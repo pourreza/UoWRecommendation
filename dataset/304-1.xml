@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:NXIYI8FZ5K0" author="" title="" />
+  <s:processor name="chromosome" boring="true">
+    <s:stringconstant>17</s:stringconstant>
+  </s:processor>
+  <s:processor name="end" boring="true">
+    <s:stringconstant>44592504</s:stringconstant>
+  </s:processor>
+  <s:processor name="species" boring="true">
+    <s:stringconstant>mus_musculus</s:stringconstant>
+  </s:processor>
+  <s:processor name="start" boring="true">
+    <s:stringconstant>19592504</s:stringconstant>
+  </s:processor>
+  <s:processor name="Get_Gene_Info">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+        <s:processor name="getGeneInfo">
+          <s:arbitrarywsdl>
+            <s:wsdl>http://xml.nig.ac.jp/wsdl/Ensembl.wsdl</s:wsdl>
+            <s:operation>getGeneInfo</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="lister">
+          <s:arbitrarywsdl>
+            <s:wsdl>http://phoebus.cs.man.ac.uk:8081/axis/EnsemblListner.jws?wsdl</s:wsdl>
+            <s:operation>lister</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:link source="genes_in_region" sink="lister:file" />
+        <s:link source="getGeneInfo:Result" sink="gene_info" />
+        <s:link source="lister:listerReturn" sink="getGeneInfo:geneId" />
+        <s:source name="genes_in_region" />
+        <s:sink name="gene_info" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="getgenesbyspecies">
+    <s:description>Retrieves a list of Ensembl genes for a given species, chromosome and position</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/qtl_analysis.getgenesbyspecies</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getcurrentdatabase">
+    <s:description>Retrieves the current databases from ENSEMBL for a species</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/qtl_analysis.getcurrentdatabase</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="NestedWorkflow">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+        <s:processor name="options" boring="true">
+          <s:stringconstant>gene_name</s:stringconstant>
+        </s:processor>
+        <s:processor name="lister2">
+          <s:arbitrarywsdl>
+            <s:wsdl>http://phoebus.cs.man.ac.uk:8081/axis/EnsemblListner.jws?wsdl</s:wsdl>
+            <s:operation>lister</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="parse_gene_name">
+          <s:beanshell>
+            <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++) 
+{		
+	String trimmed = split[i].trim();
+	String[] trimmedSplit = trimmed.split("\t");	
+	nonEmpty.add(trimmedSplit[3].trim());
+	
+}
+
+String output = "";
+
+for (int i = 0; i &lt; nonEmpty.size(); i++)
+{
+	output = output + (String) (nonEmpty.elementAt(i) + "\n");
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="parse_ddbj_gene_info">
+          <s:description>extract information from geneGeneInfo processor at http://xml.nig.ac.jp/wsdl/Ensembl.wsdl</s:description>
+          <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.parse_ddbj_gene_info</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="gene_info_input" sink="parse_ddbj_gene_info:file_direct_data" />
+        <s:link source="lister2:listerReturn" sink="parse_gene_name:input" />
+        <s:link source="options:value" sink="parse_ddbj_gene_info:options" />
+        <s:link source="parse_ddbj_gene_info:output" sink="lister2:file" />
+        <s:link source="parse_gene_name:output" sink="gene_name" />
+        <s:source name="gene_info_input" />
+        <s:sink name="gene_name" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Get_Gene_Info:gene_info" sink="NestedWorkflow:gene_info_input" />
+  <s:link source="Get_Gene_Info:gene_info" sink="gene_info" />
+  <s:link source="NestedWorkflow:gene_name" sink="gene_name" />
+  <s:link source="chromosome:value" sink="getgenesbyspecies:chromo" />
+  <s:link source="end:value" sink="getgenesbyspecies:end" />
+  <s:link source="getcurrentdatabase:output" sink="current_database" />
+  <s:link source="getcurrentdatabase:output" sink="getgenesbyspecies:database" />
+  <s:link source="getgenesbyspecies:output" sink="Get_Gene_Info:genes_in_region" />
+  <s:link source="getgenesbyspecies:output" sink="genes_in_region" />
+  <s:link source="species:value" sink="getcurrentdatabase:species" />
+  <s:link source="start:value" sink="getgenesbyspecies:start" />
+  <s:sink name="current_database" />
+  <s:sink name="genes_in_region" />
+  <s:sink name="gene_info" />
+  <s:sink name="gene_name" />
+</s:scufl>
+
+

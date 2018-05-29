@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:12eae221-cc54-4742-b2cb-d47669b3abe7" author="M. L. Hekkelman &amp; Bas Vroling" title="blastp using the MRS system">This blastp workflow uses the blast service of MRS (http://mrs.cmbi.ru.nl). Inputs are a sequence (only amino acids, not a fasta sequence) and a database. Databases that can be used are "sprot", "uniprot", "trembl", "pdb", "refseq", "ipi" and "gpcrdb".</s:workflowdescription>
+  <s:processor name="filterHits">
+    <s:defaults>
+      <s:default name="xpath">//*[local-name(.)='hits']</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="castToXml" boring="true">
+    <s:beanshell>
+      <s:scriptvalue>output = input;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/xml'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="blastJobResultOut">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="BlastJobResultResponse" name="parameters" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}BlastJobResultResponse">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="dbCount" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;BlastJobResultResponse&gt;dbCount" />
+            <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="dbLength" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;BlastJobResultResponse&gt;dbLength" />
+            <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="effectiveSearchSpace" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;BlastJobResultResponse&gt;effectiveSearchSpace" />
+            <s:basetype optional="false" unbounded="false" typename="double" name="kappa" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;BlastJobResultResponse&gt;kappa" />
+            <s:basetype optional="false" unbounded="false" typename="double" name="lambda" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;BlastJobResultResponse&gt;lambda" />
+            <s:basetype optional="false" unbounded="false" typename="double" name="entropy" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;BlastJobResultResponse&gt;entropy" />
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Hit" name="hits" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;BlastJobResultResponse&gt;hits">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="Hit" name="" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hit">
+                  <s:elements>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="id" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hit&gt;id" />
+                    <s:basetype optional="false" unbounded="false" typename="string" name="title" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hit&gt;title" />
+                    <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Hsp" name="hsps" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hit&gt;hsps">
+                      <s:elementtype>
+                        <s:complextype optional="false" unbounded="false" typename="Hsp" name="" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hsp">
+                          <s:elements>
+                            <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="score" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hsp&gt;score" />
+                            <s:basetype optional="false" unbounded="false" typename="double" name="bitScore" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hsp&gt;bitScore" />
+                            <s:basetype optional="false" unbounded="false" typename="double" name="expect" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hsp&gt;expect" />
+                            <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="queryStart" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hsp&gt;queryStart" />
+                            <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="subjectStart" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hsp&gt;subjectStart" />
+                            <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="identity" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hsp&gt;identity" />
+                            <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="positive" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hsp&gt;positive" />
+                            <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="gaps" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hsp&gt;gaps" />
+                            <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="subjectLength" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hsp&gt;subjectLength" />
+                            <s:basetype optional="false" unbounded="false" typename="string" name="queryAlignment" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hsp&gt;queryAlignment" />
+                            <s:basetype optional="false" unbounded="false" typename="string" name="subjectAlignment" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hsp&gt;subjectAlignment" />
+                            <s:basetype optional="false" unbounded="false" typename="string" name="midline" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Hsp&gt;midline" />
+                          </s:elements>
+                        </s:complextype>
+                      </s:elementtype>
+                    </s:arraytype>
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="blastResultParametersIn">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="BlastJobResult" name="parameters" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}BlastJobResult">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="jobId" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;BlastJobResult&gt;jobId" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="BlastJobResult">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://mrs.cmbi.ru.nl/mrsws/blast/wsdl</s:wsdl>
+      <s:operation>BlastJobResult</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="mrs_blast">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:a7a12e88-8ebb-4daf-9572-2b9d262c57ed" author="" title="mrs_blast" />
+        <s:processor name="blastParametersOut">
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="BlastResponse" name="parameters" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}BlastResponse">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="jobId" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;BlastResponse&gt;jobId" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="blastParametersIn">
+          <s:defaults>
+            <s:default name="program">blastp</s:default>
+            <s:default name="reportLimit">250</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="Blast" name="parameters" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Blast">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="query" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;Blast&gt;query" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="program" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;Blast&gt;program" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="db" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;Blast&gt;db" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="mrsBooleanQuery" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;Blast&gt;mrsBooleanQuery" />
+                  <s:complextype optional="false" unbounded="false" typename="Parameters" name="params" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;Blast&gt;params">
+                    <s:elements>
+                      <s:basetype optional="false" unbounded="false" typename="string" name="matrix" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Parameters&gt;matrix" />
+                      <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="wordSize" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Parameters&gt;wordSize" />
+                      <s:basetype optional="false" unbounded="false" typename="double" name="expect" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Parameters&gt;expect" />
+                      <s:basetype optional="false" unbounded="false" typename="boolean" name="lowComplexityFilter" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Parameters&gt;lowComplexityFilter" />
+                      <s:basetype optional="false" unbounded="false" typename="boolean" name="gapped" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Parameters&gt;gapped" />
+                      <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="gapOpen" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Parameters&gt;gapOpen" />
+                      <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="gapExtend" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}Parameters&gt;gapExtend" />
+                    </s:elements>
+                  </s:complextype>
+                  <s:basetype optional="false" unbounded="false" typename="unsignedInt" name="reportLimit" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;Blast&gt;reportLimit" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Blast">
+          <s:arbitrarywsdl>
+            <s:wsdl>http://mrs.cmbi.ru.nl/mrsws/blast/wsdl</s:wsdl>
+            <s:operation>Blast</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:link source="Blast:parameters" sink="blastParametersOut:input" />
+        <s:link source="blastParametersIn:output" sink="Blast:parameters" />
+        <s:link source="db" sink="blastParametersIn:db" />
+        <s:link source="sequence" sink="blastParametersIn:query" />
+        <s:link source="blastParametersOut:jobId" sink="jobId" />
+        <s:source name="db" />
+        <s:source name="sequence" />
+        <s:sink name="jobId" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="mrs_blast_status">
+    <s:workflow maxretries="300" retrydelay="1000">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:c149a84b-7195-466d-ac68-e0880710b16a" author="" title="mrs_blast_status" />
+        <s:processor name="Fail_if_false">
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="blastJobStatusOut">
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="BlastJobStatusResponse" name="parameters" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}BlastJobStatusResponse">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="status" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;BlastJobStatusResponse&gt;status" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="blastJobStatusIn">
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="BlastJobStatus" name="parameters" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}BlastJobStatus">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="jobId" qname="{http://mrs.cmbi.ru.nl/mrsws/blast}&gt;BlastJobStatus&gt;jobId" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="checkStatus">
+          <s:beanshell>
+            <s:scriptvalue>isComplete = status.equals("finished").toString();</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">status</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">isComplete</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="BlastJobStatus">
+          <s:arbitrarywsdl>
+            <s:wsdl>http://mrs.cmbi.ru.nl/mrsws/blast/wsdl</s:wsdl>
+            <s:operation>BlastJobStatus</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:link source="BlastJobStatus:parameters" sink="blastJobStatusOut:input" />
+        <s:link source="blastJobStatusIn:output" sink="BlastJobStatus:parameters" />
+        <s:link source="blastJobStatusOut:status" sink="checkStatus:status" />
+        <s:link source="checkStatus:isComplete" sink="Fail_if_false:test" />
+        <s:link source="jobId" sink="blastJobStatusIn:jobId" />
+        <s:source name="jobId" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="BlastJobResult:parameters" sink="blastJobResultOut:input" />
+  <s:link source="BlastJobResult:parameters" sink="filterHits:xml-text" />
+  <s:link source="blastResultParametersIn:output" sink="BlastJobResult:parameters" />
+  <s:link source="db" sink="mrs_blast:db" />
+  <s:link source="filterHits:nodelistAsXML" sink="castToXml:input" />
+  <s:link source="mrs_blast:jobId" sink="blastResultParametersIn:jobId" />
+  <s:link source="mrs_blast:jobId" sink="mrs_blast_status:jobId" />
+  <s:link source="sequence" sink="mrs_blast:sequence" />
+  <s:link source="castToXml:output" sink="hits" />
+  <s:source name="sequence" />
+  <s:source name="db" />
+  <s:sink name="hits" />
+  <s:coordination name="BlastJobResult_BLOCKON_mrs_blast_status">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>mrs_blast_status</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>BlastJobResult</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+  <s:processor name="regex_2" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="split_by_regex_2">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Ensembl_gene_info">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+        <s:processor name="getGeneInfo">
+          <s:description>get gene information</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://xml.nig.ac.jp/wsdl/Ensembl.wsdl</s:wsdl>
+            <s:operation>getGeneInfo</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="regex3" boring="true">
+          <s:stringconstant>\n</s:stringconstant>
+        </s:processor>
+        <s:processor name="split_by_regex">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+        </s:processor>
+        <s:link source="genes_in_region" sink="split_by_regex:string" />
+        <s:link source="regex3:value" sink="split_by_regex:regex" />
+        <s:link source="split_by_regex:split" sink="getGeneInfo:geneId" />
+        <s:link source="getGeneInfo:Result" sink="gene_info" />
+        <s:source name="genes_in_region" />
+        <s:sink name="gene_info" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Remove_swiss_nulls">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+        <s:processor name="remove_Nulls">
+          <s:beanshell>
+            <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++){
+   if (!(split[i].equals("")))
+   {
+       nonEmpty.add(split[i].trim());
+   }
+}
+
+String[] non_empty = new String[nonEmpty.size()];
+
+for (int i = 0; i &lt; non_empty.length; i ++)
+{
+   non_empty[i] = nonEmpty.elementAt(i);
+}
+
+String output = "";
+
+for (int i = 0; i &lt; non_empty.length; i++)
+{
+	output = output + (String) (non_empty[i] + "\n");
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+          </s:beanshell>
+        </s:processor>
+        <s:link source="input_string" sink="remove_Nulls:input" />
+        <s:link source="remove_Nulls:output" sink="removed_nulls" />
+        <s:source name="input_string" />
+        <s:sink name="removed_nulls" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Uniprot_record_search">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:KC211UMOYL1345" author="" title="" />
+        <s:processor name="fieldName" boring="true">
+          <s:stringconstant>Alltext</s:stringconstant>
+        </s:processor>
+        <s:processor name="Uniprot_search">
+          <s:description>To be added</s:description>
+          <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/uniprotsequence.uniprot</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="fieldName:value" sink="Uniprot_search:fieldname" />
+        <s:link source="swissprot_id" sink="Uniprot_search:searchterm" />
+        <s:link source="Uniprot_search:result" sink="uniprot_record" />
+        <s:source name="swissprot_id" />
+        <s:sink name="uniprot_record" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Parse_swiss_ids">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+        <s:processor name="parse_swiss">
+          <s:beanshell>
+            <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++) 
+{		
+	String trimmed = split[i].trim();
+	String[] trimmedSplit = trimmed.split(":");
+	if (trimmedSplit.length == 2){
+	    nonEmpty.add(trimmedSplit[1].trim());	
+	}
+}
+
+String output = "";
+
+for (int i = 0; i &lt; nonEmpty.size(); i++)
+{
+	output = output + (String) (nonEmpty.elementAt(i) + "\n");
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="options" boring="true">
+          <s:stringconstant>swiss</s:stringconstant>
+        </s:processor>
+        <s:processor name="parse_ddbj_gene_info">
+          <s:description>extract information from geneGeneInfo processor at http://xml.nig.ac.jp/wsdl/Ensembl.wsdl</s:description>
+          <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.parse_ddbj_gene_info</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="gene_info" sink="parse_ddbj_gene_info:file_direct_data" />
+        <s:link source="options:value" sink="parse_ddbj_gene_info:options" />
+        <s:link source="parse_ddbj_gene_info:output" sink="parse_swiss:input" />
+        <s:link source="parse_swiss:output" sink="swiss_ids" />
+        <s:source name="gene_info" />
+        <s:sink name="swiss_ids" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Parse_uniprot">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:KC211UMOYL1345" author="" title="" />
+        <s:processor name="parse_uniprot">
+          <s:description>Extract information from a Uniprot text file including PubMed, InterPro, Pfam and other related accession numbers</s:description>
+          <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.parse_uniprot</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="uniprot_record" sink="parse_uniprot:file_direct_data" />
+        <s:link source="parse_uniprot:output" sink="parsed_data" />
+        <s:source name="uniprot_record" />
+        <s:sink name="parsed_data" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="parse_go_term">
+    <s:beanshell>
+      <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++) 
+{		
+	String trimmed = split[i].trim();
+	String[] trimmedSplit = trimmed.split("=");
+	if (trimmedSplit.length &gt;= 1)
+	{
+	   if(trimmedSplit[0].equals("GO"))
+   		{
+       			nonEmpty.add(trimmedSplit[1].trim());
+   		}	
+	}
+}
+
+String output = "";
+
+for (int i = 0; i &lt; nonEmpty.size(); i++)
+{
+	output = output + (String) (nonEmpty.elementAt(i) + "\n");
+}
+//AC=Q5DTJ5
+//EMBL=AK220525
+//EMBL=BAD90524.1
+//Ensembl=ENSMUSG00000002763
+//MGI=MGI:2385054
+//GO=GO:0005515
+//InterPro=IPR003593
+//InterPro=IPR003959
+//Pfam=PF00004
+//SMART=SM00382</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="split_go_terms">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Remove_Go_nulls">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+        <s:processor name="remove_Nulls">
+          <s:beanshell>
+            <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++){
+   if (!(split[i].equals("")))
+   {
+       nonEmpty.add(split[i].trim());
+   }
+}
+
+String[] non_empty = new String[nonEmpty.size()];
+
+for (int i = 0; i &lt; non_empty.length; i ++)
+{
+   non_empty[i] = nonEmpty.elementAt(i);
+}
+
+String output = "";
+
+for (int i = 0; i &lt; non_empty.length; i++)
+{
+	output = output + (String) (non_empty[i] + "\n");
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+          </s:beanshell>
+        </s:processor>
+        <s:link source="input_string" sink="remove_Nulls:input" />
+        <s:link source="remove_Nulls:output" sink="removed_nulls" />
+        <s:source name="input_string" />
+        <s:sink name="removed_nulls" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="getTree">
+    <s:description>Get tree information by GO ID</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/GO.wsdl</s:wsdl>
+      <s:operation>getTree</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="Ensembl_gene_info:gene_info" sink="Parse_swiss_ids:gene_info" />
+  <s:link source="Ensembl_genes" sink="Ensembl_gene_info:genes_in_region" />
+  <s:link source="Parse_swiss_ids:swiss_ids" sink="Remove_swiss_nulls:input_string" />
+  <s:link source="Parse_uniprot:parsed_data" sink="parse_go_term:input" />
+  <s:link source="Remove_Go_nulls:removed_nulls" sink="removed_null_go_terms" />
+  <s:link source="Remove_Go_nulls:removed_nulls" sink="split_go_terms:string" />
+  <s:link source="Remove_swiss_nulls:removed_nulls" sink="split_by_regex_2:string" />
+  <s:link source="Uniprot_record_search:uniprot_record" sink="Parse_uniprot:uniprot_record" />
+  <s:link source="getTree:Result" sink="Go_Tree" />
+  <s:link source="parse_go_term:output" sink="Remove_Go_nulls:input_string" />
+  <s:link source="regex_2:value" sink="split_by_regex_2:regex" />
+  <s:link source="regex_2:value" sink="split_go_terms:regex" />
+  <s:link source="split_by_regex_2:split" sink="Uniprot_record_search:swissprot_id" />
+  <s:link source="split_go_terms:split" sink="getTree:id" />
+  <s:link source="parse_go_term:output" sink="Go_terms" />
+  <s:source name="Ensembl_genes" />
+  <s:sink name="Go_terms" />
+  <s:sink name="Go_Tree" />
+  <s:sink name="removed_null_go_terms" />
+</s:scufl>
+
+

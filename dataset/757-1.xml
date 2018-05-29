@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:a7e8faf2-4186-4400-9fe9-967273515473" author="" title="snpNeighbours" />
+  <s:processor name="getSNPByName">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://cabernet.cng.fr:8080/snp2rdf/SNPToolWebService?wsdl</s:wsdl>
+      <s:operation>getSNPByName</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="rs25" boring="true">
+    <s:stringconstant>rs25</s:stringconstant>
+  </s:processor>
+  <s:processor name="transformInput">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getSNPByName" name="parameters" qname="{http://ws.server.operon.cephb.fr/}getSNPByName">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="rsNumber" qname="getSNPByName&gt;rsNumber" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="extractRS">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getSNPByNameResponse" name="parameters" qname="{http://ws.server.operon.cephb.fr/}getSNPByNameResponse">
+          <s:elements>
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="snp" name="SnpDescriptorList" qname="getSNPByNameResponse&gt;SnpDescriptorList">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="snp" name="" qname="{http://ws.server.operon.cephb.fr/}snp">
+                  <s:elements>
+                    <s:basetype optional="true" unbounded="false" typename="string" name="acn" qname="snp&gt;acn" />
+                    <s:basetype optional="true" unbounded="false" typename="string" name="chromosome" qname="snp&gt;chromosome" />
+                    <s:basetype optional="true" unbounded="false" typename="string" name="name" qname="snp&gt;name" />
+                    <s:basetype optional="false" unbounded="false" typename="int" name="position" qname="snp&gt;position" />
+                    <s:basetype optional="true" unbounded="false" typename="string" name="sequence" qname="snp&gt;sequence" />
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="SnpDescriptorListXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="snp" name="" qname="{http://ws.server.operon.cephb.fr/}snp">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="acn" qname="snp&gt;acn" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="chromosome" qname="snp&gt;chromosome" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="name" qname="snp&gt;name" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="position" qname="snp&gt;position" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="sequence" qname="snp&gt;sequence" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="getSNPByPosition">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://cabernet.cng.fr:8080/snp2rdf/SNPToolWebService?wsdl</s:wsdl>
+      <s:operation>getSNPByPosition</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="input">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getSNPByPosition" name="parameters" qname="{http://ws.server.operon.cephb.fr/}getSNPByPosition">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="chromosome" qname="getSNPByPosition&gt;chromosome" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="start" qname="getSNPByPosition&gt;start" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="end" qname="getSNPByPosition&gt;end" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="ExtendRange">
+    <s:beanshell>
+      <s:scriptvalue>left=Math.max(0,Integer.parseInt(position)-Integer.parseInt(extend));
+right=Integer.parseInt(position)+Integer.parseInt(extend);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">position</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">extend</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">left</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">right</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Extension" boring="true">
+    <s:stringconstant>1000</s:stringconstant>
+  </s:processor>
+  <s:processor name="Write_Text_File">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileWriter</s:local>
+  </s:processor>
+  <s:processor name="FileNameOut" boring="true">
+    <s:stringconstant>neighbours.xml</s:stringconstant>
+  </s:processor>
+  <s:link source="ExtendRange:left" sink="input:start" />
+  <s:link source="ExtendRange:right" sink="input:end" />
+  <s:link source="Extension:value" sink="ExtendRange:extend" />
+  <s:link source="FileNameOut:value" sink="Write_Text_File:outputFile" />
+  <s:link source="SnpDescriptorListXML:chromosome" sink="input:chromosome" />
+  <s:link source="SnpDescriptorListXML:position" sink="ExtendRange:position" />
+  <s:link source="extractRS:SnpDescriptorList" sink="SnpDescriptorListXML:input" />
+  <s:link source="getSNPByName:parameters" sink="extractRS:input" />
+  <s:link source="getSNPByPosition:parameters" sink="Write_Text_File:filecontents" />
+  <s:link source="input:output" sink="getSNPByPosition:parameters" />
+  <s:link source="rs25:value" sink="transformInput:rsNumber" />
+  <s:link source="transformInput:output" sink="getSNPByName:parameters" />
+</s:scufl>
+

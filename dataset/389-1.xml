@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:e9fa27a3-cfe4-481e-bed9-7fa5779739df" author="Thomas Kuhn" title="Atom typing of molecules from database">This workflow loads molecules from a database. For each molecule the atom type gets perceived. The output of this workflow are a couple of text files. The frist text file contains all molecule id's which are loaded from the database. The second text file contains all molecules which had problems with the atom typing. This file contains the molecule id and the atom which caused the problem. The last output file, a pdf, contains all structures of the molecules which caused problems during the atom typing to visual inspect the molecules.</s:workflowdescription>
+  <s:processor name="Iterative_Molecule_from_database_reader">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.database.pgchem.IterativeMoleculeFromDBReader
+      <s:extensions>
+        <s:IterativeMoleculeFromDBReader>
+          <DBConnectionPostgres>
+            <DBURL>jdbc:postgresql://localhost/cdk-taverna</DBURL>
+            <DBUserName>testuser</DBUserName>
+            <DBUserPassword>testpwd</DBUserPassword>
+            <SQLQuery>SELECT * FROM molecules ORDER BY id LIMIT ? OFFSET ?</SQLQuery>
+          </DBConnectionPostgres>
+        </s:IterativeMoleculeFromDBReader>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Nested_Workflow">
+    <s:workflow maxretries="1000000">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:1bcdb2b0-666b-4bd4-ae64-be78ab75c55f" author="Thomas Kuhn" title="Atom typing nested workflow" />
+        <s:processor name="Fail_if_true">
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+        </s:processor>
+        <s:processor name="Extract_the_database_ID_from_the_molcule">
+          <s:cdk>org.openscience.cdk.applications.taverna.tools.ExtractDatabaseIDFromMolecule</s:cdk>
+        </s:processor>
+        <s:processor name="Perceive_atom_types">
+          <s:cdk>org.openscience.cdk.applications.taverna.atomtype.PerceiveAtomType</s:cdk>
+        </s:processor>
+        <s:processor name="Create_PDF_File_with_2D_Structures">
+          <s:cdk>org.openscience.cdk.applications.taverna.renderers.CreatePDFWith2DStructures</s:cdk>
+        </s:processor>
+        <s:processor name="Get_Molecule_from_database">
+          <s:cdk>org.openscience.cdk.applications.taverna.database.pgchem.IterativeGetMoleculeFromDB</s:cdk>
+        </s:processor>
+        <s:processor name="Has_Next_Molecule_from_database">
+          <s:cdk>org.openscience.cdk.applications.taverna.database.pgchem.IterativeHasNextMoleculeFromDB</s:cdk>
+        </s:processor>
+        <s:processor name="Extract_the_database_ID_from_the_molecule">
+          <s:cdk>org.openscience.cdk.applications.taverna.tools.ExtractDatabaseIDFromMolecule</s:cdk>
+        </s:processor>
+        <s:processor name="Iterative_File_Writer1">
+          <s:cdk>
+            org.openscience.cdk.applications.taverna.io.iterative.IterativeFileWriter
+            <s:extensions>
+              <s:filewriter s:filename="log_atomtyping.txt" />
+            </s:extensions>
+          </s:cdk>
+        </s:processor>
+        <s:processor name="Iterative_File_Writer">
+          <s:cdk>
+            org.openscience.cdk.applications.taverna.io.iterative.IterativeFileWriter
+            <s:extensions>
+              <s:filewriter s:filename="log_atomtypingProblemIDs.txt" />
+            </s:extensions>
+          </s:cdk>
+        </s:processor>
+        <s:processor name="Write_MDL_Mol_File_to_File">
+          <s:cdk>org.openscience.cdk.applications.taverna.io.WriteToMDLMolFile</s:cdk>
+        </s:processor>
+        <s:processor name="Iterative_File_Writer2">
+          <s:cdk>
+            org.openscience.cdk.applications.taverna.io.iterative.IterativeFileWriter
+            <s:extensions>
+              <s:filewriter s:filename="log_moleculeID_fromAtomTyping.txt" />
+            </s:extensions>
+          </s:cdk>
+        </s:processor>
+        <s:link source="DatabaseReaderID" sink="Get_Molecule_from_database:DatabaseConnectionID" />
+        <s:link source="DatabaseReaderID" sink="Has_Next_Molecule_from_database:DatabaseConnectionID" />
+        <s:link source="Extract_the_database_ID_from_the_molcule:databaseIDs" sink="Iterative_File_Writer:content" />
+        <s:link source="Extract_the_database_ID_from_the_molecule:databaseIDs" sink="Iterative_File_Writer2:content" />
+        <s:link source="Get_Molecule_from_database:molecules" sink="Extract_the_database_ID_from_the_molecule:inputStructures" />
+        <s:link source="Get_Molecule_from_database:molecules" sink="Perceive_atom_types:inputStructures" />
+        <s:link source="Has_Next_Molecule_from_database:hasNext" sink="Fail_if_true:test" />
+        <s:link source="Perceive_atom_types:NOTallAtomTypesPerceived" sink="Create_PDF_File_with_2D_Structures:inputStructures" />
+        <s:link source="Perceive_atom_types:NOTallAtomTypesPerceived" sink="Extract_the_database_ID_from_the_molcule:inputStructures" />
+        <s:link source="Perceive_atom_types:NOTallAtomTypesPerceived" sink="Write_MDL_Mol_File_to_File:inputStructures" />
+        <s:link source="Perceive_atom_types:comment" sink="Iterative_File_Writer1:content" />
+        <s:source name="DatabaseReaderID" />
+        <s:coordination name="Has_Next_Molecule_from_database_BLOCKON_Iterative_File_Writer">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Iterative_File_Writer</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Has_Next_Molecule_from_database</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Has_Next_Molecule_from_database_BLOCKON_Create_PDF_File_with_2D_Structures">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Create_PDF_File_with_2D_Structures</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Has_Next_Molecule_from_database</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Has_Next_Molecule_from_database_BLOCKON_Write_MDL_Mol_File_to_File">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Write_MDL_Mol_File_to_File</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Has_Next_Molecule_from_database</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Has_Next_Molecule_from_database_BLOCKON_Iterative_File_Writer2">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Iterative_File_Writer2</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Has_Next_Molecule_from_database</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Has_Next_Molecule_from_database_BLOCKON_Iterative_File_Writer1">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Iterative_File_Writer1</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Has_Next_Molecule_from_database</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Iterative_Molecule_from_database_reader:DatabaseConnectionID" sink="Nested_Workflow:DatabaseReaderID" />
+</s:scufl>
+

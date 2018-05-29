@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f39f0689-ee3b-4b7b-a3b8-0579bd23deab" author="" title="d" />
+  <s:processor name="DailyDilbertImagePath">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.esynaps.com/WebServices/DailyDiblert.asmx?WSDL</s:wsdl>
+      <s:operation>DailyDilbertImagePath</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="parametersXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="DailyDilbertImagePathResponse" name="parameters" qname="{http://tempuri.org/}DailyDilbertImagePathResponse">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="DailyDilbertImagePathResult" qname="{http://tempuri.org/}&gt;DailyDilbertImagePathResponse&gt;DailyDilbertImagePathResult" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="GetImage">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebImageFetcher</s:local>
+  </s:processor>
+  <s:link source="DailyDilbertImagePath:parameters" sink="parametersXML:input" />
+  <s:link source="GetImage:image" sink="image" />
+  <s:link source="parametersXML:DailyDilbertImagePathResult" sink="GetImage:url" />
+  <s:sink name="image">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/plain</s:mimeType>
+        <s:mimeType>text/html</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

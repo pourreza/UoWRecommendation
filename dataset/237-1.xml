@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:5edb205c-2be5-483f-9f89-712f1130ffb1" author="Hamish McWilliam" title="EBI_dbfetch_UniParc">From a list of UniParc entry identifers get the complete entries using the EBI's WSDbfetch service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch).</s:workflowdescription>
+  <s:processor name="Extract_entries">
+    <s:description>Extract the UniParc entries from the XML document.</s:description>
+    <s:defaults>
+      <s:default name="xpath">//*[local-name(.)='uniparc']/*[local-name(.)='entry']</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="Format_list_for_dbfetch">
+    <s:description>Convert list of identifers into a comma-delimited string for use with fetchBatch.</s:description>
+    <s:defaults>
+      <s:default name="seperator">,</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="fetchBatch">
+    <s:description>Get a set of database entries (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch#fetchbatch_db_ids_format_style)</s:description>
+    <s:defaults>
+      <s:default name="db">uniparc</s:default>
+      <s:default name="format">uniparc</s:default>
+      <s:default name="style">raw</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSDbfetch.wsdl</s:wsdl>
+      <s:operation>fetchBatch</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="Format_list_for_dbfetch:concatenated" sink="fetchBatch:ids" />
+  <s:link source="ID_list" sink="Format_list_for_dbfetch:stringlist" />
+  <s:link source="fetchBatch:fetchBatchReturn" sink="Extract_entries:xml-text" />
+  <s:link source="Extract_entries:nodelistAsXML" sink="UniParc_entries_list" />
+  <s:link source="fetchBatch:fetchBatchReturn" sink="UniParc_entries" />
+  <s:source name="ID_list">
+    <s:metadata>
+      <s:description>List of UniParc identifiers (e.g. UPI0000000001).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="UniParc_entries">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+      <s:description>The set of UniParc entries as a single XML document.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="UniParc_entries_list">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+      <s:description>A list of UniParc entries in XML format.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

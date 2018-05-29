@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:NXIYI8FZ5K0" author="" title="" />
+  <s:processor name="end" boring="true">
+    <s:stringconstant>44592504</s:stringconstant>
+  </s:processor>
+  <s:processor name="regex1" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="split_by_regex_2">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="comma" boring="true">
+    <s:stringconstant>,</s:stringconstant>
+  </s:processor>
+  <s:processor name="split_by_regex_3">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="array_name" boring="true">
+    <s:stringconstant>Mouse430_2</s:stringconstant>
+  </s:processor>
+  <s:processor name="chromosome" boring="true">
+    <s:stringconstant>17</s:stringconstant>
+  </s:processor>
+  <s:processor name="comma_separated" boring="true">
+    <s:stringconstant>,</s:stringconstant>
+  </s:processor>
+  <s:processor name="split_by_regex_4">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="start" boring="true">
+    <s:stringconstant>19592504</s:stringconstant>
+  </s:processor>
+  <s:processor name="getcurrentdatabase">
+    <s:description>Retrieves the current databases from ENSEMBL for a species</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/qtl_analysis.getcurrentdatabase</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="Remove_duplicates">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:GTD7HTDVUX48" author="" title="" />
+        <s:processor name="Concatenate_two_strings">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+        </s:processor>
+        <s:processor name="Remove_duplicate_strings">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringStripDuplicates</s:local>
+        </s:processor>
+        <s:link source="input_list_1" sink="Concatenate_two_strings:string1" />
+        <s:link source="input_list_2" sink="Concatenate_two_strings:string2" />
+        <s:link source="Concatenate_two_strings:output" sink="Remove_duplicate_strings:stringlist" />
+        <s:link source="Remove_duplicate_strings:strippedlist" sink="unique_list" />
+        <s:source name="input_list_1" />
+        <s:source name="input_list_2" />
+        <s:sink name="unique_list" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Parse_swiss_ids">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+        <s:processor name="parse_swiss">
+          <s:beanshell>
+            <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++) 
+{		
+	String trimmed = split[i].trim();
+	String[] trimmedSplit = trimmed.split(":");
+	System.out.println(trimmedSplit.length);
+	if (trimmedSplit.length == 2){
+	    nonEmpty.add(trimmedSplit[1].trim());	
+	}
+}
+
+String output = "";
+
+for (int i = 0; i &lt; nonEmpty.size(); i++)
+{
+	output = output + (String) (nonEmpty.elementAt(i) + "\n");
+}
+
+
+//String[] split2 = intermediate.split(":");
+//Vector nonEmpty2 = new Vector();
+
+//for (int i = 0; i &lt; split2.length; i++) 
+//{		
+//	String trimmed2 = split2[i].trim();
+//	String[] trimmedSplit2 = trimmed2.split(":");	
+//	nonEmpty2.add(trimmedSplit2[1].trim());	
+//}
+
+//String output = "";
+
+//for (int i = 0; i &lt; nonEmpty2.size(); i++)
+//{
+//	output = output + (String) (nonEmpty2.elementAt(i) + "\n");
+//}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="options" boring="true">
+          <s:stringconstant>swiss</s:stringconstant>
+        </s:processor>
+        <s:processor name="parse_ddbj_gene_info">
+          <s:description>extract information from geneGeneInfo processor at http://xml.nig.ac.jp/wsdl/Ensembl.wsdl</s:description>
+          <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.parse_ddbj_gene_info</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="gene_info" sink="parse_ddbj_gene_info:file_direct_data" />
+        <s:link source="options:value" sink="parse_ddbj_gene_info:options" />
+        <s:link source="parse_ddbj_gene_info:output" sink="parse_swiss:input" />
+        <s:link source="parse_swiss:output" sink="swiss_ids" />
+        <s:source name="gene_info" />
+        <s:sink name="swiss_ids" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="split_by_regex">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="merge_list_2">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="regex_2" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="species" boring="true">
+    <s:stringconstant>mus_musculus</s:stringconstant>
+  </s:processor>
+  <s:processor name="merge_string_list">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="merge_list_3">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="Remove_gene_nulls">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+        <s:processor name="remove_Nulls">
+          <s:beanshell>
+            <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++){
+   if (!(split[i].equals("")))
+   {
+       nonEmpty.add(split[i].trim());
+   }
+}
+
+String[] non_empty = new String[nonEmpty.size()];
+
+for (int i = 0; i &lt; non_empty.length; i ++)
+{
+   non_empty[i] = nonEmpty.elementAt(i);
+}
+
+String output = "";
+
+for (int i = 0; i &lt; non_empty.length; i++)
+{
+	output = output + (String) (non_empty[i] + "\n");
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+          </s:beanshell>
+        </s:processor>
+        <s:link source="input_string" sink="remove_Nulls:input" />
+        <s:link source="remove_Nulls:output" sink="removed_nulls" />
+        <s:source name="input_string" />
+        <s:sink name="removed_nulls" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Probesets_to_genes">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:RJUXV3ITT5157" author="" title="" />
+        <s:processor name="probeset_to_gene">
+          <s:description>Gets ENSEMBL gene IDS that are based on the probeset names passed to it</s:description>
+          <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/qtl_analysis.probeset_to_gene</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="chromosome" sink="probeset_to_gene:chromosome" />
+        <s:link source="database" sink="probeset_to_gene:database" />
+        <s:link source="end" sink="probeset_to_gene:end" />
+        <s:link source="probeset_list" sink="probeset_to_gene:probeset_list" />
+        <s:link source="start" sink="probeset_to_gene:start" />
+        <s:link source="probeset_to_gene:output" sink="genes_from_probeset" />
+        <s:source name="database" />
+        <s:source name="chromosome" />
+        <s:source name="start" />
+        <s:source name="end" />
+        <s:source name="probeset_list" />
+        <s:sink name="genes_from_probeset" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Remove_swiss_nulls">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+        <s:processor name="remove_Nulls">
+          <s:beanshell>
+            <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++){
+   if (!(split[i].equals("")))
+   {
+       nonEmpty.add(split[i].trim());
+   }
+}
+
+String[] non_empty = new String[nonEmpty.size()];
+
+for (int i = 0; i &lt; non_empty.length; i ++)
+{
+   non_empty[i] = nonEmpty.elementAt(i);
+}
+
+String output = "";
+
+for (int i = 0; i &lt; non_empty.length; i++)
+{
+	output = output + (String) (non_empty[i] + "\n");
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+          </s:beanshell>
+        </s:processor>
+        <s:link source="input_string" sink="remove_Nulls:input" />
+        <s:link source="remove_Nulls:output" sink="removed_nulls" />
+        <s:source name="input_string" />
+        <s:sink name="removed_nulls" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Ensembl_gene_info">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+        <s:processor name="split_by_regex">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+        </s:processor>
+        <s:processor name="regex3" boring="true">
+          <s:stringconstant>\n</s:stringconstant>
+        </s:processor>
+        <s:processor name="getGeneInfo">
+          <s:description>get gene information</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://xml.nig.ac.jp/wsdl/Ensembl.wsdl</s:wsdl>
+            <s:operation>getGeneInfo</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:link source="genes_in_region" sink="split_by_regex:string" />
+        <s:link source="getGeneInfo:Result" sink="gene_info" />
+        <s:link source="regex3:value" sink="split_by_regex:regex" />
+        <s:link source="split_by_regex:split" sink="getGeneInfo:geneId" />
+        <s:source name="genes_in_region" />
+        <s:sink name="gene_info" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Uniprot_record_search">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:KC211UMOYL1345" author="" title="" />
+        <s:processor name="fieldName" boring="true">
+          <s:stringconstant>Alltext</s:stringconstant>
+        </s:processor>
+        <s:processor name="Uniprot_search">
+          <s:description>To be added</s:description>
+          <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/uniprotsequence.uniprot</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="fieldName:value" sink="Uniprot_search:fieldname" />
+        <s:link source="swissprot_id" sink="Uniprot_search:searchterm" />
+        <s:link source="Uniprot_search:result" sink="uniprot_record" />
+        <s:source name="swissprot_id" />
+        <s:sink name="uniprot_record" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="getgenesbyspecies">
+    <s:description>Retrieves a list of Ensembl genes for a given species, chromosome and position</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/qtl_analysis.getgenesbyspecies</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="Probeset_in_QTL">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+        <s:processor name="probeset_in_qtl">
+          <s:description>Gets the probesets that are in a region of a chromosome e.g. in a QTL or based on 2 marker names</s:description>
+          <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/qtl_analysis.probeset_in_qtl</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="array_name" sink="probeset_in_qtl:array_name" />
+        <s:link source="chromosome" sink="probeset_in_qtl:chromosome" />
+        <s:link source="database" sink="probeset_in_qtl:database" />
+        <s:link source="end" sink="probeset_in_qtl:end" />
+        <s:link source="start" sink="probeset_in_qtl:start" />
+        <s:link source="probeset_in_qtl:output" sink="probesets_in_qtl" />
+        <s:source name="start" />
+        <s:source name="end" />
+        <s:source name="database" />
+        <s:source name="chromosome" />
+        <s:source name="array_name" />
+        <s:sink name="probesets_in_qtl" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Text_mining">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+        <s:processor name="email" boring="true">
+          <s:stringconstant>fisherp@cs.man.ac.uk</s:stringconstant>
+        </s:processor>
+        <s:processor name="chilibot">
+          <s:description>Searches Pubmed for links between terms using the Chilibot database and program http://www.chilibot.net/</s:description>
+          <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/text_mining.chilibot</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="email:value" sink="chilibot:email" />
+        <s:link source="terms" sink="chilibot:terms" />
+        <s:link source="chilibot:output" sink="output" />
+        <s:source name="terms" />
+        <s:sink name="output" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Parse_gene_name">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+        <s:processor name="options2" boring="true">
+          <s:stringconstant>gene_name</s:stringconstant>
+        </s:processor>
+        <s:processor name="parse_gene_info">
+          <s:beanshell>
+            <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++) 
+{		
+	String trimmed = split[i].trim();
+	String[] trimmedSplit = trimmed.split("\t");
+	System.out.println(trimmedSplit.length);
+	if (trimmedSplit.length == 4){
+	    nonEmpty.add(trimmedSplit[3].trim());	
+	}
+}
+
+String output = "";
+
+for (int i = 0; i &lt; nonEmpty.size(); i++)
+{
+	output = output + (String) (nonEmpty.elementAt(i) + "\n");
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="parse_gene_info_2">
+          <s:description>extract information from geneGeneInfo processor at http://xml.nig.ac.jp/wsdl/Ensembl.wsdl</s:description>
+          <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.parse_ddbj_gene_info</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="gene_info" sink="parse_gene_info_2:file_direct_data" />
+        <s:link source="options2:value" sink="parse_gene_info_2:options" />
+        <s:link source="parse_gene_info_2:output" sink="parse_gene_info:input" />
+        <s:link source="parse_gene_info:output" sink="gene_name" />
+        <s:source name="gene_info" />
+        <s:sink name="gene_name" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="remove_genes_from_probesets">
+    <s:beanshell>
+      <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++) 
+{		
+	String trimmed = split[i].trim();
+	String[] trimmedSplit = trimmed.split("\t");
+	System.out.println(trimmedSplit.length);
+	if (trimmedSplit.length == 2){
+	    nonEmpty.add(trimmedSplit[1].trim());	
+	}
+}
+
+String output = "";
+
+for (int i = 0; i &lt; nonEmpty.size(); i++)
+{
+	output = output + (String) (nonEmpty.elementAt(i) + "\n");
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+    </s:beanshell>
+  </s:processor>
+  <s:link source="Ensembl_gene_info:gene_info" sink="Parse_gene_name:gene_info" />
+  <s:link source="Ensembl_gene_info:gene_info" sink="Parse_swiss_ids:gene_info" />
+  <s:link source="Parse_gene_name:gene_name" sink="Remove_gene_nulls:input_string" />
+  <s:link source="Parse_swiss_ids:swiss_ids" sink="Remove_swiss_nulls:input_string" />
+  <s:link source="Probeset_in_QTL:probesets_in_qtl" sink="split_by_regex:string" />
+  <s:link source="Probesets_to_genes:genes_from_probeset" sink="remove_genes_from_probesets:input" />
+  <s:link source="Remove_duplicates:unique_list" sink="split_by_regex_3:string" />
+  <s:link source="Remove_swiss_nulls:removed_nulls" sink="split_by_regex_2:string" />
+  <s:link source="Uniprot_record_search:uniprot_record" sink="merge_list_2:stringlist" />
+  <s:link source="array_name:value" sink="Probeset_in_QTL:array_name" />
+  <s:link source="chromosome:value" sink="Probeset_in_QTL:chromosome" />
+  <s:link source="chromosome:value" sink="Probesets_to_genes:chromosome" />
+  <s:link source="chromosome:value" sink="getgenesbyspecies:chromo" />
+  <s:link source="comma:value" sink="merge_string_list:seperator" />
+  <s:link source="comma_separated:value" sink="merge_list_3:seperator" />
+  <s:link source="end:value" sink="Probeset_in_QTL:end" />
+  <s:link source="end:value" sink="Probesets_to_genes:end" />
+  <s:link source="end:value" sink="getgenesbyspecies:end" />
+  <s:link source="getcurrentdatabase:output" sink="Probeset_in_QTL:database" />
+  <s:link source="getcurrentdatabase:output" sink="Probesets_to_genes:database" />
+  <s:link source="getcurrentdatabase:output" sink="getgenesbyspecies:database" />
+  <s:link source="getgenesbyspecies:output" sink="Remove_duplicates:input_list_2" />
+  <s:link source="merge_list_3:concatenated" sink="Text_mining:terms" />
+  <s:link source="merge_string_list:concatenated" sink="Probesets_to_genes:probeset_list" />
+  <s:link source="remove_genes_from_probesets:output" sink="Remove_duplicates:input_list_1" />
+  <s:link source="Ensembl_gene_info:gene_info" sink="gene_info" />
+  <s:link source="Parse_swiss_ids:swiss_ids" sink="swiss_prot" />
+  <s:link source="Probeset_in_QTL:probesets_in_qtl" sink="probesets_in_qtl" />
+  <s:link source="Probesets_to_genes:genes_from_probeset" sink="genes_from_probesets" />
+  <s:link source="Remove_gene_nulls:removed_nulls" sink="gene_name" />
+  <s:link source="Remove_gene_nulls:removed_nulls" sink="split_by_regex_4:string" />
+  <s:link source="Text_mining:output" sink="text_mining_url" />
+  <s:link source="merge_list_2:concatenated" sink="uniprot_records" />
+  <s:link source="regex1:value" sink="split_by_regex:regex" />
+  <s:link source="regex_2:value" sink="split_by_regex_2:regex" />
+  <s:link source="regex_2:value" sink="split_by_regex_3:regex" />
+  <s:link source="regex_2:value" sink="split_by_regex_4:regex" />
+  <s:link source="species:value" sink="getcurrentdatabase:species" />
+  <s:link source="split_by_regex:split" sink="merge_string_list:stringlist" />
+  <s:link source="split_by_regex_2:split" sink="Uniprot_record_search:swissprot_id" />
+  <s:link source="split_by_regex_3:split" sink="Ensembl_gene_info:genes_in_region" />
+  <s:link source="split_by_regex_4:split" sink="merge_list_3:stringlist" />
+  <s:link source="start:value" sink="Probeset_in_QTL:start" />
+  <s:link source="start:value" sink="Probesets_to_genes:start" />
+  <s:link source="start:value" sink="getgenesbyspecies:start" />
+  <s:link source="getcurrentdatabase:output" sink="current_database" />
+  <s:link source="getgenesbyspecies:output" sink="genes_in_region" />
+  <s:sink name="current_database" />
+  <s:sink name="genes_in_region" />
+  <s:sink name="gene_info" />
+  <s:sink name="probesets_in_qtl" />
+  <s:sink name="genes_from_probesets" />
+  <s:sink name="swiss_prot" />
+  <s:sink name="gene_name" />
+  <s:sink name="uniprot_records" />
+  <s:sink name="text_mining_url" />
+</s:scufl>
+
+

@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:7670f221-230b-4f10-a009-dad996eb9662" author="" title="example_workflow_blocking" />
+  <s:processor name="filterListOfStringsByRegex">
+    <s:description>This is a cosmetic filter which allow to only retrieve some of the output file urls sent by Tuiuiu service.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.FilterStringList</s:local>
+  </s:processor>
+  <s:processor name="launchJobBlockingOutputXML">
+    <s:description>This is the output of Tuiuiu webservice: status of the job, job output, ...</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="launchJobBlockingOutput" name="launchJobBlockingOutput" qname="{http://nbcr.sdsc.edu/opal/types}launchJobBlockingOutput">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="StatusOutputType" name="status" qname="BlockingOutputType&gt;status">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="int" name="code" qname="StatusOutputType&gt;code" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="message" qname="StatusOutputType&gt;message" />
+                <s:basetype optional="false" unbounded="false" typename="anyURI" name="baseURL" qname="StatusOutputType&gt;baseURL" />
+              </s:elements>
+            </s:complextype>
+            <s:complextype optional="false" unbounded="false" typename="JobOutputType" name="jobOut" qname="BlockingOutputType&gt;jobOut">
+              <s:elements>
+                <s:basetype optional="true" unbounded="false" typename="anyURI" name="stdOut" qname="JobOutputType&gt;stdOut" />
+                <s:basetype optional="true" unbounded="false" typename="anyURI" name="stdErr" qname="JobOutputType&gt;stdErr" />
+                <s:arraytype optional="true" unbounded="true" wrapped="false" typename="OutputFileType" name="outputFile" qname="JobOutputType&gt;outputFile">
+                  <s:elementtype>
+                    <s:complextype optional="false" unbounded="false" typename="OutputFileType" name="" qname="{http://nbcr.sdsc.edu/opal/types}OutputFileType">
+                      <s:elements>
+                        <s:basetype optional="false" unbounded="false" typename="string" name="name" qname="OutputFileType&gt;name" />
+                        <s:basetype optional="false" unbounded="false" typename="anyURI" name="url" qname="OutputFileType&gt;url" />
+                      </s:elements>
+                    </s:complextype>
+                  </s:elementtype>
+                </s:arraytype>
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="outputFileXML">
+    <s:description>Every file used by Tuiuiu service will be represented by this outputFileXML object.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="OutputFileType" name="" qname="{http://nbcr.sdsc.edu/opal/types}OutputFileType">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="name" qname="OutputFileType&gt;name" />
+            <s:basetype optional="false" unbounded="false" typename="anyURI" name="url" qname="OutputFileType&gt;url" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="launchJobBlockingInputXML">
+    <s:description>This is where you define all the input data to Tuiuiu webservice.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="launchJobBlockingInput" name="launchJobBlockingInput" qname="{http://nbcr.sdsc.edu/opal/types}launchJobBlockingInput">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="InputFileType" name="inputFastaFile" qname="JobInputType&gt;inputFastaFile">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="name" qname="InputFileType&gt;name" />
+                <s:basetype optional="true" unbounded="false" typename="base64Binary" name="contents" qname="InputFileType&gt;contents" />
+                <s:basetype optional="true" unbounded="false" typename="anyURI" name="location" qname="InputFileType&gt;location" />
+                <s:basetype optional="true" unbounded="false" typename="DataHandler" name="attachment" qname="InputFileType&gt;attachment" />
+              </s:elements>
+            </s:complextype>
+            <s:basetype optional="true" unbounded="false" typename="boolean" name="useGoodAlgorithm" qname="JobInputType&gt;useGoodAlgorithm" />
+            <s:basetype optional="true" unbounded="false" typename="boolean" name="useExcellentAlgorithm" qname="JobInputType&gt;useExcellentAlgorithm" />
+            <s:basetype optional="true" unbounded="false" typename="boolean" name="singleSequence" qname="JobInputType&gt;singleSequence" />
+            <s:basetype optional="true" unbounded="false" typename="boolean" name="multiSequence" qname="JobInputType&gt;multiSequence" />
+            <s:basetype optional="true" unbounded="false" typename="boolean" name="checkReverseComplementToo" qname="JobInputType&gt;checkReverseComplementToo" />
+            <s:basetype optional="true" unbounded="false" typename="integer" name="lengthOfRepetitions" qname="JobInputType&gt;lengthOfRepetitions" />
+            <s:basetype optional="true" unbounded="false" typename="integer" name="numberOfErrorsBetweenWindows" qname="JobInputType&gt;numberOfErrorsBetweenWindows" />
+            <s:basetype optional="true" unbounded="false" typename="integer" name="numWindows" qname="JobInputType&gt;numWindows" />
+            <s:basetype optional="true" unbounded="false" typename="integer" name="kFactorsLength" qname="JobInputType&gt;kFactorsLength" />
+            <s:basetype optional="true" unbounded="false" typename="integer" name="outputFormat" qname="JobInputType&gt;outputFormat" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="infoOutputFileName" qname="JobInputType&gt;infoOutputFileName" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="dataOutputFileName" qname="JobInputType&gt;dataOutputFileName" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="numProcs" qname="JobInputType&gt;numProcs" />
+            <s:basetype optional="true" unbounded="false" typename="nonNegativeInteger" name="wallClockTime" qname="JobInputType&gt;wallClockTime" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="jobOutXML">
+    <s:description>These are the files generated by Tuiuiu.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="JobOutputType" name="jobOut" qname="BlockingOutputType&gt;jobOut">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="anyURI" name="stdOut" qname="JobOutputType&gt;stdOut" />
+            <s:basetype optional="true" unbounded="false" typename="anyURI" name="stdErr" qname="JobOutputType&gt;stdErr" />
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="OutputFileType" name="outputFile" qname="JobOutputType&gt;outputFile">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="OutputFileType" name="" qname="{http://nbcr.sdsc.edu/opal/types}OutputFileType">
+                  <s:elements>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="name" qname="OutputFileType&gt;name" />
+                    <s:basetype optional="false" unbounded="false" typename="anyURI" name="url" qname="OutputFileType&gt;url" />
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="inputFastaFileXML">
+    <s:description>This object represent the input fasta file to send to Tuiuiu. There are three ways to send an input file. In each case, you first have to define a 'name' for the file. Then you can directly add file content by filling 'contents' value. Or you can give an URL where the input file can be downloaded. Or you can also attach the input file using SOAP attachment (more complex).</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="InputFileType" name="inputFastaFile" qname="JobInputType&gt;inputFastaFile">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="name" qname="InputFileType&gt;name" />
+            <s:basetype optional="true" unbounded="false" typename="base64Binary" name="contents" qname="InputFileType&gt;contents" />
+            <s:basetype optional="true" unbounded="false" typename="anyURI" name="location" qname="InputFileType&gt;location" />
+            <s:basetype optional="true" unbounded="false" typename="DataHandler" name="attachment" qname="InputFileType&gt;attachment" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="launchJobBlocking">
+    <s:description>Same as launchJob but blocks until the remote execution is complete, and returns job outputs (as described above) as the response. This operation may only be appropriate for jobs that are not long running.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://webservices.genouest.org/typedservices/Tuiuiu.wsdl</s:wsdl>
+      <s:operation>launchJobBlocking</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="dataOutputFileName" sink="launchJobBlockingInputXML:dataOutputFileName" />
+  <s:link source="infoOutputFileName" sink="launchJobBlockingInputXML:infoOutputFileName" />
+  <s:link source="inputFastaFileContent" sink="inputFastaFileXML:contents" />
+  <s:link source="inputFastaFileName" sink="inputFastaFileXML:name" />
+  <s:link source="multiSequence" sink="launchJobBlockingInputXML:multiSequence" />
+  <s:link source="regexOutputUrlFilter" sink="filterListOfStringsByRegex:regex" />
+  <s:link source="singleSequence" sink="launchJobBlockingInputXML:singleSequence" />
+  <s:link source="useExcellentAlgorithm" sink="launchJobBlockingInputXML:useExcellentAlgorithm" />
+  <s:link source="useGoodAlgorithm" sink="launchJobBlockingInputXML:useGoodAlgorithm" />
+  <s:link source="inputFastaFileXML:output" sink="launchJobBlockingInputXML:inputFastaFile" />
+  <s:link source="jobOutXML:outputFile" sink="outputFileXML:input" />
+  <s:link source="launchJobBlocking:launchJobBlockingOutput" sink="launchJobBlockingOutputXML:input" />
+  <s:link source="launchJobBlockingInputXML:output" sink="launchJobBlocking:launchJobBlockingInput" />
+  <s:link source="launchJobBlockingOutputXML:jobOut" sink="jobOutXML:input" />
+  <s:link source="outputFileXML:url" sink="filterListOfStringsByRegex:stringlist" />
+  <s:link source="filterListOfStringsByRegex:filteredlist" sink="dataOutput" />
+  <s:source name="inputFastaFileName">
+    <s:metadata>
+      <s:description>Give a name to the input fasta file.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="inputFastaFileContent">
+    <s:metadata>
+      <s:description>Load input fasta data from a file on your hard drive.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="useGoodAlgorithm">
+    <s:metadata>
+      <s:description>'true' or 'false': use the algorithm which gives good results and is faster. Set useExcellentAlgorithm to the opposite value.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="useExcellentAlgorithm">
+    <s:metadata>
+      <s:description>'true' or 'false': use the algorithm which gives excellent results but is slower. Set useGoodAlgorithm to the opposite value.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="singleSequence">
+    <s:metadata>
+      <s:description>'true' or 'false': search for repeats in a unique sequence. Set multiSequence to the opposite value.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="multiSequence">
+    <s:metadata>
+      <s:description>'true' or 'false': search for repeats in a set of sequences. Set singleSequence to the opposite value.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="dataOutputFileName">
+    <s:metadata>
+      <s:description>Choose a name for the data output file (the file containing filtered sequence in fasta format).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="infoOutputFileName">
+    <s:metadata>
+      <s:description>Choose a name for the information output file (the file providing informations about: Input data, parameters used, Positions conserved - between '[' and ']' -, Computations informations (Size and percentage kept by Tuiuiu, execution time)).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="regexOutputUrlFilter">
+    <s:metadata>
+      <s:description>This is a regex to retrieve specific output file urls (if dataOutputFileName was set to 'data.out', then you can retrieve its url with a regex like 'data.*').
+This is only a cosmetic thing to filter results sent by Tuiuiu webservice.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="dataOutput">
+    <s:metadata>
+      <s:description>A list of urls of input and output files used during this request to the Tuiuiu webservice.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

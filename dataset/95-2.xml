@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:9432adf1-d8a4-4509-b393-428ffa49c2e8" author="" title="SifterWorkflow_Prod_Neu" />
+  <s:processor name="BuildPhylogeneticTreeFromFastaAlignment">
+    <s:description>Builds the most accurate phylogenetic tree. For small trees (&lt; 20 sequences) a maximum likelihood approach (Phyml) and for greater trees a very good and high performance neighbor joining algorithm (BioNJ) is used.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>BuildPhylogeneticTreeFromFastaAlignment</s:serviceName>
+      <s:authorityName>mpiz-koeln.mpg.de</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="buildMultipleAlignmentWithMAFFT">
+    <s:description>Builds a multiple alignment with MAFFT from a set of fasta files.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>buildMultipleAlignmentWithMAFFT</s:serviceName>
+      <s:authorityName>mpiz-koeln.mpg.de</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="GetConservedDomainsFromFastaAlignment">
+    <s:description>Extract conserved regions from fasta alignment.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>GetConservedDomainsFromFastaAlignment</s:serviceName>
+      <s:authorityName>mpiz-koeln.mpg.de</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="GetInAndOrthologsFromRefSeq">
+    <s:description>Runs a iterative Blastp searches against the RefSeq database with only full sequenced organisms. Inparalogs and Orthologs are returned in fasta format</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>GetInAndOrthologsFromRefSeq</s:serviceName>
+      <s:authorityName>mpiz-koeln.mpg.de</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="organism">
+    <s:description>an object</s:description>
+    <s:defaults>
+      <s:default name="namespace">taxon</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Object</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="RunSifter">
+    <s:description>SIFTER uses a phylogenomic inference algorithm to transfer Ontology terms inside a phylogenetic tree. The result are GO Terms predicted by SIFTER for the gene with name "gene_name". Please make sure, that "gene_name" is in phylogenetic tree and the other genes in the tree are RefSeqProt proteins!</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>RunSifter</s:serviceName>
+      <s:authorityName>mpiz-koeln.mpg.de</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Integer">
+    <s:description>an int</s:description>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Integer</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="gene_name">
+    <s:description>an object</s:description>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Object</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="String">
+    <s:description>a string</s:description>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>String</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="AminoAcidSequence">
+    <s:description>Lightweight representation an amino acid sequence</s:description>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>AminoAcidSequence</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:link source="BuildPhylogeneticTreeFromFastaAlignment:Newick_Text(phyogenetic_tree)" sink="RunSifter:Newick_Text(phyogenetic_tree)" />
+  <s:link source="Integer:mobyData" sink="AminoAcidSequence:Integer(Length)" />
+  <s:link source="String:mobyData" sink="AminoAcidSequence:String(SequenceString)" />
+  <s:link source="gene_name" sink="gene_name:id" />
+  <s:link source="gene_name:mobyData" sink="GetInAndOrthologsFromRefSeq:Object(gene_name)" />
+  <s:link source="gene_name:mobyData" sink="RunSifter:Object(gene_name)" />
+  <s:link source="length" sink="Integer:value" />
+  <s:link source="organism" sink="organism:id" />
+  <s:link source="organism:mobyData" sink="GetInAndOrthologsFromRefSeq:Object(organism)" />
+  <s:link source="organism:mobyData" sink="RunSifter:Object(organism)" />
+  <s:link source="seq" sink="String:value" />
+  <s:link source="AminoAcidSequence:mobyData" sink="GetInAndOrthologsFromRefSeq:AminoAcidSequence(sequence)" />
+  <s:link source="GetConservedDomainsFromFastaAlignment:alignment_in_fasta_format(alignment)" sink="BuildPhylogeneticTreeFromFastaAlignment:alignment_in_fasta_format(alignment)" />
+  <s:link source="GetConservedDomainsFromFastaAlignment:alignment_in_fasta_format(alignment)" sink="RunSifter:alignment_in_fasta_format(alignment)" />
+  <s:link source="GetInAndOrthologsFromRefSeq:FASTA_AA(Collection - 'fasta')" sink="buildMultipleAlignmentWithMAFFT:FASTA_AA(Collection - 'fasta')" />
+  <s:link source="buildMultipleAlignmentWithMAFFT:alignment_in_fasta_format(fasta_alignment)" sink="GetConservedDomainsFromFastaAlignment:alignment_in_fasta_format(fasta_alignment)" />
+  <s:link source="BuildPhylogeneticTreeFromFastaAlignment:output" sink="tree" />
+  <s:link source="GetConservedDomainsFromFastaAlignment:output" sink="alignment2" />
+  <s:link source="GetInAndOrthologsFromRefSeq:output" sink="fasta" />
+  <s:link source="RunSifter:Annotated_GO_Term_With_Probability(Collection - 'GO_term')" sink="gos" />
+  <s:link source="RunSifter:Newick_Text(forester_file)" sink="forester" />
+  <s:link source="RunSifter:text-plain(family_file)" sink="family" />
+  <s:link source="RunSifter:text-plain(scale_file)" sink="scale" />
+  <s:link source="RunSifter:text-xml(pli_file)" sink="pli" />
+  <s:link source="buildMultipleAlignmentWithMAFFT:output" sink="mafft" />
+  <s:source name="seq" />
+  <s:source name="length" />
+  <s:source name="organism" />
+  <s:source name="gene_name" />
+  <s:sink name="mafft" />
+  <s:sink name="fasta" />
+  <s:sink name="pli" />
+  <s:sink name="gos" />
+  <s:sink name="family" />
+  <s:sink name="forester" />
+  <s:sink name="tree" />
+  <s:sink name="alignment2" />
+  <s:sink name="scale" />
+</s:scufl>
+

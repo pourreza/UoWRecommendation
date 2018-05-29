@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:4a10d766-1358-4db7-b65e-92406db0ae9c" author="Andrea Wiggins" title="DOI Record Generator">This workflow generates DOI record files for deposit, using data set metadata for the FLOSSmole project. It reads in an input file generated from a SQL query from an eprints database, and transforms the parts of the source file as necessary to create a comprehensive DOI deposit record. It also generates DOIs for the data sets. These metadata are inserted into an XML record template (based on the std-doi.xsd schema) and the individual resources are aggregated into a single file.</s:workflowdescription>
+  <s:processor name="file_location" boring="true">
+    <s:description>Location of the source CSV with data for creating records.</s:description>
+    <s:stringconstant>/file_location/eprint.csv</s:stringconstant>
+  </s:processor>
+  <s:processor name="split_rows">
+    <s:description>Takes a flat CSV input file and splits it into a list.</s:description>
+    <s:defaults>
+      <s:default name="regex">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="split_numbers_to_list">
+    <s:description>Takes a single string output and converts it to a list.</s:description>
+    <s:defaults>
+      <s:default name="regex">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="split_more">
+    <s:description>Takes the list input and creates a 2-deep list.</s:description>
+    <s:defaults>
+      <s:default name="regex">";"</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="read_input">
+    <s:description>Shim to read in the file, location provided by a string constant.</s:description>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="split_formatted_filesize">
+    <s:description>Takes a single string input and splits it into a list of string inputs.</s:description>
+    <s:defaults>
+      <s:default name="regex">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="split_filesize_further">
+    <s:description>Splits the filesize string into two pieces, for size and units, so that the units can be replaced and appended to the size.</s:description>
+    <s:defaults>
+      <s:default name="regex">\s</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="make_number_sequence">
+    <s:description>Creates a sequential integer series for assignment to DOIs.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+count = trigger.size();
+
+delim = "\n";
+
+out = new String();
+
+for(i=0; i &lt; count; i++){
+out = out + (i + Integer.valueOf(seed));
+out = out + delim;
+}
+number_sequence = out;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">seed</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">trigger</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">number_sequence</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="parse_url_for_source">
+    <s:description>Extracts the name of the dataset file host from the download location URL.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+import java.util.regex.Pattern;
+
+String sf_regex = "^http://downloads.*";
+String gc_regex = "^http://flossmole.*";
+
+
+if (Pattern.matches(sf_regex, url)) {
+	publicationPlace = "SourceForge";
+} else {
+	if (Pattern.matches(gc_regex, url)) {
+	publicationPlace = "GoogleCode";
+	}
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">url</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">publicationPlace</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="aggregate_doi_records">
+    <s:description>Aggregates the individual records into a single XML file.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+delim = "\n";
+
+count = doi.size();
+
+out = "&lt;resources&gt;" + delim;
+
+for(i = 0; i &lt; count; i++) {
+out = out + doi.get(i);
+out = out + delim;
+}
+out = out + "&lt;/resources&gt;";
+
+import_file = out;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">doi</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">import_file</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="build_URL_from_eprintid">
+    <s:description>Constructs the metadata URL for FLOSSmole data sets, given the name of the eprintid.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+url = "http://flosspapers.org/"+eprintid;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">eprintid</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="split_fields">
+    <s:description>Reads the 2-deep input list and splits out the values into separate variables.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+eprintid = file.get(0);
+title = file.get(1);
+abstracts = file.get(2);
+year = file.get(3);
+month = file.get(4);
+day = file.get(5);
+url = file.get(6);
+media = file.get(7);
+data_type = file.get(8);
+file_type = file.get(9);
+file_size = file.get(10);
+source = file.get(11);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">file</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">title</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">eprintid</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">year</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">month</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">day</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">media</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">data_type</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">file_type</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">file_size</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">source</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">abstracts</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:iterator xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10" name="file" />
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="generate_doi">
+    <s:description>Creates a unique DOI string following the format &lt;DOI.base&gt;/&lt;source&gt;.&lt;year&gt;-&lt;month&gt;.&lt;sequential number&gt;.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+//replace any spaces in the name of the source repository
+formatted_source = source.replaceAll("\\s","");
+
+//assemble metadata elements and numberic list into DOI
+doi = "doi.base/FLOSSmole." + formatted_source + "." + year + "-" + month + "." + seed;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">source</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">year</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">month</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">seed</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">doi</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="source" />
+        <i:iterator name="year" />
+        <i:iterator name="month" />
+        <i:iterator name="seed" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="generate_description">
+    <s:description>Creates a general description of the data set contents to include additional metadata.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+description = abstracts+"  A "+file_type+" file of "+data_type+" data available as a "+media+" from "+url+". Data collected from "+source+" as raw HTML and parsed into data files by FLOSSmole. Metadata record available at "+metadata_url+"."</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">media</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">data_type</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">file_type</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">source</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">metadata_url</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">url</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">abstracts</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">description</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="abstracts" />
+        <i:iterator name="url" />
+        <i:iterator name="metadata_url" />
+        <i:iterator name="source" />
+        <i:iterator name="file_type" />
+        <i:iterator name="data_type" />
+        <i:iterator name="media" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="format_filesize">
+    <s:description>Formats the filesize into Byte units by appending the metric unit prefix to the size value.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+import java.util.regex.Pattern;
+
+String gb_regex = "GB";
+String mb_regex = "MB";
+String kb_regex = "KB";
+
+delim = "\n";
+
+count = filesize.size();
+
+out = new String();
+
+for(i=0; i &lt; count; i++){
+String sizes = filesize.get(i).get(0);
+String units = filesize.get(i).get(1);
+if (Pattern.matches(gb_regex, units)) {
+	out = out + sizes + "g";
+	out = out + delim;
+} else {
+if (Pattern.matches(mb_regex, units)) {
+	out = out + sizes + "m";
+	out = out + delim;
+} else {
+if (Pattern.matches(kb_regex, units)) {
+	out = out + sizes + "k";
+	out = out + delim;
+} else {
+	out = out + sizes;
+	out = out + delim;
+	}
+	}
+	}
+}
+formatted_filesize = out;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l(l('text/plain'))">filesize</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">formatted_filesize</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:iterator xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10" name="filesize" />
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="generate_xml_record">
+    <s:description>Generates an XML DOI record according to the std-doi.xsd metadata standard schema.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+doi_records = "&lt;resource xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"std-doi.xsd\"&gt;&lt;DOI&gt;"+doi+"&lt;/DOI&gt;&lt;creator&gt;Megan@Squire&lt;/creator&gt;&lt;creator&gt;Kevin@Crowston&lt;/creator&gt;&lt;creator&gt;James@Howison&lt;/creator&gt;&lt;publisher&gt;FLOSSmole&lt;/publisher&gt;&lt;title&gt;"+title+"&lt;/title&gt;&lt;language&gt;en&lt;/language&gt;&lt;structuralType&gt;Digital&lt;/structuralType&gt;&lt;mode&gt;Abstract&lt;/mode&gt;&lt;resourceType&gt;Dataset&lt;/resourceType&gt;&lt;registrationAgency&gt;doi.base&lt;/registrationAgency&gt;&lt;issueNumber&gt;1&lt;/issueNumber&gt;&lt;publicationDate&gt;"+publicationDate+"&lt;/publicationDate&gt;&lt;description&gt;"+description+"&lt;/description&gt;&lt;publicationPlace&gt;"+publicationPlace+"&lt;/publicationPlace&gt;&lt;size&gt;&lt;value&gt;"+filesize+"&lt;/value&gt;&lt;unit&gt;Bytes&lt;/unit&gt;&lt;/size&gt;&lt;format&gt;text/plain&lt;/format&gt;&lt;edition&gt;1&lt;/edition&gt;&lt;discipline&gt;softwareEngineering&lt;/discipline&gt;&lt;/resource&gt;"</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">filesize</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">description</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">publicationPlace</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">publicationDate</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">title</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">doi</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">doi_records</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="doi" />
+        <i:iterator name="title" />
+        <i:iterator name="publicationDate" />
+        <i:iterator name="publicationPlace" />
+        <i:iterator name="description" />
+        <i:iterator name="filesize" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="construct_date">
+    <s:description>Aggregates the individual date fields into a single date unit according to the standard for deposit.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+publicationDate  = year + "-" + month + "-" + day</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">year</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">month</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">day</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">publicationDate</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="day" />
+        <i:iterator name="month" />
+        <i:iterator name="year" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="format_months">
+    <s:description>Ensures two-digit month values.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+import java.util.regex.Pattern;
+
+String jan_regex = "1";
+String feb_regex = "2";
+String mar_regex = "3";
+String apr_regex = "4";
+String may_regex = "5";
+String jun_regex = "6";
+String jul_regex = "7";
+String aug_regex = "8";
+String sep_regex = "9";
+
+if (Pattern.matches(jan_regex, month)) {
+formatted_month = "01";
+} else {
+	if (Pattern.matches(feb_regex, month)) {
+	formatted_month = "02";
+} else {
+	if (Pattern.matches(mar_regex, month)) {
+	formatted_month = "03";
+} else {
+	if (Pattern.matches(apr_regex, month)) {
+	formatted_month = "04";
+} else {
+	if (Pattern.matches(may_regex, month)) {
+	formatted_month = "05";
+} else {
+	if (Pattern.matches(jun_regex, month)) {
+	formatted_month = "06";
+} else {
+	if (Pattern. matches(jul_regex, month)) {
+	formatted_month = "07";
+} else {
+	if (Pattern.matches(aug_regex, month)) {
+	formatted_month = "08";
+} else {
+	if (Pattern.matches(sep_regex, month)) {
+	formatted_month = "09";
+} else {
+	formatted_month = month;
+}
+}
+}
+}
+}
+}
+}
+}
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">month</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">formatted_month</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="build_URL_from_eprintid:url" sink="generate_description:metadata_url" />
+  <s:link source="construct_date:publicationDate" sink="generate_xml_record:publicationDate" />
+  <s:link source="file_location:value" sink="read_input:fileurl" />
+  <s:link source="format_filesize:formatted_filesize" sink="split_formatted_filesize:string" />
+  <s:link source="format_months:formatted_month" sink="construct_date:month" />
+  <s:link source="format_months:formatted_month" sink="generate_doi:month" />
+  <s:link source="generate_description:description" sink="generate_xml_record:description" />
+  <s:link source="generate_xml_record:doi_records" sink="aggregate_doi_records:doi" />
+  <s:link source="parse_url_for_source:publicationPlace" sink="generate_xml_record:publicationPlace" />
+  <s:link source="read_input:filecontents" sink="split_rows:string" />
+  <s:link source="seed" sink="make_number_sequence:seed" />
+  <s:link source="generate_doi:doi" sink="generate_xml_record:doi" />
+  <s:link source="make_number_sequence:number_sequence" sink="split_numbers_to_list:string" />
+  <s:link source="split_fields:abstracts" sink="generate_description:abstracts" />
+  <s:link source="split_fields:data_type" sink="generate_description:data_type" />
+  <s:link source="split_fields:day" sink="construct_date:day" />
+  <s:link source="split_fields:eprintid" sink="build_URL_from_eprintid:eprintid" />
+  <s:link source="split_fields:eprintid" sink="make_number_sequence:trigger" />
+  <s:link source="split_fields:file_size" sink="split_filesize_further:string" />
+  <s:link source="split_fields:file_type" sink="generate_description:file_type" />
+  <s:link source="split_fields:media" sink="generate_description:media" />
+  <s:link source="split_fields:month" sink="format_months:month" />
+  <s:link source="split_fields:source" sink="generate_description:source" />
+  <s:link source="split_fields:source" sink="generate_doi:source" />
+  <s:link source="aggregate_doi_records:import_file" sink="XMLoutput" />
+  <s:link source="split_fields:title" sink="generate_xml_record:title" />
+  <s:link source="split_fields:url" sink="generate_description:url" />
+  <s:link source="split_fields:url" sink="parse_url_for_source:url" />
+  <s:link source="split_fields:year" sink="construct_date:year" />
+  <s:link source="split_fields:year" sink="generate_doi:year" />
+  <s:link source="split_filesize_further:split" sink="format_filesize:filesize" />
+  <s:link source="split_formatted_filesize:split" sink="generate_xml_record:filesize" />
+  <s:link source="split_more:split" sink="split_fields:file" />
+  <s:link source="split_numbers_to_list:split" sink="generate_doi:seed" />
+  <s:link source="split_rows:split" sink="split_more:string" />
+  <s:source name="seed" />
+  <s:sink name="XMLoutput">
+    <s:metadata>
+      <s:description>Text output of XML input file for ePrints metadata records.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

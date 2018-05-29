@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:be87921d-4da7-42fd-a7b0-86dbc47d6579" author="Hamish McWilliam" title="Fasta_string_to_fasta_list">Split a string containing a set of sequences in fasta format into a list for fasta formated sequences.</s:workflowdescription>
+  <s:processor name="Split_into_sequences">
+    <s:description>Split string using a regular expression, to get the individual sequences.</s:description>
+    <s:defaults>
+      <s:default name="regex">\n&gt;</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Add_angle">
+    <s:description>For sequences where the angle bracket (&gt;), denoting the start of the fasta formated sequence, was removed during the split, prepend it.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>if(!stripped_fasta.startsWith("&gt;")) {
+  full_fasta = "&gt;" + stripped_fasta;
+} else {
+  full_fasta = stripped_fasta;
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">stripped_fasta</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">full_fasta</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="fasta_string" sink="Split_into_sequences:string" />
+  <s:link source="Add_angle:full_fasta" sink="fasta_list" />
+  <s:link source="Split_into_sequences:split" sink="Add_angle:stripped_fasta" />
+  <s:source name="fasta_string">
+    <s:metadata>
+      <s:description>String containing one or more fasta sequences.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="fasta_list">
+    <s:metadata>
+      <s:description>List of fasta sequences.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:8c2cfd1f-a6e7-445b-a353-0946d7d467cd" author="Pieter B.T. Neerincx, Blaise T.F. Alako and Jack A.M. Leunissen." title="GeneIlluminator_GetClusters">Example workflow demonstrating how to use GeneIlluminator_GetClusters, a synchronous BioMOBY service for gene symbol disambiguation. If a gene symbol is ambiguous this service provides GI_Clusters describing which different genes, sharing the same symbol, exist in different parts of the tree of life. Provides also gene symbol aliases associated to the input gene symbol.
+
+(Use GeneIlluminator_GetGraph for a graphical representation of the clusters or GeneIlluminator_Disambiguate to get the most likely cluster for a certain species of interest in addition to the clusters.)
+  
+Visit http://www.bioinformatics.nl/gi/ for more info about GeneIlluminator.
+
+GeneIlluminator services use a secure connection over HTTPS. To make this work you *must* import our SSL certificates in your local Java keystores. More information can be found on https://www.bioinformatics.nl/phenolink/home/
+  </s:workflowdescription>
+  <s:processor name="GeneIlluminator_GetClusters">
+    <s:description>Synchronous BioMOBY service for gene symbol disambiguation. If a gene symbol is ambiguous this service provides GI_Clusters describing which different genes sharing the same symbol exist in different parts of the tree of life. Provides also gene symbol aliases associated to the input gene symbol. Have a look at the GeneIlluminator_GetGraph service for a graphical representation of this data.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>GeneIlluminator_GetClusters</s:serviceName>
+      <s:authorityName>www.bioinformatics.nl</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Object">
+    <s:description>an object</s:description>
+    <s:defaults>
+      <s:default name="article name">gene_symbol</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Object</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:link source="GeneSymbol" sink="Object:id" />
+  <s:link source="GeneIlluminator_GetClusters:GI_Cluster(Collection - 'gi_clusters')" sink="Clusters" />
+  <s:link source="Object:mobyData" sink="GeneIlluminator_GetClusters:Object(gene_symbol)" />
+  <s:source name="GeneSymbol">
+    <s:metadata>
+      <s:description>Your potentially ambiguous gene symbol of interest or one of it's aliases.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="Clusters">
+    <s:metadata>
+      <s:description>BioMoby collection (list) of objects describing clusters of gene symbols that were mentioned in databases / literature in the same "context". Each cluster has:
+1. One or more genes with a gene symbol. All genes and their symbols listed for the same cluster are aliases. These gene symbols might be ambiguous.
+2. One or more fuctional descriptions. These are the terms that describe the context where the gene symbol was mentioned and that were used for the clustering.
+3. One or more clades, identified by IDs from the NCBI Taxonomy. These clades are the last common ancestors (LCAs) of those parts of the tree of life where the gene symbols for this cluster are mentioned in the context of the functional descriptions for this cluster.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

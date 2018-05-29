@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:a4fd01ab-9a98-4434-acf0-6159d10dace3" author="Hamish McWilliam" title="EBI_ScanPS">Perform a Smith-Waterman sequence similarity search using the ScanPS tool (see http://www.compbio.dundee.ac.uk/Software/Scanps/scanps.html). In the case the EBI's WSScanPS web service (see http://www.ebi.ac.uk/Tools/webservices/services/scanps) is used to run the tool.</s:workflowdescription>
+  <s:processor name="runScanPS">
+    <s:description>Submit a ScanPS analysis job (see http://www.ebi.ac.uk/Tools/webservices/services/scanps#runscanps_params_content)</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSScanPS.wsdl</s:wsdl>
+      <s:operation>runScanPS</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Contents_list">
+    <s:description>Wrap input data in list.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:arraytype optional="false" unbounded="false" wrapped="false" typename="WSArrayofData" name="content" qname="{http://www.ebi.ac.uk/WSScanPS}WSArrayofData">
+          <s:elementtype>
+            <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSScanPS}data">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+              </s:elements>
+            </s:complextype>
+          </s:elementtype>
+        </s:arraytype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Input_data">
+    <s:description>Add type information to input sequence.</s:description>
+    <s:defaults>
+      <s:default name="type">sequence</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSScanPS}data">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Job_params">
+    <s:description>Parameters for the ScanPS job.</s:description>
+    <s:defaults>
+      <s:default name="numal">50</s:default>
+      <s:default name="probcut">10.0</s:default>
+      <s:default name="probcut2">0.015</s:default>
+      <s:default name="scores">50</s:default>
+      <s:default name="niter">1</s:default>
+      <s:default name="async">1</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="inputParams" name="params" qname="{http://www.ebi.ac.uk/WSScanPS}inputParams">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="database" qname="inputParams&gt;database" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="matrix" qname="inputParams&gt;matrix" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="opengap" qname="inputParams&gt;opengap" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="extendgap" qname="inputParams&gt;extendgap" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="numal" qname="inputParams&gt;numal" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="probcut" qname="inputParams&gt;probcut" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="probcut2" qname="inputParams&gt;probcut2" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="mode" qname="inputParams&gt;mode" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="scores" qname="inputParams&gt;scores" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="niter" qname="inputParams&gt;niter" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="toponly" qname="inputParams&gt;toponly" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="inputParams&gt;email" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="async" qname="inputParams&gt;async" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Get_output">
+    <s:description>Get the results of a job (see http://www.ebi.ac.uk/Tools/webservices/services/scanps#poll_jobid_type)</s:description>
+    <s:defaults>
+      <s:default name="type">tooloutput</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSScanPS.wsdl</s:wsdl>
+      <s:operation>poll</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Unpack_output">
+    <s:description>Unpack the byte[] returned by the service into a string for display.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+  </s:processor>
+  <s:processor name="EBI_ScanPS_poll_job" boring="true">
+    <s:description>Check job status, fails if job not done.</s:description>
+    <s:workflow maxretries="100" retrydelay="30000">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:5f870ee5-a113-48b6-ae59-4798eb5d2ff8" author="" title="EBI_ScanPS_poll_job" />
+        <s:processor name="checkStatus">
+          <s:description>Get the status of a submited job (see http://www.ebi.ac.uk/Tools/webservices/services/scanps#checkstatus_jobid)</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSScanPS.wsdl</s:wsdl>
+            <s:operation>checkStatus</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Is_done">
+          <s:beanshell>
+            <s:scriptvalue>if(job_status.equals("DONE")) {
+  is_done = "true";
+} else {
+  is_done = "false";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">job_status</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">is_done</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Success">
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:link source="Is_done:is_done" sink="Success:test" />
+        <s:link source="Job_ID" sink="checkStatus:jobid" />
+        <s:link source="checkStatus:status" sink="Is_done:job_status" />
+        <s:link source="checkStatus:status" sink="Job_status" />
+        <s:source name="Job_ID" />
+        <s:sink name="Job_status" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Contents_list:output" sink="runScanPS:content" />
+  <s:link source="Email_address" sink="Job_params:email" />
+  <s:link source="Input_data:output" sink="Contents_list:WSArrayofData" />
+  <s:link source="Search_mode" sink="Job_params:mode" />
+  <s:link source="Sequence_or_ID" sink="Input_data:content" />
+  <s:link source="Get_output:output" sink="Unpack_output:bytes" />
+  <s:link source="Job_params:output" sink="runScanPS:params" />
+  <s:link source="Search_database" sink="Job_params:database" />
+  <s:link source="runScanPS:jobid" sink="EBI_ScanPS_poll_job:Job_ID" />
+  <s:link source="Unpack_output:string" sink="ScanPS_output" />
+  <s:link source="runScanPS:jobid" sink="Get_output:jobid" />
+  <s:link source="runScanPS:jobid" sink="ScanPS_job_ID" />
+  <s:source name="Email_address">
+    <s:metadata>
+      <s:description>User e-mail address.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Sequence_or_ID">
+    <s:metadata>
+      <s:description>Query sequence. Either the actual sequence (fasta format recommended) or an entry identifier in database:identifier format (e.g. uniprot:wap_rat).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Search_database">
+    <s:metadata>
+      <s:description>Protein sequence database to search (e.g. swissprot).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Search_mode">
+    <s:metadata>
+      <s:description>Search mode: 200 (simple) or 202 (affine)</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="ScanPS_job_ID">
+    <s:metadata>
+      <s:description>EBI job identifier.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="ScanPS_output">
+    <s:metadata>
+      <s:description>ScanPS search report.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:coordination name="Get_output_BLOCKON_EBI_ScanPS_poll_job">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>EBI_ScanPS_poll_job</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Get_output</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

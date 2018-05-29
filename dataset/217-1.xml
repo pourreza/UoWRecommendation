@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:b07e6e4d-2338-4f4f-a230-591502bdc187" author="Hamish McWilliam" title="EBI_Kalign">Multiple sequence alignment using the Kalign tool. This workflow uses the EBI's WSKalign service (see http://www.ebi.ac.uk/Tools/webservices/services/kalign) to access the Kalign tool. The set of sequences to align and the molecule type (protein or nucleic acid) are the input, the other parameters for the search (see Job_params) are allowed to default.</s:workflowdescription>
+  <s:processor name="runKalign">
+    <s:description>Submit a Kalign analysis job (see http://www.ebi.ac.uk/Tools/webservices/services/kalign#runkalign_params_content)</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSKalign.wsdl</s:wsdl>
+      <s:operation>runKalign</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Get_alignment">
+    <s:description>Get the results of a job (see http://www.ebi.ac.uk/Tools/webservices/services/kalign#poll_jobid_type)</s:description>
+    <s:defaults>
+      <s:default name="type">tooloutput</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSKalign.wsdl</s:wsdl>
+      <s:operation>poll</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Job_params">
+    <s:defaults>
+      <s:default name="async">1</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="inputParams" name="params" qname="{http://www.ebi.ac.uk/WSKalign}inputParams">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="moltype" qname="inputParams&gt;moltype" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="gpo" qname="inputParams&gt;gpo" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="gpe" qname="inputParams&gt;gpe" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="tgpe" qname="inputParams&gt;tgpe" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="bonus" qname="inputParams&gt;bonus" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="sequence" qname="inputParams&gt;sequence" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="async" qname="inputParams&gt;async" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="inputParams&gt;email" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Contents_list">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:arraytype optional="false" unbounded="false" wrapped="false" typename="WSArrayofData" name="content" qname="{http://www.ebi.ac.uk/WSKalign}WSArrayofData">
+          <s:elementtype>
+            <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSKalign}data">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+              </s:elements>
+            </s:complextype>
+          </s:elementtype>
+        </s:arraytype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Input_data">
+    <s:defaults>
+      <s:default name="type">sequence</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSKalign}data">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Unpack_alignment">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+  </s:processor>
+  <s:processor name="EBI_Kalign_poll_job" boring="true">
+    <s:workflow maxretries="100" retrydelay="10000">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:dcc08557-49c9-4c53-9461-3a81992a270a" author="" title="EBI_Kalign_poll_job" />
+        <s:processor name="checkStatus">
+          <s:description>Get the status of a submited job (see http://www.ebi.ac.uk/Tools/webservices/services/kalign#checkstatus_jobid)</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSKalign.wsdl</s:wsdl>
+            <s:operation>checkStatus</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Is_done">
+          <s:beanshell>
+            <s:scriptvalue>if(job_status.equals("DONE")) {
+  is_done = "true";
+} else {
+  is_done = "false";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">job_status</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">is_done</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Success">
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:link source="Job_ID" sink="checkStatus:jobid" />
+        <s:link source="Is_done:is_done" sink="Success:test" />
+        <s:link source="checkStatus:status" sink="Is_done:job_status" />
+        <s:link source="checkStatus:status" sink="Job_status" />
+        <s:source name="Job_ID" />
+        <s:sink name="Job_status" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Contents_list:output" sink="runKalign:content" />
+  <s:link source="Email_address" sink="Job_params:email" />
+  <s:link source="Input_data:output" sink="Contents_list:WSArrayofData" />
+  <s:link source="Job_params:output" sink="runKalign:params" />
+  <s:link source="Sequences" sink="Input_data:content" />
+  <s:link source="Get_alignment:output" sink="Unpack_alignment:bytes" />
+  <s:link source="Molecule_type" sink="Job_params:moltype" />
+  <s:link source="runKalign:jobid" sink="EBI_Kalign_poll_job:Job_ID" />
+  <s:link source="Unpack_alignment:string" sink="Kalign_alignment" />
+  <s:link source="runKalign:jobid" sink="Get_alignment:jobid" />
+  <s:link source="runKalign:jobid" sink="Kalign_job_id" />
+  <s:source name="Sequences">
+    <s:metadata>
+      <s:description>Sequences to align (fasta format recommended).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Email_address">
+    <s:metadata>
+      <s:description>User e-mail address.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Molecule_type">
+    <s:metadata>
+      <s:description>Molecule type: P for protein or N for nucleotide.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="Kalign_alignment">
+    <s:metadata>
+      <s:description>The alignment in ClustalW style format.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="Kalign_job_id">
+    <s:metadata>
+      <s:description>EBI job identifier.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:coordination name="Get_alignment_BLOCKON_EBI_Kalign_poll_job">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>EBI_Kalign_poll_job</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Get_alignment</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:b4cfe95b-d105-4d5f-a8b3-37fda854f409" author="Katy Wolstencroft (with a nested workflow from Paul Fisher)" title="omim">This workflow searches OMIM for entries associated with MArfan syndrome, returns the IDs and maps them to Kegg Gene IDs. For each gene, it then gets the description and any corresponding pathways those genes are involved with</s:workflowdescription>
+  <s:processor name="Filter_KeggGenes">
+    <s:defaults>
+      <s:default name="regex">hsa:*\w*</s:default>
+      <s:default name="group">0</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="Concatenate_two_strings">
+    <s:defaults>
+      <s:default name="string1">omim:</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="Filter_list_of_strings_extracting_match_to_a_regex">
+    <s:defaults>
+      <s:default name="regex">[0-9]+</s:default>
+      <s:default name="group">0</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="Split_string_into_string_list_by_regular_expression">
+    <s:defaults>
+      <s:default name="regex">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Remove_duplicate_strings">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringStripDuplicates</s:local>
+  </s:processor>
+  <s:processor name="bconv">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://soap.genome.jp/KEGG.wsdl</s:wsdl>
+      <s:operation>bconv</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="KeggGenestoPathways">
+    <s:workflow>
+      <s:xscufllocation>http://www.myexperiment.org/workflows/611/download?version=2</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="OMIM">
+    <s:description>get Keyword</s:description>
+    <s:defaults>
+      <s:default name="keyword">marfan</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/OMIM.wsdl</s:wsdl>
+      <s:operation>search</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="Concatenate_two_strings:output" sink="bconv:string" />
+  <s:link source="Filter_KeggGenes:filteredlist" sink="KeggGenestoPathways:kegg_gene_id_list" />
+  <s:link source="Filter_list_of_strings_extracting_match_to_a_regex:filteredlist" sink="Concatenate_two_strings:string2" />
+  <s:link source="OMIM:Result" sink="Split_string_into_string_list_by_regular_expression:string" />
+  <s:link source="Remove_duplicate_strings:strippedlist" sink="Filter_KeggGenes:stringlist" />
+  <s:link source="Split_string_into_string_list_by_regular_expression:split" sink="Filter_list_of_strings_extracting_match_to_a_regex:stringlist" />
+  <s:link source="bconv:return" sink="Remove_duplicate_strings:stringlist" />
+  <s:link source="KeggGenestoPathways:gene_descriptions" sink="geneDescriptions" />
+  <s:link source="KeggGenestoPathways:pathway_by_genes" sink="pathways" />
+  <s:link source="KeggGenestoPathways:pathway_descriptions" sink="pathwayDescriptions" />
+  <s:link source="bconv:return" sink="KeggGenes" />
+  <s:sink name="KeggGenes" />
+  <s:sink name="geneDescriptions" />
+  <s:sink name="pathways" />
+  <s:sink name="pathwayDescriptions" />
+</s:scufl>
+

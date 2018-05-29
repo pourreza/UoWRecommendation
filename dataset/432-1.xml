@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:792f948f-5948-4899-9d0f-6fdd35c85549" author="Alan R Williams" title="Get image URLs from HTTP document">Retrieve the web page at http://www.mygrid.org.uk/usermanual1.7/user_gettings_started.html and examine it for images.  The workflow should return an empty list.</s:workflowdescription>
+  <s:processor name="Get_image_URLs_from_HTTP_document">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ExtractImageLinks</s:local>
+  </s:processor>
+  <s:processor name="Get_web_page_from_URL">
+    <s:defaults>
+      <s:default name="url">http://www.mygrid.org.uk/usermanual1.7/user_gettings_started.html</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:link source="Get_image_URLs_from_HTTP_document:imagelinks" sink="out" />
+  <s:link source="Get_web_page_from_URL:contents" sink="Get_image_URLs_from_HTTP_document:document" />
+  <s:sink name="out">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/plain</s:mimeType>
+        <s:mimeType>text/html</s:mimeType>
+        <s:mimeType>image/*</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

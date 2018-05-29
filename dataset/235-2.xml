@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:163686eb-6776-4f67-a5ec-52fa991f5d89" author="Hamish McWilliam" title="EBI_PICR_Sequence_to_UniParc_and_InterPro">Given a protein sequence get some information about it:
+
+1. Does this protein sequence occur in any of the protein databases (e.g. UniProtKB, PDB, etc.). Using the PICR web service (see http://www.ebi.ac.uk/Tools/picr/) map the sequence to a UniParc identifer.
+
+2. Which entries in the protein databases have this sequence. Using the UniParc database (see http://www.ebi.ac.uk/uniprot/database/DBDescription.html#uniparc) a summary of the databases and the entries in those databases which have this sequence is obtained.
+
+3. Does any protein domain or family information exist for this sequence. Using the InterPro Matches UniParc database (see http://srs.ebi.ac.uk/srsbin/cgi-bin/wgetz?-page+LibInfo+-lib+IPRMC_UNIPARC) a summary of the known signature matches is obtained.</s:workflowdescription>
+  <s:processor name="Spit_PICR_result">
+    <s:description>Split PICR result to extract UniParc identifer (UPI).</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="UPEntry" name="getUPIForSequenceReturn" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}&gt;getUPIForSequenceResponse&gt;getUPIForSequenceReturn">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="CRC64" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;CRC64" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="UPI" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;UPI" />
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="CrossReference" name="identicalCrossReferences" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;identicalCrossReferences">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="CrossReference" name="" qname="{http://model.picr.ebi.ac.uk}CrossReference">
+                  <s:elements>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="accession" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;accession" />
+                    <s:basetype optional="false" unbounded="false" typename="string" name="accessionVersion" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;accessionVersion" />
+                    <s:basetype optional="false" unbounded="false" typename="string" name="databaseDescription" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;databaseDescription" />
+                    <s:basetype optional="false" unbounded="false" typename="string" name="databaseName" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;databaseName" />
+                    <s:basetype optional="false" unbounded="false" typename="dateTime" name="dateAdded" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;dateAdded" />
+                    <s:basetype optional="false" unbounded="false" typename="dateTime" name="dateDeleted" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;dateDeleted" />
+                    <s:basetype optional="false" unbounded="false" typename="boolean" name="deleted" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;deleted" />
+                    <s:basetype optional="false" unbounded="false" typename="string" name="gi" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;gi" />
+                    <s:basetype optional="false" unbounded="false" typename="string" name="taxonId" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;taxonId" />
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="CrossReference" name="logicalCrossReferences" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;logicalCrossReferences">
+              <s:elementtype>
+                <s:complextype id="{http://model.picr.ebi.ac.uk}CrossReference" optional="false" unbounded="false" typename="CrossReference" name="" />
+              </s:elementtype>
+            </s:arraytype>
+            <s:basetype optional="false" unbounded="false" typename="string" name="sequence" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;sequence" />
+            <s:basetype optional="false" unbounded="false" typename="dateTime" name="timestamp" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;timestamp" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="EBI_dbfetch_UniParc">
+    <s:description>Fetch the UniParc entry using the EBI's WSDbfetch web service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch).</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:5edb205c-2be5-483f-9f89-712f1130ffb1" author="Hamish McWilliam" title="EBI_dbfetch_UniParc">From a list of UniParc entry identifers get the complete entries using the EBI's WSDbfetch service.</s:workflowdescription>
+        <s:processor name="Extract_entries">
+          <s:description>Extract the UniParc entries from the XML document.</s:description>
+          <s:defaults>
+            <s:default name="xpath">//*[local-name(.)='uniparc']/*[local-name(.)='entry']</s:default>
+          </s:defaults>
+          <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+        </s:processor>
+        <s:processor name="Format_list_for_dbfetch">
+          <s:description>Convert list of identifers into a comma-delimited string for use with fetchBatch.</s:description>
+          <s:defaults>
+            <s:default name="seperator">,</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+        </s:processor>
+        <s:processor name="fetchBatch">
+          <s:description>Get a set of database entries (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch#fetchbatch_db_ids_format_style)</s:description>
+          <s:defaults>
+            <s:default name="db">uniparc</s:default>
+            <s:default name="format">uniparc</s:default>
+            <s:default name="style">raw</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSDbfetch.wsdl</s:wsdl>
+            <s:operation>fetchBatch</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:link source="Format_list_for_dbfetch:concatenated" sink="fetchBatch:ids" />
+        <s:link source="ID_list" sink="Format_list_for_dbfetch:stringlist" />
+        <s:link source="fetchBatch:fetchBatchReturn" sink="Extract_entries:xml-text" />
+        <s:link source="Extract_entries:nodelistAsXML" sink="UniParc_entries_list" />
+        <s:link source="fetchBatch:fetchBatchReturn" sink="UniParc_entries" />
+        <s:source name="ID_list">
+          <s:metadata>
+            <s:description>List of UniParc identifiers (e.g. UPI0000000001).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="UniParc_entries">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>text/xml</s:mimeType>
+            </s:mimeTypes>
+            <s:description>The set of UniParc entries as a single XML document.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="UniParc_entries_list">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>text/xml</s:mimeType>
+            </s:mimeTypes>
+            <s:description>A list of UniParc entries in XML format.</s:description>
+          </s:metadata>
+        </s:sink>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="EBI_Fetch_InterPro_Matches_UniParc">
+    <s:description>Get entry from InterPro Matches UniParc for the UniParc entry using the EBI's SRS service (see http://srs.ebi.ac.uk/).</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:ab14daa5-e903-4d04-803f-9adca01415db" author="Hamish McWilliam" title="EBI_Fetch_InterPro_Matches_UniParc">For a UniParc (see http://www.ebi.ac.uk/uniprot/database/DBDescription.html#uniparc) identifier/accession fetch the assocated InterPro Matches from SRS@EBI (see http://srs.ebi.ac.uk/srsbin/cgi-bin/wgetz?-page+LibInfo+-lib+IPRMC_UNIPARC).</s:workflowdescription>
+        <s:processor name="Get_entry_from_SRS">
+          <s:description>Get the entry from SRS using http.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+        </s:processor>
+        <s:processor name="Build_InterPro_Matches_UniParc_URL">
+          <s:description>Construct SRS@EBI URL to get the InterPro matches UniParc (IPRMC_UNIPARC) entry.</s:description>
+          <s:beanshell>
+            <s:scriptvalue>//
+// Build URL to get InterPro matches UniParc, given a UniParc
+// ID/accession.
+//
+
+iprmc_uniparc_url = "http://srs.ebi.ac.uk/srsbin/cgi-bin/wgetz?-e+-ascii+";
+iprmc_uniparc_url += "[iprmc_uniparc-ID:" + uniparc_id + "]";</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">uniparc_id</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">iprmc_uniparc_url</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Check_for_SRS_error">
+          <s:description>Check the data returned by SRS for errors, and "not found" messages. In this case a simple check for HTML tags.</s:description>
+          <s:beanshell>
+            <s:scriptvalue>//
+// Check the document returned by SRS for error messages.
+//
+
+if(input.indexOf("&lt;HTML&gt;") &lt; 0) {
+  output = input;
+} else {
+  output = "";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:link source="UniParc_ID" sink="Build_InterPro_Matches_UniParc_URL:uniparc_id" />
+        <s:link source="Build_InterPro_Matches_UniParc_URL:iprmc_uniparc_url" sink="Get_entry_from_SRS:url" />
+        <s:link source="Get_entry_from_SRS:contents" sink="Check_for_SRS_error:input" />
+        <s:link source="Check_for_SRS_error:output" sink="InterPro_Matches" />
+        <s:source name="UniParc_ID">
+          <s:metadata>
+            <s:description>UniParc identifier/accession to get InterPro matches for (e.g. UPI000000004E).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="InterPro_Matches">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>text/xml</s:mimeType>
+            </s:mimeTypes>
+            <s:description>InterPro matches entry for UniParc identifer.</s:description>
+          </s:metadata>
+        </s:sink>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="EBI_PICR_sequence_to_ID">
+    <s:description>Map the input protein sequence to a UniParc identifer using the EBI's PICR web service (see http://www.ebi.ac.uk/Tools/picr/).</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:256aab34-9ba8-40be-a39c-f621100e3507" author="Hamish McWilliam" title="EBI_PICR_Sequence_to_ID">Map a protein sequence to the known identifiers of identical sequences.
+
+Uses the EBI's PICR web service (see http://www.ebi.ac.uk/Tools/picr/) to perform the mapping.</s:workflowdescription>
+        <s:processor name="getUPIForSequence">
+          <s:description>Get UPI information from a sequence in fasta format.</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/picr/service?wsdl</s:wsdl>
+            <s:operation>getUPIForSequence</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="PICR_input_params">
+          <s:description>Construct request structure.</s:description>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="getUPIForSequence" name="parameters" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}getUPIForSequence">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="sequence" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}&gt;getUPIForSequence&gt;sequence" />
+                  <s:arraytype optional="false" unbounded="true" wrapped="false" typename="string" name="searchDatabases" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}&gt;getUPIForSequence&gt;searchDatabases">
+                    <s:elementtype>
+                      <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                    </s:elementtype>
+                  </s:arraytype>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="taxonId" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}&gt;getUPIForSequence&gt;taxonId" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="onlyActive" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}&gt;getUPIForSequence&gt;onlyActive" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Unwrap_PICR_result">
+          <s:description>Unwrap response structure.</s:description>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="getUPIForSequenceResponse" name="parameters" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}getUPIForSequenceResponse">
+                <s:elements>
+                  <s:complextype optional="false" unbounded="false" typename="UPEntry" name="getUPIForSequenceReturn" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}&gt;getUPIForSequenceResponse&gt;getUPIForSequenceReturn">
+                    <s:elements>
+                      <s:basetype optional="false" unbounded="false" typename="string" name="CRC64" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;CRC64" />
+                      <s:basetype optional="false" unbounded="false" typename="string" name="UPI" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;UPI" />
+                      <s:arraytype optional="true" unbounded="true" wrapped="false" typename="CrossReference" name="identicalCrossReferences" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;identicalCrossReferences">
+                        <s:elementtype>
+                          <s:complextype optional="false" unbounded="false" typename="CrossReference" name="" qname="{http://model.picr.ebi.ac.uk}CrossReference">
+                            <s:elements>
+                              <s:basetype optional="false" unbounded="false" typename="string" name="accession" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;accession" />
+                              <s:basetype optional="false" unbounded="false" typename="string" name="accessionVersion" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;accessionVersion" />
+                              <s:basetype optional="false" unbounded="false" typename="string" name="databaseDescription" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;databaseDescription" />
+                              <s:basetype optional="false" unbounded="false" typename="string" name="databaseName" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;databaseName" />
+                              <s:basetype optional="false" unbounded="false" typename="dateTime" name="dateAdded" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;dateAdded" />
+                              <s:basetype optional="false" unbounded="false" typename="dateTime" name="dateDeleted" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;dateDeleted" />
+                              <s:basetype optional="false" unbounded="false" typename="boolean" name="deleted" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;deleted" />
+                              <s:basetype optional="false" unbounded="false" typename="string" name="gi" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;gi" />
+                              <s:basetype optional="false" unbounded="false" typename="string" name="taxonId" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;taxonId" />
+                            </s:elements>
+                          </s:complextype>
+                        </s:elementtype>
+                      </s:arraytype>
+                      <s:arraytype optional="true" unbounded="true" wrapped="false" typename="CrossReference" name="logicalCrossReferences" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;logicalCrossReferences">
+                        <s:elementtype>
+                          <s:complextype id="{http://model.picr.ebi.ac.uk}CrossReference" optional="false" unbounded="false" typename="CrossReference" name="" />
+                        </s:elementtype>
+                      </s:arraytype>
+                      <s:basetype optional="false" unbounded="false" typename="string" name="sequence" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;sequence" />
+                      <s:basetype optional="false" unbounded="false" typename="dateTime" name="timestamp" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;timestamp" />
+                    </s:elements>
+                  </s:complextype>
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:link source="PICR_input_params:output" sink="getUPIForSequence:parameters" />
+        <s:link source="Sequence" sink="PICR_input_params:sequence" />
+        <s:link source="getUPIForSequence:parameters" sink="Unwrap_PICR_result:input" />
+        <s:link source="Unwrap_PICR_result:getUPIForSequenceReturn" sink="PICR_result" />
+        <s:source name="Sequence">
+          <s:metadata>
+            <s:description>Protein seqence in fasta format, to get identifiers for.</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="PICR_result">
+          <s:metadata>
+            <s:description>XML structure describing the sequence and the database and identifers of identical sequences.</s:description>
+          </s:metadata>
+        </s:sink>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Sequence" sink="EBI_PICR_sequence_to_ID:Sequence" />
+  <s:link source="EBI_PICR_sequence_to_ID:PICR_result" sink="Spit_PICR_result:input" />
+  <s:link source="EBI_Fetch_InterPro_Matches_UniParc:InterPro_Matches" sink="InterPro_matches" />
+  <s:link source="EBI_PICR_sequence_to_ID:PICR_result" sink="PICR_result" />
+  <s:link source="Spit_PICR_result:UPI" sink="EBI_Fetch_InterPro_Matches_UniParc:UniParc_ID" />
+  <s:link source="EBI_dbfetch_UniParc:UniParc_entries" sink="UniParc_entry" />
+  <s:link source="Spit_PICR_result:UPI" sink="EBI_dbfetch_UniParc:ID_list" />
+  <s:source name="Sequence">
+    <s:metadata>
+      <s:description>Input protein sequence in fasta format.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="PICR_result">
+    <s:metadata>
+      <s:description>Result from the PICR service. Contains a mapping to the UniParc identifer (UPI) and to various other protein databases based on the UniParc data.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="UniParc_entry">
+    <s:metadata>
+      <s:description>Entry from UniParc corresponding to the input sequence.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="InterPro_matches">
+    <s:metadata>
+      <s:description>InterPro Matches UniParc entry corresponding to the input sequence.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

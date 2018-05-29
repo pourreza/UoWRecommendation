@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:2ad85267-6b96-4cca-b27b-f1346a8f6b24" author="Franck Tanoh" title="Retrieve_abstract_from_Medline">This workflow retrieves Medline Abstracts of any given PMIDs (PubMed id)
+you can use: 9879 as input example to run this workflow</s:workflowdescription>
+  <s:processor name="queryPmid">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/webservices/whatizit/ws?wsdl</s:wsdl>
+      <s:operation>queryPmid</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="InputParameters">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="queryPmid" name="parameters" qname="{http://www.ebi.ac.uk/webservices/whatizit/ws}queryPmid">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="pipelineName" qname="queryPmid&gt;pipelineName" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="pmid" qname="queryPmid&gt;pmid" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Outputparameters">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="queryPmidResponse" name="parameters" qname="{http://www.ebi.ac.uk/webservices/whatizit/ws}queryPmidResponse">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="return" qname="queryPmidResponse&gt;return" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="PipelineName" boring="true">
+    <s:description>possible values: 
+whatizitSwissprotG2;  whatizitChebiDict; whatizitOscars3; whatizitPathwaywiki; whatizitEBIMed;
+whatizitProteinInteraction; whatizitGORanked; whatizitProteinBiolexHuman; whatizitDisease; 
+whatizitOrganisms; whatizitQbmarsdf; whatizitEBIMedDiseaseChemicals; whatizitSwissprotGo;
+whatizitChemicalsMeta; whatizitGODict; whatizitProteinInteractionPMID; whatizitChemicals; 
+whatizitSwissprotDisease; whatizitDrugs; whatizitSwissprot.</s:description>
+    <s:stringconstant>whatizitSwissprot</s:stringconstant>
+  </s:processor>
+  <s:link source="InputParameters:output" sink="queryPmid:parameters" />
+  <s:link source="PubMed_id" sink="InputParameters:pmid" />
+  <s:link source="PipelineName:value" sink="InputParameters:pipelineName" />
+  <s:link source="Outputparameters:return" sink="MedlineAbstract" />
+  <s:link source="queryPmid:parameters" sink="Outputparameters:input" />
+  <s:source name="PubMed_id" />
+  <s:sink name="MedlineAbstract">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

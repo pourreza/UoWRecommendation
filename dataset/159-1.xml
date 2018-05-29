@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:M763988GGM2" author="Tom Oinn" title="A workflow version of the EMBOSS tutorial">Designed to show the use of EMBOSS based Soaplab services from Taverna, this workflow has no inputs as all initial values are specified as string constants. A sequence set is fetched using the seqret tool, then simultaneously scanned for predicted transmembrane regions and subjected to a multiple alignment using emma. This alignment is then plotted to a set of PNG images and also used to build a profile using the prophecy and prophet tools.</s:workflowdescription>
+  <s:processor name="sequenceid">
+    <s:stringconstant>swallid:ops2_*</s:stringconstant>
+  </s:processor>
+  <s:processor name="prophecyType">
+    <s:stringconstant>G</s:stringconstant>
+  </s:processor>
+  <s:processor name="prophecyName">
+    <s:stringconstant>Ops2 Sequences</s:stringconstant>
+  </s:processor>
+  <s:processor name="send">
+    <s:stringconstant>1171</s:stringconstant>
+  </s:processor>
+  <s:processor name="sbegin">
+    <s:stringconstant>110</s:stringconstant>
+  </s:processor>
+  <s:processor name="msfFormat">
+    <s:stringconstant>msf</s:stringconstant>
+  </s:processor>
+  <s:processor name="transeqSequenceID">
+    <s:stringconstant>embl:xlrhodop</s:stringconstant>
+  </s:processor>
+  <s:processor name="prophet">
+    <s:description>Gapped alignment for profiles</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/nucleic_profiles::prophet</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="prophecy">
+    <s:description>Creates matrices/profiles from multiple alignments</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/nucleic_profiles::prophecy</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="tmap">
+    <s:description>Displays membrane spanning regions</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/protein_2d_structure::tmap</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="seqret1">
+    <s:description>Reads and writes (returns) sequences</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/edit::seqret</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="transeq">
+    <s:description>Translate nucleic acid sequences</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/nucleic_translation::transeq</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="formatSequences">
+    <s:description>Reads and writes (returns) sequences</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/edit::seqret</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="emma">
+    <s:description>Multiple alignment program - interface to ClustalW program</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/alignment_multiple::emma</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="plot">
+    <s:description>Displays aligned sequences, with colouring and boxing</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/alignment_multiple::prettyplot</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="sequenceid:value" sink="seqret1:sequence_usa" />
+  <s:link source="seqret1:outseq" sink="emma:sequence_direct_data" />
+  <s:link source="emma:outseq" sink="plot:sequences_direct_data" />
+  <s:link source="plot:Graphics_in_PNG" sink="outputPlot" />
+  <s:link source="emma:outseq" sink="prophecy:sequence_direct_data" />
+  <s:link source="prophecyType:value" sink="prophecy:type" />
+  <s:link source="prophecyName:value" sink="prophecy:name" />
+  <s:link source="prophecy:outfile" sink="prophet:infile_direct_data" />
+  <s:link source="transeq:outseq" sink="prophet:sequence_direct_data" />
+  <s:link source="transeqSequenceID:value" sink="transeq:sequence_usa" />
+  <s:link source="sbegin:value" sink="transeq:sbegin" />
+  <s:link source="send:value" sink="transeq:send" />
+  <s:link source="prophet:outfile" sink="prophetOutput" />
+  <s:link source="tmap:Graphics_in_PNG" sink="tmapPlot" />
+  <s:link source="seqret1:outseq" sink="formatSequences:sequence_direct_data" />
+  <s:link source="formatSequences:outseq" sink="tmap:sequences_direct_data" />
+  <s:link source="msfFormat:value" sink="formatSequences:osformat" />
+  <s:sink name="outputPlot">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>image/png</s:mimeType>
+        <s:mimeType>application/octet-stream</s:mimeType>
+      </s:mimeTypes>
+      <s:description>The array of png images returned from the plot processor</s:description>
+      <s:semanticType>http://www.mygrid.org.uk/ontology#domain_concept</s:semanticType>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="prophetOutput" />
+  <s:sink name="tmapPlot">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>image/png</s:mimeType>
+        <s:mimeType>application/octet-stream</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+
+

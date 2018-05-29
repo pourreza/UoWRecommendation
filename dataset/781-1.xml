@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f3d2fd16-ad75-46ad-8613-dc92ba26357b" author="" title="getCountryCapital" />
+  <s:processor name="composeURL">
+    <s:defaults>
+      <s:default name="country">PL</s:default>
+    </s:defaults>
+    <s:beanshell>
+      <s:scriptvalue>List vars = new ArrayList(Arrays.asList(this.variables));
+
+// vars.remove("variables");
+vars.remove("bsh");
+
+
+String url = "http://ws.geonames.org/countryInfo?";
+
+for (String variable : vars) {
+   url = url + variable + "=" + eval(variable);
+}
+
+
+// Chop of last &amp;
+url = url.substring(0, url.length());</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">country</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Get_web_page_from_URL">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="getCapitalFromXML">
+    <s:beanshell>
+      <s:scriptvalue>capital = countryInfo.substring(countryInfo.indexOf("&lt;capital&gt;")+9,countryInfo.indexOf("&lt;/capital&gt;"))</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">countryInfo</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">capital</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="fresh" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="composeURL:url" sink="Get_web_page_from_URL:url" />
+  <s:link source="countryCode" sink="composeURL:country" />
+  <s:link source="Get_web_page_from_URL:contents" sink="getCapitalFromXML:countryInfo" />
+  <s:link source="composeURL:url" sink="url" />
+  <s:link source="getCapitalFromXML:capital" sink="countryCapital" />
+  <s:source name="countryCode" />
+  <s:sink name="countryCapital">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/html</s:mimeType>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="url" />
+</s:scufl>
+

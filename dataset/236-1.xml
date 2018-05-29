@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:256aab34-9ba8-40be-a39c-f621100e3507" author="Hamish McWilliam" title="EBI_PICR_Sequence_to_ID">Map a protein sequence to the known identifiers of identical sequences.
+
+Uses the EBI's PICR web service (see http://www.ebi.ac.uk/Tools/picr/) to perform the mapping.</s:workflowdescription>
+  <s:processor name="getUPIForSequence">
+    <s:description>Get UPI information from a sequence in fasta format.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/picr/service?wsdl</s:wsdl>
+      <s:operation>getUPIForSequence</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="PICR_input_params">
+    <s:description>Construct request structure.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getUPIForSequence" name="parameters" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}getUPIForSequence">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="sequence" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}&gt;getUPIForSequence&gt;sequence" />
+            <s:arraytype optional="false" unbounded="true" wrapped="false" typename="string" name="searchDatabases" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}&gt;getUPIForSequence&gt;searchDatabases">
+              <s:elementtype>
+                <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+              </s:elementtype>
+            </s:arraytype>
+            <s:basetype optional="false" unbounded="false" typename="string" name="taxonId" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}&gt;getUPIForSequence&gt;taxonId" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="onlyActive" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}&gt;getUPIForSequence&gt;onlyActive" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Unwrap_PICR_result">
+    <s:description>Unwrap response structure.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getUPIForSequenceResponse" name="parameters" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}getUPIForSequenceResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="UPEntry" name="getUPIForSequenceReturn" qname="{http://www.ebi.ac.uk/picr/AccessionMappingService}&gt;getUPIForSequenceResponse&gt;getUPIForSequenceReturn">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="CRC64" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;CRC64" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="UPI" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;UPI" />
+                <s:arraytype optional="true" unbounded="true" wrapped="false" typename="CrossReference" name="identicalCrossReferences" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;identicalCrossReferences">
+                  <s:elementtype>
+                    <s:complextype optional="false" unbounded="false" typename="CrossReference" name="" qname="{http://model.picr.ebi.ac.uk}CrossReference">
+                      <s:elements>
+                        <s:basetype optional="false" unbounded="false" typename="string" name="accession" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;accession" />
+                        <s:basetype optional="false" unbounded="false" typename="string" name="accessionVersion" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;accessionVersion" />
+                        <s:basetype optional="false" unbounded="false" typename="string" name="databaseDescription" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;databaseDescription" />
+                        <s:basetype optional="false" unbounded="false" typename="string" name="databaseName" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;databaseName" />
+                        <s:basetype optional="false" unbounded="false" typename="dateTime" name="dateAdded" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;dateAdded" />
+                        <s:basetype optional="false" unbounded="false" typename="dateTime" name="dateDeleted" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;dateDeleted" />
+                        <s:basetype optional="false" unbounded="false" typename="boolean" name="deleted" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;deleted" />
+                        <s:basetype optional="false" unbounded="false" typename="string" name="gi" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;gi" />
+                        <s:basetype optional="false" unbounded="false" typename="string" name="taxonId" qname="{http://model.picr.ebi.ac.uk}CrossReference&gt;taxonId" />
+                      </s:elements>
+                    </s:complextype>
+                  </s:elementtype>
+                </s:arraytype>
+                <s:arraytype optional="true" unbounded="true" wrapped="false" typename="CrossReference" name="logicalCrossReferences" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;logicalCrossReferences">
+                  <s:elementtype>
+                    <s:complextype id="{http://model.picr.ebi.ac.uk}CrossReference" optional="false" unbounded="false" typename="CrossReference" name="" />
+                  </s:elementtype>
+                </s:arraytype>
+                <s:basetype optional="false" unbounded="false" typename="string" name="sequence" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;sequence" />
+                <s:basetype optional="false" unbounded="false" typename="dateTime" name="timestamp" qname="{http://model.picr.ebi.ac.uk}UPEntry&gt;timestamp" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="PICR_input_params:output" sink="getUPIForSequence:parameters" />
+  <s:link source="Sequence" sink="PICR_input_params:sequence" />
+  <s:link source="getUPIForSequence:parameters" sink="Unwrap_PICR_result:input" />
+  <s:link source="Unwrap_PICR_result:getUPIForSequenceReturn" sink="PICR_result" />
+  <s:source name="Sequence">
+    <s:metadata>
+      <s:description>Protein seqence in fasta format, to get identifiers for.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="PICR_result">
+    <s:metadata>
+      <s:description>XML structure describing the sequence and the database and identifers of identical sequences.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

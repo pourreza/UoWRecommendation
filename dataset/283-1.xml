@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:KC211UMOYL1345" author="" title="" />
+  <s:processor name="fieldName" boring="true">
+    <s:stringconstant>Alltext</s:stringconstant>
+  </s:processor>
+  <s:processor name="Uniprot_search">
+    <s:description>To be added</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/uniprotsequence.uniprot</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="parse_uniprot">
+    <s:description>Extract information from a Uniprot text file including PubMed, InterPro, Pfam and other related accession numbers</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.parse_uniprot</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="Swissprot_Id" boring="true">
+    <s:stringconstant>Q8BTW2</s:stringconstant>
+  </s:processor>
+  <s:link source="Swissprot_Id:value" sink="Uniprot_search:searchterm" />
+  <s:link source="Uniprot_search:result" sink="parse_uniprot:file_direct_data" />
+  <s:link source="fieldName:value" sink="Uniprot_search:fieldname" />
+  <s:link source="Uniprot_search:result" sink="uniprot_record" />
+  <s:link source="parse_uniprot:output" sink="parsed_data" />
+  <s:sink name="uniprot_record" />
+  <s:sink name="parsed_data" />
+</s:scufl>
+
+

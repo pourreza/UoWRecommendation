@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:7d424a5a-f1f5-4670-b59b-29e9fa063ba0" author="Thomas Kuhn" title="Load Molecules from a database and create a PDF file showing the structures of the loaded molecules">This workflow loads molecules from a database. The 2D structure of these molecules are shown within a table of a PDF document.</s:workflowdescription>
+  <s:processor name="Get_molecules_from_database">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.database.pgchem.GetMoleculesFromDB
+      <s:extensions>
+        <s:GetMoleculesFromDB>
+          <DBConnectionPostgres>
+            <DBURL>jdbc:postgresql://localhost/cdk-taverna</DBURL>
+            <DBUserName>postgres</DBUserName>
+            <DBUserPassword>postgres#21</DBUserPassword>
+            <SQLQuery>SELECT id, molecule FROM chmolecules WHERE id &lt; 10</SQLQuery>
+          </DBConnectionPostgres>
+        </s:GetMoleculesFromDB>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Create_PDF_File_with_2D_Structures">
+    <s:cdk>org.openscience.cdk.applications.taverna.renderers.CreatePDFWith2DStructures</s:cdk>
+  </s:processor>
+  <s:link source="Get_molecules_from_database:molecules" sink="Create_PDF_File_with_2D_Structures:inputStructures" />
+</s:scufl>
+

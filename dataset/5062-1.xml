@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:a5397afb-aa99-45c0-b7bc-73e2f8c65011" author="Mark Fortner" title="List_CorrData">This test workflow demonstrates the ability to read a file.</s:workflowdescription>
+  <s:processor name="ChooseCorrMethod" boring="true">
+    <s:stringconstant>P</s:stringconstant>
+  </s:processor>
+  <s:processor name="PeakFileMessage" boring="true">
+    <s:stringconstant>tab delimited Files</s:stringconstant>
+  </s:processor>
+  <s:processor name="DataFileMessage" boring="true">
+    <s:stringconstant>Text files</s:stringconstant>
+  </s:processor>
+  <s:processor name="Select_PeakFile">
+    <s:description>Reads in csv or txt file - depending on extension of file selected
+Writes out data in same format</s:description>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.SelectFileWorker</s:local>
+  </s:processor>
+  <s:processor name="PeakFile" boring="true">
+    <s:stringconstant>Select Peak File</s:stringconstant>
+  </s:processor>
+  <s:processor name="rtdiff" boring="true">
+    <s:stringconstant>5</s:stringconstant>
+  </s:processor>
+  <s:processor name="Read_PeakFile">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="DataFile" boring="true">
+    <s:stringconstant>Select Data File</s:stringconstant>
+  </s:processor>
+  <s:processor name="Split_DataFile">
+    <s:defaults>
+      <s:default name="regex">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="CorrLim" boring="true">
+    <s:stringconstant>0.7</s:stringconstant>
+  </s:processor>
+  <s:processor name="PeakFile_Type" boring="true">
+    <s:stringconstant>txt</s:stringconstant>
+  </s:processor>
+  <s:processor name="Split_PeakFile">
+    <s:defaults>
+      <s:default name="regex">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="DataFile_Type" boring="true">
+    <s:stringconstant>txt</s:stringconstant>
+  </s:processor>
+  <s:processor name="Select_DataFile">
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.SelectFileWorker</s:local>
+  </s:processor>
+  <s:processor name="Read_DataFile">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="List_CorrData">
+    <s:beanshell>
+      <s:scriptvalue>// List_CorrData December 2010 
+/* EITHER reads in correlation data already calculated
+/* OR reads in data and performs either Pearson or Spearman Rank correlation
+/* algorithm equivalent to Matlab Function corr(X,'rows','pairwise','type'.'Pearson') or Spearman
+/* Handles NaN, Inf and 0 in data
+// Study data - Peak List (indata) - PeakNo/mz/rt - HEADER ROW, tab-delimited *.txt file 
+// EITHER correlation data (already calculated) or peak data to be correlated (mydata) 
+/* CorrData - matrix m x m (no Header Row) or PeakData - matrix m peaks x n samples (no Header Row)
+/* EITHER *.txt OR *.csv file
+
+//**Returns the correlation matrix (Pearson's r) for the columns in 'data'*/
+public static double getPearsonCorrelationMatrix(int v1, int v2, double[][] data)
+	{
+	int len = data.length;
+	double tcorr=0.0;
+	double x = 0.0;
+	double y = 0.0;
+	double xy =0.0;
+	double xSquared = 0.0;
+	double ySquared = 0.0;
+	int invalidDataCount = 0;
+	double numerator = 0.0;
+	double denominator = 0.0;
+	
+        int klen=len;
+        int okflag;
+	for(int k=0;k&lt;len;k++)
+	   {
+	   if(Double.isNaN(data[k][v1]) || Double.isInfinite(data[k][v1]) || Double.isInfinite(data[k][v2]) || Double.isNaN(data[k][v2]))
+                 {
+                  klen=klen-1;
+		  continue;
+	          }   
+	          x += data[k][v1];
+		  y += data[k][v2];
+		  xy += data[k][v1] * data[k][v2];
+	          xSquared += Math.pow(data[k][v1],2.0);
+		  ySquared += Math.pow(data[k][v2],2.0);
+            }
+		numerator = klen * xy - x * y;
+		denominator = Math.sqrt(klen * xSquared - Math.pow(x, 2.0)) * Math.sqrt(klen * ySquared - Math.pow(y, 2.0));
+		tcorr = numerator / denominator;
+              
+           return tcorr;
+}
+
+//**Returns the Spearman rank correlation matrix for the columns in 'data'*/
+	public static double getSpearmanCorrelationMatrix(int v1, int v2, double[][] data)
+	{
+		int len = data.length;
+		double tcorr=0.0;
+		double x = 0.0;
+		double y = 0.0;
+		double xy =0.0;
+		double xSquared = 0.0;
+		double ySquared = 0.0;
+		double numerator = 0.0;
+		double denominator = 0.0;
+              
+                Vector invalidData = new Vector();
+		for(int k=0;k&lt;len;k++)
+		  {
+        		if(Double.isInfinite(data[k][v1])||Double.isInfinite(data[k][v2])||Double.isNaN(data[k][v1])||Double.isNaN(data[k][v2]))
+				{
+					invalidData.add(k);
+				}
+		  }
+			int invalidDataSize = invalidData.size();
+			int found = 0;
+			double[][] vals = new double[2][len - invalidDataSize];
+			for(int k=0;k&lt;len;k++)
+			{
+				if(invalidData.indexOf(k) &gt;=0)
+					found++;
+				else
+				{
+					vals[0][k-found] = data[k][v1];
+					vals[1][k-found] = data[k][v2];
+				}
+			}
+				double[][] ranks = new double[len - invalidDataSize][2];
+				for(int k=0;k&lt;2;k++)
+				{
+				        int[] ordering = ShellSortValues(vals[k], true);
+					int equalRankCount = 0;
+					for(int l=0;l&lt;len-invalidDataSize;l++)
+					{
+						if(l&gt;0 &amp;&amp; vals[k][ordering[l]] != vals[k][ordering[l-1]])
+						{
+							for(int m=0;m&lt;equalRankCount;m++)
+								ranks[ordering[l-m-1]][k] = l-(equalRankCount-1)/2.0;
+							equalRankCount = 1;
+						}
+						else
+							equalRankCount++;
+					        }
+					for(int l=0;l&lt;equalRankCount;l++)
+						ranks[ordering[len-invalidDataSize-l-1]][k] = len-invalidDataSize-(equalRankCount-1)/2.0;
+				}
+				x = 0.0;
+				y = 0.0;
+				xy =0.0;
+				xSquared = 0.0;
+				ySquared = 0.0;
+				len -= invalidDataSize;
+				for(int k=0;k&lt;len;k++)
+				{
+					x += ranks[k][0];
+					y += ranks[k][1];
+					xy += ranks[k][0] * ranks[k][1];
+					xSquared += Math.pow(ranks[k][0],2.0);
+					ySquared += Math.pow(ranks[k][1],2.0);
+				}
+				numerator = len * xy - x * y;
+				denominator = Math.sqrt(len * xSquared - Math.pow(x, 2.0)) * Math.sqrt(len * ySquared - Math.pow(y, 2.0));
+				tcorr = numerator / denominator;
+				len += invalidDataSize;
+		
+		return tcorr;
+	}
+
+/**Sorts &lt;i&gt;values&lt;/i&gt; using the Shell sort algorithm. If sortAscending is true, the values will be
+	in order from smallest to largest. The returned array contains the indices of &lt;i&gt;values&lt;/i&gt; in the requested order.*/
+	public static int[] ShellSortValues(double[]values, boolean sortAscending)
+	{
+		int len = values.length;
+	        double[] sortedVals = new double[len];
+		int[] originalIndices = new int[len];
+		for(int i=0;i&lt;len;i++) {
+                        originalIndices[i] = i;
+                        sortedVals[i] = values[i];
+	       }
+		int h = 1;
+		//find the largest h value possible
+		while ((h * 3 + 1) &lt; len)
+		{
+			h = 3 * h + 1;
+		}
+
+		while( h &gt; 0 )
+		{
+			//for each set of elements (there are h sets)
+			for (int i = h - 1; i &lt; len; i++)
+			{
+				//pick the last element in the set
+				double val = sortedVals[i];
+				int index = originalIndices[i];
+				int j = i;
+				 /*compare value to the one before it in the set
+				   if they are out of order continue this loop, moving
+				   elements "back" to make room for ind to be inserted.*/
+				for( j = i; (j &gt;= h) &amp;&amp; ((!sortAscending &amp;&amp; sortedVals[j-h] &lt; val) || (sortAscending &amp;&amp; sortedVals[j-h] &gt; val)); j -= h)
+				{
+					sortedVals[j] = sortedVals[j-h];
+					originalIndices[j] = originalIndices[j-h];
+				}
+				//insert val into the correct place
+				sortedVals[j] = val;
+				originalIndices[j] = index;
+			}
+			//all sets h-sorted, now decrease set size
+			h = h / 3;
+		}
+		return originalIndices;
+	}
+	
+
+StringBuffer listofdata = new StringBuffer();
+double rtdiff = Double.parseDouble(rtread);
+double corrlim = Double.parseDouble(corrcheck);
+double tcorr=0.0;
+String tempStr="";
+Boolean OKdata=true;
+
+String iline=indata.get(0).trim();
+String[] iitems=iline.split("\t");
+int npeaks=indata.size();
+double[] rt = new double[npeaks];
+int [] PeakNo = new int[npeaks];
+double [] PeakNoDble = new double[npeaks]; //DCW
+for(int i=1;i&lt;npeaks;i++) 
+   {
+    iline=indata.get(i).trim(); 
+    iitems=iline.split("\t");
+    PeakNo[i]=Integer.parseInt(iitems[0].trim());
+    PeakNoDble[i] = (double)(PeakNo[i]);
+    rt[i] = Double.parseDouble(iitems[2].trim());
+   }
+
+int[] order = ShellSortValues(PeakNoDble,true); //finds Peak No. Order
+
+// mydata has header row and then n peaks and at least 3 columns	
+String line=mydata.get(0).trim();
+String myseparator="/t";
+if (filetype.equals("csv")) {
+    myseparator=",";
+}
+if (filetype.equals("txt")) {
+    myseparator="\t";
+}
+String[] items=line.split(myseparator);
+int dimensionality=mydata.size();
+int ncols=items.length;
+
+// check correct data input
+ if (calccorr.substring(0,1).equals("P") || calccorr.substring(0,1).equals("p") || calccorr.substring(0,1).equals("S") || calccorr.substring(0,1).equals("s")) {
+    // data needs to be n rows (peaks) x ncols columns (samples)
+     if ((ncols+1 == dimensionality) || (dimensionality+1 != npeaks)) {
+         OKdata=false;
+         tempStr="Incorrect data to calculate correlation - program aborted";
+     }
+}
+else {
+    if ((ncols != dimensionality) || (dimensionality+1 != npeaks)) {    
+        OKdata=false;
+        tempStr="Data should be a square matrix (n x n) with n = no. of peaks - program aborted";
+     }
+}
+
+if (OKdata) {
+   double[][] values=new double [ncols][dimensionality];		
+   for(int i=0;i&lt;dimensionality;i++)
+     { 
+     line=mydata.get(i).trim(); 
+     items=line.split(myseparator);
+     for(int j=0;j&lt;ncols;j++) {
+	 values[j][i] = Double.parseDouble(items[j].trim());
+    }
+}
+
+double rtgap=0;
+for(int i=1;i&lt;npeaks;i++) {
+   for(int j=i+1;j&lt;npeaks;j++) {
+       //uses Peak No. order
+	rtgap=rt[order[i]]-rt[order[j]];
+       if (rtgap&lt;0) {
+          rtgap=-rtgap;
+       }
+       if (rtgap&lt;rtdiff)
+           {
+            if (calccorr.substring(0,1).equals("P") || calccorr.substring(0,1).equals("p")) {
+		tcorr=getPearsonCorrelationMatrix(order[i]-1,order[j]-1,values);
+            }
+            else {
+                if (calccorr.substring(0,1).equals("S") || calccorr.substring(0,1).equals("s")) {
+         	    tcorr=getSpearmanCorrelationMatrix(order[i]-1,order[j]-1,values);
+                  }
+                else {
+		     tcorr=values[order[i]-1][order[j]-1];
+                }
+             }
+             if (tcorr&gt;corrlim) {
+                 if (PeakNo[order[i]]&lt;PeakNo[order[j]]) {
+                     listofdata.append(PeakNo[order[i]]+"\t"+PeakNo[order[j]]+"\t"+tcorr+"\n");
+                 }
+                 else {
+                      listofdata.append(PeakNo[order[j]]+"\t"+PeakNo[order[i]]+"\t"+tcorr+"\n");
+                 }
+             }
+            }
+    }
+}
+}
+else {
+    listofdata.append(tempStr);
+}
+
+String corrlist=listofdata.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">indata</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">mydata</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">calccorr</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">rtread</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">corrcheck</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">filetype</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">corrlist</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="ChooseCorrMethod:value" sink="List_CorrData:calccorr" />
+  <s:link source="CorrLim:value" sink="List_CorrData:corrcheck" />
+  <s:link source="DataFile:value" sink="Select_DataFile:title" />
+  <s:link source="DataFileMessage:value" sink="Select_DataFile:fileExtLabels" />
+  <s:link source="DataFile_Type:value" sink="List_CorrData:filetype" />
+  <s:link source="DataFile_Type:value" sink="Select_DataFile:fileExtensions" />
+  <s:link source="List_CorrData:corrlist" sink="CorrList" />
+  <s:link source="PeakFile:value" sink="Select_PeakFile:title" />
+  <s:link source="PeakFileMessage:value" sink="Select_PeakFile:fileExtLabels" />
+  <s:link source="PeakFile_Type:value" sink="Select_PeakFile:fileExtensions" />
+  <s:link source="Read_DataFile:filecontents" sink="Split_DataFile:string" />
+  <s:link source="Read_PeakFile:filecontents" sink="Split_PeakFile:string" />
+  <s:link source="Select_DataFile:selectedFile" sink="Read_DataFile:fileurl" />
+  <s:link source="Select_PeakFile:selectedFile" sink="Read_PeakFile:fileurl" />
+  <s:link source="Split_DataFile:split" sink="List_CorrData:mydata" />
+  <s:link source="Split_PeakFile:split" sink="List_CorrData:indata" />
+  <s:link source="rtdiff:value" sink="List_CorrData:rtread" />
+  <s:sink name="CorrList" />
+  <s:coordination name="SelectMassFile_BLOCKON_SelectReferenceFile">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Select_PeakFile</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Select_DataFile</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

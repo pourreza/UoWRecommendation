@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:ab14daa5-e903-4d04-803f-9adca01415db" author="Hamish McWilliam" title="EBI_Fetch_InterPro_Matches_UniParc">For a UniParc (see http://www.ebi.ac.uk/uniprot/database/DBDescription.html#uniparc) identifier/accession fetch the assocated InterPro Matches from SRS@EBI (see http://srs.ebi.ac.uk/srsbin/cgi-bin/wgetz?-page+LibInfo+-lib+IPRMC_UNIPARC).</s:workflowdescription>
+  <s:processor name="Get_entry_from_SRS">
+    <s:description>Get the entry from SRS using http.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="Build_InterPro_Matches_UniParc_URL">
+    <s:description>Construct SRS@EBI URL to get the InterPro matches UniParc (IPRMC_UNIPARC) entry (see http://www.ebi.ac.uk/~srs/wiki/doku.php?id=guides:linkingtosrs).</s:description>
+    <s:beanshell>
+      <s:scriptvalue>//
+// Build URL to get InterPro matches UniParc, given a UniParc
+// ID/accession.
+//
+
+iprmc_uniparc_url = "http://srs.ebi.ac.uk/srsbin/cgi-bin/wgetz?-e+-ascii+";
+iprmc_uniparc_url += "[iprmc_uniparc-ID:" + uniparc_id + "]";</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">uniparc_id</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">iprmc_uniparc_url</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Check_for_SRS_error">
+    <s:description>Check the data returned by SRS for errors, and "not found" messages. In this case a simple check for HTML tags.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>//
+// Check the document returned by SRS for error messages.
+//
+
+if(input.indexOf("&lt;HTML&gt;") &lt; 0) {
+  output = input;
+} else {
+  output = "";
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="UniParc_ID" sink="Build_InterPro_Matches_UniParc_URL:uniparc_id" />
+  <s:link source="Build_InterPro_Matches_UniParc_URL:iprmc_uniparc_url" sink="Get_entry_from_SRS:url" />
+  <s:link source="Get_entry_from_SRS:contents" sink="Check_for_SRS_error:input" />
+  <s:link source="Check_for_SRS_error:output" sink="InterPro_Matches" />
+  <s:source name="UniParc_ID">
+    <s:metadata>
+      <s:description>UniParc identifier/accession to get InterPro matches for (e.g. UPI000000004E).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="InterPro_Matches">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+      <s:description>InterPro matches XML entry for UniParc identifer.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

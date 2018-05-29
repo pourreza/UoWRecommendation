@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f47cb19e-767f-456c-bd62-de9477eeb76c" author="" title="casimir_paper" />
+  <s:processor name="mmusculus_gene_ensembl">
+    <s:description>Mus musculus genes (NCBIM37)</s:description>
+    <s:biomart>
+      <biomart:MartQuery xmlns:biomart="http://org.embl.ebi.escience/xscufl-biomart/0.1alpha">
+        <biomart:MartService location="http://www.biomart.org/biomart/martservice" />
+        <biomart:MartDataset displayName="Mus musculus genes (NCBIM37)" name="mmusculus_gene_ensembl" type="TableSet" initialBatchSize="200" maximumBatchSize="50000" visible="false" interface="default" modified="2007-12-11 11:42:43">
+          <biomart:MartURLLocation database="ensembl_mart_48" default="1" displayName="ENSEMBL 48 GENES (SANGER)" host="www.biomart.org" includeDatasets="" martUser="" name="ensembl" path="/biomart/martservice" port="80" serverVirtualSchema="default" virtualSchema="default" visible="1" redirect="0" />
+        </biomart:MartDataset>
+        <biomart:Query virtualSchemaName="default" count="0" uniqueRows="0" softwareVersion="0.6" requestId="taverna">
+          <biomart:Dataset name="mmusculus_gene_ensembl">
+            <biomart:Attribute name="ensembl_gene_id" />
+            <biomart:Filter name="ensembl_gene_id" value="ENSMUSG00000041798" list="true" />
+          </biomart:Dataset>
+        </biomart:Query>
+      </biomart:MartQuery>
+    </s:biomart>
+  </s:processor>
+  <s:processor name="mouse_embl_ids">
+    <s:description>Mus musculus genes (NCBIM37)</s:description>
+    <s:biomart>
+      <biomart:MartQuery xmlns:biomart="http://org.embl.ebi.escience/xscufl-biomart/0.1alpha">
+        <biomart:MartService location="http://www.biomart.org/biomart/martservice" />
+        <biomart:MartDataset displayName="Mus musculus genes (NCBIM37)" name="mmusculus_gene_ensembl" type="TableSet" initialBatchSize="200" maximumBatchSize="50000" visible="false" interface="default" modified="2007-12-11 11:42:43">
+          <biomart:MartURLLocation database="ensembl_mart_48" default="1" displayName="ENSEMBL 48 GENES (SANGER)" host="www.biomart.org" includeDatasets="" martUser="" name="ensembl" path="/biomart/martservice" port="80" serverVirtualSchema="default" virtualSchema="default" visible="1" redirect="0" />
+        </biomart:MartDataset>
+        <biomart:Query virtualSchemaName="default" count="0" uniqueRows="0" softwareVersion="0.6" requestId="taverna">
+          <biomart:Dataset name="mmusculus_gene_ensembl">
+            <biomart:Attribute name="embl" />
+            <biomart:Attribute name="ensembl_gene_id" />
+            <biomart:Filter name="ensembl_gene_id" value="" list="true" />
+          </biomart:Dataset>
+        </biomart:Query>
+      </biomart:MartQuery>
+    </s:biomart>
+  </s:processor>
+  <s:processor name="MergeShell">
+    <s:beanshell>
+      <s:scriptvalue>mergedOutput = "";
+for (i = 0; i &lt; keggGeneID.split(";").length(); i++){
+	mergedOutput = mergedOutput + ensemblGeneID + " " + emblID + " " + keggGeneID.split(";")[i];
+	if (i &lt; keggGeneID.split(";").length() - 1){ 
+		mergedOutput = mergedOutput + "\n";
+	}
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">ensemblGeneID</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">emblID</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">keggGeneID</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">mergedOutput</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="ensemblGeneID" />
+        <i:iterator name="emblID" />
+        <i:iterator name="keggGeneID" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="Nested_Workflow" workers="12">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:07d6becf-d959-4f82-ac72-61b8870c3c0b" author="" title="test" />
+        <s:processor name="Concatenate_two_strings">
+          <s:defaults>
+            <s:default name="string1">genbank:</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+        </s:processor>
+        <s:processor name="SplitBean">
+          <s:beanshell>
+            <s:scriptvalue>if (!"\n".equals(input)){
+	output = input.split("\t")[1];
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="get_html_of_marked_pathway_by_objects">
+          <s:arbitrarywsdl>
+            <s:wsdl>http://soap.genome.jp/KEGG.wsdl</s:wsdl>
+            <s:operation>get_html_of_marked_pathway_by_objects</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="get_pathways_by_genes">
+          <s:arbitrarywsdl>
+            <s:wsdl>http://soap.genome.jp/KEGG.wsdl</s:wsdl>
+            <s:operation>get_pathways_by_genes</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="bconv">
+          <s:arbitrarywsdl>
+            <s:wsdl>http://soap.genome.jp/KEGG.wsdl</s:wsdl>
+            <s:operation>bconv</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Split_string_into_string_list_by_regular_expression">
+          <s:defaults>
+            <s:default name="regex">\n</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+        </s:processor>
+        <s:processor name="Split_string_into_string_list_by_regular_expression1">
+          <s:defaults>
+            <s:default name="regex">\n</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+        </s:processor>
+        <s:link source="Concatenate_two_strings:output" sink="bconv:string" />
+        <s:link source="SplitBean:output" sink="Split_string_into_string_list_by_regular_expression1:string" />
+        <s:link source="SplitBean:output" sink="get_html_of_marked_pathway_by_objects:object_id_list" />
+        <s:link source="Split_string_into_string_list_by_regular_expression1:split" sink="get_pathways_by_genes:genes_id_list" />
+        <s:link source="Split_string_into_string_list_by_regular_expression:split" sink="SplitBean:input" />
+        <s:link source="bconv:return" sink="Split_string_into_string_list_by_regular_expression:string" />
+        <s:link source="get_pathways_by_genes:return" sink="c" />
+        <s:link source="get_pathways_by_genes:return" sink="get_html_of_marked_pathway_by_objects:pathway_id" />
+        <s:link source="string2" sink="Concatenate_two_strings:string2" />
+        <s:link source="get_html_of_marked_pathway_by_objects:return" sink="a" />
+        <s:source name="string2" />
+        <s:sink name="a" />
+        <s:sink name="c" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Flatten_list">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Merge_string_list_to_string">
+    <s:defaults>
+      <s:default name="seperator">;</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:link source="Flatten_list:outputlist" sink="d" />
+  <s:link source="MergeShell:mergedOutput" sink="Flatten_list:inputlist" />
+  <s:link source="Merge_string_list_to_string:concatenated" sink="MergeShell:keggGeneID" />
+  <s:link source="Nested_Workflow:c" sink="Merge_string_list_to_string:stringlist" />
+  <s:link source="mouse_embl_ids:mmusculus_gene_ensembl.ensembl_gene_id" sink="MergeShell:ensemblGeneID" />
+  <s:link source="Nested_Workflow:a" sink="a" />
+  <s:link source="mmusculus_gene_ensembl:mmusculus_gene_ensembl.ensembl_gene_id" sink="mouse_embl_ids:mmusculus_gene_ensembl.ensembl_gene_id_filter" />
+  <s:link source="mouse_embl_ids:mmusculus_gene_ensembl.embl" sink="MergeShell:emblID" />
+  <s:link source="mouse_embl_ids:mmusculus_gene_ensembl.embl" sink="Nested_Workflow:string2" />
+  <s:sink name="a" />
+  <s:sink name="d" />
+</s:scufl>
+

@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:d0b43e2d-530d-485a-909e-6a85b78a3160" author="Stian Soiland-Reyes" title="Staged iteration strategy">Consider two lists A and B, of equal size 3. A1 corresponds to B1, A2 to B2, etc, for instance A are image scans from 2007 and B from 2008, and the index indicates the patient number.
+
+There's then two lists of possible parameters P and Q, of different lengths, P has 2 and Q has 4 items.
+
+Each of the A items should be processed in "ap" using each of the P parameters, and each of the B items processed in "bq" using each of the Q parameters.
+
+The problem then is how to compare AnPp against the all BnQq - but notice that An and Bn have to match. The normal crossproduct would compare all AaPp against all BbQq - but we want to restrict the iteration strategy. We can't use the dot product directly because for a given patient n we want to compare all Ps against all Qs using the cross product.
+
+This is solved in t2 using staged iteration, but here is a hack showing how this can be achieved in t1 using a nested workflow. The nested workflow basically "stops" the iteration at list level, due to the echo_lists inside that makes the nested workflow excpect lists.
+
+There's explicit crossproduct(p,a) strategy set on ap and crossproduct(q,b) on bq to make sure they output with a/b iteration at the top-level lists, ie. "ap" outputs:
+
+[  [ a0p0, a0p1],
+   [ a1p0, a1p1],
+   [ a2p0, a2p1]
+]
+
+So the top level lists from "ap" corresponds to each item of A. The same trick applies to "bq" - if we don't do this the implicit iteration might output the opposite with the highest list corresponding to the Ps and Qs.
+
+The second part is to use a nested workflow that takes the outputs from ap and bq, but through the "Echo list" local worker. This worker doesn't do anything except it forces the nested workflow to take a list of items as inputs instead of single inputs. 
+
+Hence we can set a dotproduct(pq, ap) on the processor for the nested workflow "apbq_iter" - since the nested workflow consumes lists at both ports this means it will be iterated over with these inputs:
+
+ap = [ a0p0, a0p1]    bq = [b0q0, b0q1, b0q2, b0q3]
+ap = [ a1p0, a1p1]    bq = [b1q0, b1q1, b1q2, b1q3]
+ap = [ a2p0, a2p1]    bq = [b2q0, b2q1, b2q2, b2q3]
+
+Inside the nested workflow there's the normal crossproduct(pq, ap) so that it could (in theory) do an all-to-all comparison. (The beanshell inside apbq here only returns the string ap+bq.)
+
+With this hack we can run a dotproduct for the outermost list, and a crossproduct for the innermost list.
+
+The output of running this should be:
+
+{
+  [ (a0p0b0q0, a0p0b0q1, a0p0b0q2, a0p0b0q3),
+    (a0p1b0q0, a0p1b0q1, a0p1b0q2, a0p1b0q3)
+  ],
+  [ (a1p0b1q0, a1p0b1q1, a1p0b1q2, a1p0b1q3),
+    (a1p1b1q0, a1p1b1q1, a1p1b1q2, a1p1b1q3)
+  ],
+  [ (a2p0b2q0, a2p0b2q1, a2p0b2q2, a2p0b2q3),
+    (a2p1b2q0, a2p1b2q1, a2p1b2q2, a2p1b2q3)
+  ]
+}
+
+So in the final output {} (depth=3) there's three big [] lists of depth
+2, responding to a0/b0, a1/b1 and b2/b2. Within each of these are two
+() lists of depth 1 corresponding two p0 and p1. The content of these
+lists (depth 0) are the actual items returned from "apbq" - one for each
+of q0,q1,q2,q3.</s:workflowdescription>
+  <s:processor name="P">
+    <s:beanshell>
+      <s:scriptvalue>List P = new ArrayList();
+P.add("p0");
+P.add("p1");</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">P</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="A">
+    <s:beanshell>
+      <s:scriptvalue>List A = new ArrayList();
+A.add("a0");
+A.add("a1");
+A.add("a2");</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">A</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Q">
+    <s:beanshell>
+      <s:scriptvalue>List Q = new ArrayList();
+Q.add("q0");
+Q.add("q1");
+Q.add("q2");
+Q.add("q3");</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">Q</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="B">
+    <s:beanshell>
+      <s:scriptvalue>List B = new ArrayList();
+B.add("b0");
+B.add("b1");
+B.add("b2");</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">B</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="bq">
+    <s:beanshell>
+      <s:scriptvalue>bq = b+q;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">b</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">q</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">bq</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="q" />
+        <i:iterator name="b" />
+      </i:cross>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="ap">
+    <s:beanshell>
+      <s:scriptvalue>ap = a+p;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">a</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">p</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">ap</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="p" />
+        <i:iterator name="a" />
+      </i:cross>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="apbq_iter">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:5f800cd7-281d-45ba-835b-b7303d12237f" author="" title="Untitled workflow #58" />
+        <s:processor name="pq_echo">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.EchoList</s:local>
+        </s:processor>
+        <s:processor name="ap_echo">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.EchoList</s:local>
+        </s:processor>
+        <s:processor name="apbq">
+          <s:beanshell>
+            <s:scriptvalue>apbq = ap + bq;</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">ap</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">bq</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">apbq</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+          <s:iterationstrategy>
+            <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="ap" />
+              <i:iterator name="bq" />
+            </i:cross>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:link source="ap" sink="ap_echo:inputlist" />
+        <s:link source="pq" sink="pq_echo:inputlist" />
+        <s:link source="ap_echo:outputlist" sink="apbq:ap" />
+        <s:link source="apbq:apbq" sink="apbq" />
+        <s:link source="pq_echo:outputlist" sink="apbq:bq" />
+        <s:source name="ap" />
+        <s:source name="pq" />
+        <s:sink name="apbq" />
+      </s:scufl>
+    </s:workflow>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="ap" />
+        <i:iterator name="pq" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="Flatten_list">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="5" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Merge_string_list_to_string">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:link source="A:A" sink="ap:a" />
+  <s:link source="B:B" sink="bq:b" />
+  <s:link source="Flatten_list:outputlist" sink="Merge_string_list_to_string:stringlist" />
+  <s:link source="Merge_string_list_to_string:concatenated" sink="flattened" />
+  <s:link source="P:P" sink="ap:p" />
+  <s:link source="Q:Q" sink="bq:q" />
+  <s:link source="ap:ap" sink="apbq_iter:ap" />
+  <s:link source="apbq_iter:apbq" sink="Flatten_list:inputlist" />
+  <s:link source="apbq_iter:apbq" sink="apbq" />
+  <s:link source="bq:bq" sink="apbq_iter:pq" />
+  <s:sink name="apbq" />
+  <s:sink name="flattened" />
+</s:scufl>
+

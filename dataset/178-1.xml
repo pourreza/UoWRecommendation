@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:6d4b10ba-7239-4748-b684-fdcb729a8437" author="Peter Li" title="selectworker">This workflow shows how the selectData beanshell script can be used to select items from a given list for analysis by downstream processors.</s:workflowdescription>
+  <s:processor name="selectData">
+    <s:beanshell>
+      <s:scriptvalue>/**
+ * Class representing the selected values of this beanshell processor
+ */
+class SelectedValues
+{
+  ArrayList selectedValues;
+
+  SelectedValues()
+  {
+    selectedValues = new ArrayList();
+  }
+
+  synchronized void addToValues(ArrayList values)
+  {
+    for(int i = 0; i &lt; values.size(); i ++)
+      selectedValues.add(values.get(i));
+
+    notifyAll();
+  }
+
+  synchronized ArrayList getValues()
+  {
+    while (selectedValues.size() == 0)
+    {
+      try
+      {
+        wait();
+      }
+      catch (InterruptedException e)
+      {
+        e.printStackTrace();
+      }
+    }
+
+    return selectedValues;
+  }
+}
+
+/**
+ * Class representing the GUI for selecting the values to be
+ * processed by the remainder of the workflow.
+ */
+MultipleSelectWorkerGUI(ArrayList input, SelectedValues values)
+{
+  JList list;
+  DefaultListModel listModel;
+  final String submitString = "Submit";
+  JButton submitButton;
+  int[] accessions;
+  SelectedValues selectedValues;
+  ArrayList inputdata;
+  
+
+  void init()
+  {
+    super.frame = new JFrame("Select data for downstream analysis");
+    //Place window in centre of the screen
+    super.frame.setLocationRelativeTo(null);
+    pane = new JPanel(); 
+    super.frame.getContentPane().add(pane); 
+    pane.setLayout(new BorderLayout()); 
+
+    // Set up input data available for selection
+    listModel = new DefaultListModel();
+    for (int i = 0; i &lt; input.size(); i++)
+      listModel.addElement(input.get(i));
+    
+    selectedValues = values;
+
+    //Create the list and put it in a scroll pane
+    list = new JList(listModel);
+    list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+    list.setSelectedIndex(0);
+    list.addListSelectionListener(this);
+    list.setVisibleRowCount(10);
+    list.setSize(800,500);
+    list.setFixedCellHeight(20);
+
+    JScrollPane listScrollPane = new JScrollPane(list);
+
+    submitButton = new JButton(submitString);
+    submitButton.setActionCommand(submitString);
+    submitButton.addActionListener(this);
+
+    //Create a panel
+    JPanel buttonPane = new JPanel();
+    buttonPane.add(submitButton);
+    buttonPane.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+    pane.add(listScrollPane, BorderLayout.CENTER);
+    pane.add(buttonPane, BorderLayout.PAGE_END);
+
+    //frame.setSize(800,500);
+    frame.setVisible(true); 
+    frame.pack(); 
+  }
+
+  //This method is required by ListSelectionListener.
+  void valueChanged(ListSelectionEvent e)
+  {
+    if (!e.getValueIsAdjusting())
+    {
+      if (list.getSelectedIndex() == -1)
+      {
+        //No selection so disable fire button
+        submitButton.setEnabled(false);
+      }
+      else
+      {
+        //Selection made so enable the fire button.
+        submitButton.setEnabled(true);
+      }
+    }
+
+  }
+
+  // This method is called only if there is a valid selection
+  void actionPerformed(ActionEvent e)
+  {
+    ArrayList al = new ArrayList();
+
+    if (list.getSelectedIndices().length == 0)
+    {
+      // Nothing selected so disable firing
+      submitButton.setEnabled(false);
+    }
+    else
+    {
+      selectedItems = list.getSelectedIndices();
+      //System.out.println(selectedItems);
+      
+      for(int i = 0; i &lt; selectedItems.length; i++)
+      {
+        String str = listModel.elementAt(selectedItems[i]);
+        al.add(str);
+      }
+      
+      selectedValues.addToValues(al);
+      super.frame.dispose();
+
+    }
+  }
+
+  init(); 
+  return this; 
+}
+
+/**
+ * Wrapper for MultipleSelectWorkerGUI
+ */ 
+class WorkerWrapper extends Thread
+{
+  SelectedValues selectedValues;
+  ArrayList inputdata;
+
+  WorkerWrapper(ArrayList input, SelectedValues v)
+  {
+    inputdata = inputList;
+    selectedValues = v;
+  }
+
+  void run()
+  {
+    msw = MultipleSelectWorkerGUI(inputdata, selectedValues);
+  }
+}
+
+
+sv = new SelectedValues();
+wrapper = new WorkerWrapper(inputList, sv);
+wrapper.start();
+outputList = sv.getValues();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">inputList</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">outputList</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="data" boring="true">
+    <s:stringconstant>1,2,3,4,5</s:stringconstant>
+  </s:processor>
+  <s:processor name="split">
+    <s:defaults>
+      <s:default name="regex">,</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:link source="data:value" sink="split:string" />
+  <s:link source="selectData:outputList" sink="out" />
+  <s:link source="split:split" sink="selectData:inputList" />
+  <s:sink name="out" />
+</s:scufl>
+

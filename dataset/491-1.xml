@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:eb87e295-12bc-4e6c-bc58-5ddf31b66c28" author="Alan R Williams" title="Flatten list - two depth">The flatten_list service takes the list [[['a']], [['b']], [['c']], [['d']]] and, using the default flatten depth of 2, outputs the list [['a'], ['b'], ['c'], ['d'], ['e']].</s:workflowdescription>
+  <s:processor name="Beanshell_scripting_host" boring="true">
+    <s:beanshell>
+      <s:scriptvalue>make_sub_list (Object o) {
+List a = new ArrayList();
+a.add(o);
+List a_container = new ArrayList();
+a_container.add(a);
+return a_container;
+}
+
+out = new ArrayList();
+out.add(make_sub_list("a"));
+out.add(make_sub_list("b"));
+out.add(make_sub_list("c"));
+out.add(make_sub_list("d"));
+out.add(make_sub_list("e"));</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">out</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Flatten_list">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="Beanshell_scripting_host:out" sink="Flatten_list:inputlist" />
+  <s:link source="Flatten_list:outputlist" sink="out" />
+  <s:sink name="out">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/plain</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

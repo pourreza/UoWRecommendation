@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:b8278b1e-05a9-4332-b3b7-09984f42fb99" author="Alan R Williams" title="Extract elements from a list - extraction of nested lists">The extract_elements_from_a_list is passed the list [['a','b','c', 'd'], ['e','f','g','h'],['i','j','k','l'],['m','n','o','p']]  with fromIndex of 1 and toIndex of 3  and  depth 2, will output the list [['e','f','g','h'],['i','j','k','l']] as it is the outermost list i.e. that with depth 2 that is considered.</s:workflowdescription>
+  <s:processor name="Extract_elements_from_a_list">
+    <s:defaults>
+      <s:default name="fromindex">1</s:default>
+      <s:default name="toindex">3</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.SliceList
+      <s:extensions>
+        <s:slicelist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="a_b_c_d">
+    <s:defaults>
+      <s:default name="string">a,b,c,d</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="e_f_g_h">
+    <s:defaults>
+      <s:default name="string">e,f,g,h</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="i_j_k_l">
+    <s:defaults>
+      <s:default name="string">i,j,k,l</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="m_n_o_p">
+    <s:defaults>
+      <s:default name="string">m,n,o,p</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Create_two_deep_list">
+    <s:beanshell>
+      <s:scriptvalue>outList = new ArrayList();
+outList.add(in1);
+outList.add(in2);
+outList.add(in3);
+outList.add(in4);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">in1</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">in2</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">in3</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">in4</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">outList</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="Create_two_deep_list:outList" sink="Extract_elements_from_a_list:inputlist" />
+  <s:link source="a_b_c_d:split" sink="Create_two_deep_list:in1" />
+  <s:link source="e_f_g_h:split" sink="Create_two_deep_list:in2" />
+  <s:link source="i_j_k_l:split" sink="Create_two_deep_list:in3" />
+  <s:link source="m_n_o_p:split" sink="Create_two_deep_list:in4" />
+  <s:link source="Extract_elements_from_a_list:outputlist" sink="out" />
+  <s:sink name="out" />
+</s:scufl>
+

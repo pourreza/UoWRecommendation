@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:85187e42-e01e-4df8-803a-dbee10f0d9d7" author="Mikołaj Rybiński" title="asynchronous prism Web service">Asynchronous version of the Prism Web service. Results XML list is sent via email.</s:workflowdescription>
+  <s:processor name="asyncResultXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="asyncResult" name="asyncResult" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/wsdl}asyncResult">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="info" qname="&gt;asyncResult&gt;info" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="error" qname="&gt;asyncResult&gt;error" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="asyncPrismParamsCompactXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="asyncPrismParamsCompact" name="asyncPrismParamsCompact" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/wsdl}asyncPrismParamsCompact">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="model" qname="&gt;asyncPrismParamsCompact&gt;model" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="properties" qname="&gt;asyncPrismParamsCompact&gt;properties" />
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="FiniteValues" name="constantCompact" qname="&gt;asyncPrismParamsCompact&gt;constantCompact">
+              <s:elementtype>
+                <s:arraytype optional="false" unbounded="false" wrapped="true" typename="FiniteValues" name="ArrayOfdecimal" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/wsdl}FiniteValues">
+                  <s:elementtype>
+                    <s:basetype optional="false" unbounded="false" typename="decimal" name="" qname="{http://www.w3.org/2001/XMLSchema}decimal" />
+                  </s:elementtype>
+                </s:arraytype>
+              </s:elementtype>
+            </s:arraytype>
+            <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="&gt;asyncPrismParamsCompact&gt;email" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="setConstantCompactXmlList">
+    <s:beanshell>
+      <s:scriptvalue>source(new URL("http://bioputer.mimuw.edu.pl/tav4sb/workflows/setConstantCompactXmlList.bsh"));</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/xml')">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="asyncPrism">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://bioputer.mimuw.edu.pl/tav4sb/services/wsdl</s:wsdl>
+      <s:operation>asyncPrism</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="constants" sink="setConstantCompactXmlList:input" />
+  <s:link source="email" sink="asyncPrismParamsCompactXML:email" />
+  <s:link source="model" sink="asyncPrismParamsCompactXML:model" />
+  <s:link source="asyncPrismParamsCompactXML:output" sink="asyncPrism:asyncPrismParamsCompact" />
+  <s:link source="properties" sink="asyncPrismParamsCompactXML:properties" />
+  <s:link source="asyncPrism:asyncResult" sink="asyncResultXML:input" />
+  <s:link source="setConstantCompactXmlList:output" sink="asyncPrismParamsCompactXML:constantCompact" />
+  <s:link source="asyncResultXML:error" sink="error" />
+  <s:link source="asyncResultXML:info" sink="info" />
+  <s:source name="model">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/x-taverna-web-url</s:mimeType>
+      </s:mimeTypes>
+      <s:description>See Prism Web service.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="properties">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/x-taverna-web-url</s:mimeType>
+      </s:mimeTypes>
+      <s:description>See Prism Web service.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="constants">
+    <s:metadata>
+      <s:description>See Prism Web service.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="email">
+    <s:metadata>
+      <s:description>Email address to send the results to.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="info">
+    <s:metadata>
+      <s:description>PRISM job startup info, mutually exclusive with 'error' output.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="error">
+    <s:metadata>
+      <s:description>PRISM job startup error message, mutually exclusive with 'info' output.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

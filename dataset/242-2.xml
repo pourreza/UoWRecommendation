@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:d049d11a-a0d5-4b14-81f8-4304781a97ba" author="Franck Tanoh" title="Get weather information">Get the weather forcast of the day for you city. 
+Info display:  wind, visibility, temperature, sky conditions and pressure. 
+The default value is my home town. 
+To find out any supported city run the 'Get cities by country name' workflow</s:workflowdescription>
+  <s:processor name="CountryName" boring="true">
+    <s:stringconstant>Norway</s:stringconstant>
+  </s:processor>
+  <s:processor name="ExtractTemperature">
+    <s:defaults>
+      <s:default name="xpath">/*[local-name(.)='CurrentWeather']/*[local-name(.)='Temperature']</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="GetWeatherResult">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetWeatherResponse" name="parameters" qname="{http://www.webserviceX.NET}GetWeatherResponse">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="GetWeatherResult" qname="{http://www.webserviceX.NET}&gt;GetWeatherResponse&gt;GetWeatherResult" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="CountryAndCity">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetWeather" name="parameters" qname="{http://www.webserviceX.NET}GetWeather">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="CityName" qname="{http://www.webserviceX.NET}&gt;GetWeather&gt;CityName" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="CountryName" qname="{http://www.webserviceX.NET}&gt;GetWeather&gt;CountryName" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="GetWeather">
+    <s:description>Get weather report for all major cities around the world.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.webservicex.com/globalweather.asmx?WSDL</s:wsdl>
+      <s:operation>GetWeather</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="FindCitiesByCountry">
+    <s:workflow>
+      <s:xscufllocation>file:/C:/Users/Franck/Documents/OMII/myGrid/Taverna/myWorflow/Get%20cities%20by%20country%20nameUpdate.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="SelectFirstCities">
+    <s:beanshell>
+      <s:scriptvalue>List extract = list.subList(0,5);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">list</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">extract</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="CountryAndCity:output" sink="GetWeather:parameters" />
+  <s:link source="CountryName:value" sink="CountryAndCity:CountryName" />
+  <s:link source="CountryName:value" sink="FindCitiesByCountry:Country" />
+  <s:link source="FindCitiesByCountry:lotsOfCities" sink="SelectFirstCities:list" />
+  <s:link source="GetWeather:parameters" sink="GetWeatherResult:input" />
+  <s:link source="GetWeatherResult:GetWeatherResult" sink="ExtractTemperature:xml-text" />
+  <s:link source="SelectFirstCities:extract" sink="CountryAndCity:CityName" />
+  <s:link source="ExtractTemperature:nodelist" sink="outp2" />
+  <s:link source="GetWeatherResult:GetWeatherResult" sink="WeatherInfo" />
+  <s:sink name="WeatherInfo">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+        <s:mimeType>'text/plain'</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="outp2">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>l('text/plain')</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:eac8112c-29f3-4d6a-a48c-1b95a2dcf26f" author="" title="RSworkflow slide 32" />
+  <s:processor name="program" boring="true">
+    <s:stringconstant>blastp</s:stringconstant>
+  </s:processor>
+  <s:processor name="database" boring="true">
+    <s:stringconstant>SWISS</s:stringconstant>
+  </s:processor>
+  <s:processor name="Get_Protein_FASTA">
+    <s:local>net.sourceforge.taverna.scuflworkers.ncbi.ProteinFastaWorker</s:local>
+  </s:processor>
+  <s:processor name="searchSimple">
+    <s:description>Execute Blast</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/Blast.wsdl</s:wsdl>
+      <s:operation>searchSimple</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="Get_Protein_FASTA:outputText" sink="searchSimple:query" />
+  <s:link source="geneidentfier" sink="Get_Protein_FASTA:id" />
+  <s:link source="Get_Protein_FASTA:outputText" sink="fastaSequence" />
+  <s:link source="searchSimple:Result" sink="Blast_Report" />
+  <s:source name="geneidentfier" />
+  <s:sink name="Blast_Report" />
+  <s:sink name="fastaSequence" />
+</s:scufl>
+

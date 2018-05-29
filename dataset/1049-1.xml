@@ -1,0 +1,1115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:9aa028da-979a-4de7-963a-740d3f8b10c1" author="Achille Zappa" title="test-tp53_info_by_morpho" />
+  <s:processor name="String_Constant2" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="String_Constant3" boring="true">
+    <s:stringconstant>([A-Z0-9]*:)([0-9]*)</s:stringconstant>
+  </s:processor>
+  <s:processor name="dataset" boring="true">
+    <s:stringconstant>tp53_somatic</s:stringconstant>
+  </s:processor>
+  <s:processor name="query_field" boring="true">
+    <s:stringconstant>mor</s:stringconstant>
+  </s:processor>
+  <s:processor name="Split_string_2">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Remove_duplicate_strings">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringStripDuplicates</s:local>
+  </s:processor>
+  <s:processor name="Filter_list_3">
+    <s:defaults>
+      <s:default name="regex">([A-Z0-9]*) ([0-9]*)</s:default>
+      <s:default name="group">2</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="Filter_list_1">
+    <s:defaults>
+      <s:default name="regex">([A-Z0-9]*) ([0-9]*)</s:default>
+      <s:default name="group">2</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="Filter_list_2">
+    <s:defaults>
+      <s:default name="regex">([A-Z0-9]*) ([A-Z0-9]* [A-Z0-9]*)</s:default>
+      <s:default name="group">2</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="Split_string_">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Split_string_1">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Filter_list_">
+    <s:defaults>
+      <s:default name="group">2</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="filter_list1">
+    <s:beanshell>
+      <s:scriptvalue>import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+StringBuffer temp = new StringBuffer();
+String information="";
+// regular expression to extract only the sequence description
+Pattern pattern = Pattern.compile ("(Effect) (.(.(.)*)*)*");
+Matcher matcher = pattern.matcher(inputs);
+
+while(matcher.find()){
+	information=matcher.group(2);
+	temp.append(information);
+}
+
+// Output sequence description
+String result = temp.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">inputs</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">result</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="filter_list">
+    <s:beanshell>
+      <s:scriptvalue>import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+StringBuffer temp = new StringBuffer();
+String information="";
+// regular expression to extract only the sequence description
+Pattern pattern = Pattern.compile ("(Type) (.(.(.)*)*)*");
+Matcher matcher = pattern.matcher(inputs);
+
+while(matcher.find()){
+	information=matcher.group(2);
+	temp.append(information);
+}
+
+// Output sequence description
+String result = temp.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">inputs</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">result</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="count">
+    <s:description>Simple workflow to count the number of items in a list;</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:bc985989-2fee-4b0c-92b0-c5031adc6c85" author="Marco Roos" title="CountListElements">Simple workflow to count the number of items in a list</s:workflowdescription>
+        <s:processor name="CountListElements">
+          <s:beanshell>
+            <s:scriptvalue>count = list.size();</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="l('text/xml')">list</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">count</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:link source="list" sink="CountListElements:list" />
+        <s:link source="CountListElements:count" sink="count" />
+        <s:source name="list">
+          <s:metadata>
+            <s:description>(xml) list</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="count">
+          <s:metadata>
+            <s:description>number of elements counted</s:description>
+          </s:metadata>
+        </s:sink>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="count1">
+    <s:description>Simple workflow to count the number of items in a list;</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:bc985989-2fee-4b0c-92b0-c5031adc6c85" author="Marco Roos" title="CountListElements">Simple workflow to count the number of items in a list</s:workflowdescription>
+        <s:processor name="CountListElements">
+          <s:beanshell>
+            <s:scriptvalue>count = list.size();</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="l('text/xml')">list</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">count</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:link source="list" sink="CountListElements:list" />
+        <s:link source="CountListElements:count" sink="count" />
+        <s:source name="list">
+          <s:metadata>
+            <s:description>(xml) list</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="count">
+          <s:metadata>
+            <s:description>number of elements counted</s:description>
+          </s:metadata>
+        </s:sink>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="R_topo">
+    <s:description>It plots the distribution.</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:7c908eb7-6994-402a-b1cb-6d5f7beb443d" author="" title="Distributions">It plots the distribution.</s:workflowdescription>
+        <s:processor name="delist_strings">
+          <s:description>From the list format into a delimited format.</s:description>
+          <s:defaults>
+            <s:default name="seperator">,</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+        </s:processor>
+        <s:processor name="pie_distr">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## PiePlot distribution 
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.matrix(devnum, mode="integer")
+
+## plot the data
+png(dist_plot, width=800);
+
+#png(pie_, width=800);
+
+#dist_plot &lt;- hist(dev_num,col="red",main="Distribution of ",xlab="Number of ",ylab="Pro")
+
+datapoints &lt;- as.table(summary.factor(dev_num))
+#dist_plot &lt;- plot(datapoints,xlim=range(dev_num),col="blue",type="o",main="Distribution of ",xlab="Number of ",ylab="Number of ",pch=20)
+
+#dist_plot &lt;- pie(datapoints, col=rainbow(length(dev_num), start=0.1, end=0.8), main="Pie Chart", clockwise=T)
+#,names.arg=names(datapoints)
+dist_plot &lt;- pie(datapoints, col=rainbow(length(datapoints), start=0.05, end=0.95), labels=NA, edges = 200, radius = 0.8, main="Pie Chart", clockwise=T); legend("topright", legend=row.names(datapoints), cex=1.4, bty="n", pch=18, pt.cex=1.9, col=rainbow(length(datapoints), start=0.1, end=0.8), ncol=1)
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">dist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="barplot">
+          <s:description>Bar_Plot</s:description>
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## Plot distribution 
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.matrix(devnum, mode="integer")
+
+## plot the data
+png(dist_plot, width=800);
+
+datapoints &lt;- as.table(summary.factor(dev_num))
+
+#,names.arg=names(datapoints)
+dist_plot &lt;- barplot(datapoints, col=rainbow(length(dev_num)))
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">dist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="n_list">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            devnum &lt;- read.csv(textConnection(dev_inp),header=FALSE,row.names=NULL)
+dev_num &lt;- as.matrix(devnum, mode="integer")
+
+points &lt;- as.matrix(summary.factor(dev_num))
+
+n_list &lt;- paste(capture.output(points), collapse="\n")
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_inp</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">n_list</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:link source="delist_strings:concatenated" sink="barplot:dev_numbers" />
+        <s:link source="delist_strings:concatenated" sink="pie_distr:dev_numbers" />
+        <s:link source="i" sink="delist_strings:stringlist" />
+        <s:link source="delist_strings:concatenated" sink="n_list:dev_inp" />
+        <s:link source="barplot:dist_plot" sink="bar" />
+        <s:link source="n_list:n_list" sink="n_list" />
+        <s:link source="pie_distr:dist_plot" sink="pie" />
+        <s:source name="i" />
+        <s:sink name="pie" />
+        <s:sink name="bar" />
+        <s:sink name="n_list" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="R_type">
+    <s:description>It plots the distribution.</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:7c908eb7-6994-402a-b1cb-6d5f7beb443d" author="" title="Distributions">It plots the distribution.</s:workflowdescription>
+        <s:processor name="delist_strings">
+          <s:description>From the list format into a delimited format.</s:description>
+          <s:defaults>
+            <s:default name="seperator">,</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+        </s:processor>
+        <s:processor name="n_list">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            devnum &lt;- read.csv(textConnection(dev_inp),header=FALSE,row.names=NULL)
+dev_num &lt;- as.matrix(devnum, mode="integer")
+
+points &lt;- as.matrix(summary.factor(dev_num))
+
+n_list &lt;- paste(capture.output(points), collapse="\n")
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_inp</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">n_list</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="pie_distr">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## Pie Plot distribution 
+
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.matrix(devnum, mode="integer")
+
+## plot the data
+png(dist_plot, width=800);
+
+#png(pie_, width=800);
+
+#dist_plot &lt;- hist(dev_num,col="red",main="Distribution of Number of Codons",xlab="Number of ",ylab="Projects")
+
+datapoints &lt;- as.table(summary.factor(dev_num))
+#dist_plot &lt;- plot(datapoints,xlim=range(dev_num),col="blue",type="o",main="Distribution of Number of Codons",xlab="Number of Codons",ylab="Number of nodes",pch=20)
+
+#dist_plot &lt;- pie(datapoints, col=rainbow(length(dev_num), start=0.1, end=0.8), main="Pie Chart", clockwise=T)
+#,names.arg=names(datapoints)
+dist_plot &lt;- pie(datapoints, col=rainbow(length(datapoints), start=0.05, end=0.95), labels=NA, edges = 200, radius = 0.8, main="Pie Chart", clockwise=T); legend("topright", legend=row.names(datapoints), cex=1.4, bty="n", pch=18, pt.cex=1.9, col=rainbow(length(datapoints), start=0.1, end=0.8), ncol=1)
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">dist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="barplot">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ##BarPlot distribution 
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.matrix(devnum, mode="integer")
+
+## plot the data
+png(dist_plot, width=800);
+
+datapoints &lt;- as.table(summary.factor(dev_num))
+#,names.arg=names(datapoints)
+dist_plot &lt;- barplot(datapoints, col=rainbow(length(dev_num)))
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">dist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:link source="delist_strings:concatenated" sink="barplot:dev_numbers" />
+        <s:link source="delist_strings:concatenated" sink="pie_distr:dev_numbers" />
+        <s:link source="i" sink="delist_strings:stringlist" />
+        <s:link source="delist_strings:concatenated" sink="n_list:dev_inp" />
+        <s:link source="barplot:dist_plot" sink="bar" />
+        <s:link source="n_list:n_list" sink="n_list" />
+        <s:link source="pie_distr:dist_plot" sink="pie" />
+        <s:source name="i" />
+        <s:sink name="pie" />
+        <s:sink name="bar" />
+        <s:sink name="n_list" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="R_effect">
+    <s:description>It plots the distribution.</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:7c908eb7-6994-402a-b1cb-6d5f7beb443d" author="" title="Distributions">It plots the distribution.</s:workflowdescription>
+        <s:processor name="delist_strings">
+          <s:description>From the list format into a delimited format.</s:description>
+          <s:defaults>
+            <s:default name="seperator">,</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+        </s:processor>
+        <s:processor name="n_list">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            devnum &lt;- read.csv(textConnection(dev_inp),header=FALSE,row.names=NULL)
+dev_num &lt;- as.matrix(devnum, mode="integer")
+
+points &lt;- as.matrix(summary.factor(dev_num))
+
+n_list &lt;- paste(capture.output(points), collapse="\n")
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_inp</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">n_list</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="barplot">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## Plot distribution 
+
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.matrix(devnum, mode="integer")
+
+## plot the data
+png(dist_plot, width=800);
+
+datapoints &lt;- as.table(summary.factor(dev_num))
+
+#,names.arg=names(datapoints)
+dist_plot &lt;- barplot(datapoints, col=rainbow(length(dev_num)))
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">dist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="pie_distr">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## PiePlot distribution 
+
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.matrix(devnum, mode="integer")
+
+## plot the data
+png(dist_plot, width=800);
+
+#png(pie_, width=800);
+
+#dist_plot &lt;- hist(dev_num,col="red",main="Distribution of ",xlab="Number of ",ylab="Pro")
+
+datapoints &lt;- as.table(summary.factor(dev_num))
+#dist_plot &lt;- plot(datapoints,xlim=range(dev_num),col="blue",type="o",main="Distribution of ",xlab="Number of ",ylab="Number of ",pch=20)
+
+#dist_plot &lt;- pie(datapoints, col=rainbow(length(dev_num), start=0.1, end=0.8), main="Pie Chart", clockwise=T)
+#,names.arg=names(datapoints)
+dist_plot &lt;- pie(datapoints, col=rainbow(length(datapoints), start=0.05, end=0.95), labels=NA, edges = 200, radius = 0.8, main="Pie Chart", clockwise=T); legend("topright", legend=row.names(datapoints), cex=1.4, bty="n", pch=18, pt.cex=1.9, col=rainbow(length(datapoints), start=0.1, end=0.8), ncol=1)
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">dist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:link source="delist_strings:concatenated" sink="barplot:dev_numbers" />
+        <s:link source="delist_strings:concatenated" sink="pie_distr:dev_numbers" />
+        <s:link source="i" sink="delist_strings:stringlist" />
+        <s:link source="delist_strings:concatenated" sink="n_list:dev_inp" />
+        <s:link source="barplot:dist_plot" sink="bar" />
+        <s:link source="n_list:n_list" sink="n_list" />
+        <s:link source="pie_distr:dist_plot" sink="pie" />
+        <s:source name="i" />
+        <s:sink name="pie" />
+        <s:sink name="bar" />
+        <s:sink name="n_list" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="R_exon">
+    <s:description>It plots the distribution.</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:7c908eb7-6994-402a-b1cb-6d5f7beb443d" author="" title="Distributions">It plots the distribution.</s:workflowdescription>
+        <s:processor name="delist_numbers">
+          <s:description>From the list format into a delimited format.</s:description>
+          <s:defaults>
+            <s:default name="seperator">,</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+        </s:processor>
+        <s:processor name="hist_distr">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## Plot distribution of numbers of Exons
+
+## read the data
+devnum2 &lt;- read.csv(textConnection(dev_numbers2),header=FALSE,row.names=NULL)
+dev_num2 &lt;- as.vector(devnum2, mode="integer")
+
+## plot the data
+png(hist_plot, width=800);
+
+
+hist_plot &lt;- hist(dev_num2,col="red",main="Distribution of Number of Exons",xlab="Number of Exons",ylab="Projects")
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers2</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">hist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="plot_distribution">
+          <s:description>Plots the distributions on a straight scale.</s:description>
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## Plot distribution of numbers of exons
+
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+## plot the data
+png(dist_plot, width=800);
+
+#png(pie_, width=800);
+
+#dist_plot &lt;- hist(dev_num,col="red",main="Distribution of Number of Exons",xlab="Number of ",ylab="Projects")
+
+datapoints &lt;- as.table(summary.factor(dev_num))
+dist_plot &lt;- plot(datapoints,xlim=range(dev_num),col="blue",type="o",main="Distribution of Number of Exons",xlab="Number of Exons",ylab="Number of nodes",pch=20)
+
+#pie_ &lt;- pie(datapoints, col=rainbow(length(dev_num), start=0.1, end=0.8), main="Pie Chart", clockwise=T)
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">dist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="pie_distr">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## PiePlot distribution of numbers of Exons
+
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+## plot the data
+png(dist_plot, width=800);
+
+#png(pie_, width=800);
+
+#dist_plot &lt;- hist(dev_num,col="red",main="Distribution of Number of Exons",xlab="Number of ",ylab="Projects")
+
+datapoints &lt;- as.table(summary.factor(dev_num))
+#dist_plot &lt;- plot(datapoints,xlim=range(dev_num),col="blue",type="o",main="Distribution of Number of Exons",xlab="Number of Exons",ylab="Number of nodes",pch=20)
+
+#dist_plot &lt;- pie(datapoints, col=rainbow(length(dev_num), start=0.1, end=0.8), main="Pie Chart", clockwise=T)
+
+dist_plot &lt;- pie(datapoints, col=rainbow(length(datapoints), start=0.05, end=0.95), labels=NA, edges = 200, radius = 0.8, main="Pie Chart", clockwise=T); legend("topright", legend=row.names(datapoints), cex=1.4, bty="n", pch=18, pt.cex=1.9, col=rainbow(length(datapoints), start=0.1, end=0.8), ncol=1)
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">dist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="barplot">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## BarPlot distribution of numbers of Exons
+
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+## plot the data
+png(dist_plot, width=800);
+
+datapoints &lt;- as.table(summary.factor(dev_num))
+
+dist_plot &lt;- barplot(datapoints, col=rainbow(length(dev_num)))
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">dist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="log_plot">
+          <s:description>Plots the distribution on a log-log scale.</s:description>
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## LogPlot distribution of numbers of Exons
+
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+## plot the data
+png(log_plot, width=800);
+datapoints &lt;- as.vector(summary.factor(dev_num))
+
+log_plot &lt;- plot(datapoints,log="xy",col="blue",type="o",xlim=c(1,1000),main="Distribution of Number of Exons",xlab="Number of Exons",ylab="Number of nodes",pch=20)
+
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">log_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="output_points">
+          <s:description>Produces a list of the data points for plotting with other software.</s:description>
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ##
+
+devnum &lt;- read.csv(textConnection(dev_nums),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+points &lt;- as.matrix(summary.factor(dev_num))
+
+point_list &lt;- paste(capture.output(points), collapse="\n")
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_nums</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">point_list</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:link source="delist_numbers:concatenated" sink="hist_distr:dev_numbers2" />
+        <s:link source="delist_numbers:concatenated" sink="log_plot:dev_numbers" />
+        <s:link source="delist_numbers:concatenated" sink="output_points:dev_nums" />
+        <s:link source="delist_numbers:concatenated" sink="pie_distr:dev_numbers" />
+        <s:link source="delist_numbers:concatenated" sink="plot_distribution:dev_numbers" />
+        <s:link source="i" sink="delist_numbers:stringlist" />
+        <s:link source="barplot:dist_plot" sink="bar" />
+        <s:link source="delist_numbers:concatenated" sink="barplot:dev_numbers" />
+        <s:link source="hist_distr:hist_plot" sink="hist" />
+        <s:link source="log_plot:log_plot" sink="LogPlot" />
+        <s:link source="output_points:point_list" sink="PointList" />
+        <s:link source="pie_distr:dist_plot" sink="pie" />
+        <s:link source="plot_distribution:dist_plot" sink="DistributionPlot" />
+        <s:source name="i" />
+        <s:sink name="DistributionPlot">
+          <s:metadata>
+            <s:description>PNG plot of the distribution of developers to projects.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="LogPlot">
+          <s:metadata>
+            <s:description>PNG graphic plot of log-log distribution of developers to projects.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="PointList">
+          <s:metadata>
+            <s:description>List of points for plotting in other software.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="hist" />
+        <s:sink name="pie" />
+        <s:sink name="bar" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="R_codons">
+    <s:description>It plots the distribution.</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:7c908eb7-6994-402a-b1cb-6d5f7beb443d" author="" title="Distributions">It plots the distribution.</s:workflowdescription>
+        <s:processor name="delist_numbe">
+          <s:description>From the list format into a delimited format.</s:description>
+          <s:defaults>
+            <s:default name="seperator">,</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+        </s:processor>
+        <s:processor name="barplot">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## BarPlot distribution of numbers of codons
+
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+## plot the data
+png(dist_plot, width=800);
+
+datapoints &lt;- as.table(summary.factor(dev_num))
+
+dist_plot &lt;- barplot(datapoints, col=rainbow(length(dev_num)))
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">dist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="plot_distribution">
+          <s:description>Plots the distributions on a straight scale.</s:description>
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## Plot distribution of numbers of codons
+
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+## plot the data
+png(dist_plot, width=800);
+
+#png(pie_, width=800);
+
+#dist_plot &lt;- hist(dev_num,col="red",main="Distribution of Number of Codons",xlab="Number of ",ylab="Projects")
+
+datapoints &lt;- as.table(summary.factor(dev_num))
+dist_plot &lt;- plot(datapoints,xlim=range(dev_num),col="blue",type="o",main="Distribution of Number of Codons",xlab="Number of Codons",ylab="Number of nodes",pch=20)
+
+#pie_ &lt;- pie(datapoints, col=rainbow(length(dev_num), start=0.1, end=0.8), main="Pie Chart", clockwise=T)
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">dist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="log_plot">
+          <s:description>Plots the distribution on a log-log scale.</s:description>
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## LogPlot distribution 
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+## plot the data
+png(log_plot, width=800);
+datapoints &lt;- as.vector(summary.factor(dev_num))
+
+log_plot &lt;- plot(datapoints,log="xy",col="blue",type="o",xlim=c(1,1000),main="Distribution of Number of Codons",xlab="Number of Codons",ylab="Numbernodes",pch=20)
+
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">log_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="pie_distr">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## PiePlot distribution of numbers of codons
+
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+## plot the data
+png(dist_plot, width=800);
+
+#png(pie_, width=800);
+
+#dist_plot &lt;- hist(dev_num,col="red",main="Distribution of Number of Codons",xlab="Number of ",ylab="Projects")
+
+datapoints &lt;- as.table(summary.factor(dev_num))
+#dist_plot &lt;- plot(datapoints,xlim=range(dev_num),col="blue",type="o",main="Distribution of Number of Codons",xlab="Number of Codons",ylab="Number of nodes",pch=20)
+
+#dist_plot &lt;- pie(datapoints, col=rainbow(length(dev_num), start=0.1, end=0.8), main="Pie Chart", clockwise=T)
+
+dist_plot &lt;- pie(datapoints, col=rainbow(length(datapoints), start=0.05, end=0.95), labels=NA, edges = 200, radius = 0.8, main="Pie Chart", clockwise=T); legend("topright", legend=row.names(datapoints), cex=1.4, bty="n", pch=18, pt.cex=1.9, col=rainbow(length(datapoints), start=0.1, end=0.8), ncol=1)
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">dist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="output_points">
+          <s:description>Produces a list of the data points for plotting with other software.</s:description>
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ##
+
+devnum &lt;- read.csv(textConnection(dev_nums),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+points &lt;- as.matrix(summary.factor(dev_num))
+
+point_list &lt;- paste(capture.output(points), collapse="\n")
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_nums</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">point_list</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:processor name="hist_distr">
+          <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+            ## Plot distribution of numbers of codons
+
+## read the data
+devnum2 &lt;- read.csv(textConnection(dev_numbers2),header=FALSE,row.names=NULL)
+dev_num2 &lt;- as.vector(devnum2, mode="integer")
+
+## plot the data
+png(hist_plot, width=800);
+
+
+hist_plot &lt;- hist(dev_num2,col="red",main="Distribution of Number of Codons",xlab="Number of ",ylab="Projects")
+
+dev.off()
+            <s:rshellInputPortList>
+              <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers2</s:rshellInputPort>
+            </s:rshellInputPortList>
+            <s:rshellOutputPortList>
+              <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">hist_plot</s:rshellOutputPort>
+            </s:rshellOutputPortList>
+          </s:rshell>
+        </s:processor>
+        <s:link source="delist_numbe:concatenated" sink="hist_distr:dev_numbers2" />
+        <s:link source="delist_numbe:concatenated" sink="log_plot:dev_numbers" />
+        <s:link source="delist_numbe:concatenated" sink="output_points:dev_nums" />
+        <s:link source="delist_numbe:concatenated" sink="pie_distr:dev_numbers" />
+        <s:link source="delist_numbe:concatenated" sink="plot_distribution:dev_numbers" />
+        <s:link source="i" sink="delist_numbe:stringlist" />
+        <s:link source="barplot:dist_plot" sink="bar" />
+        <s:link source="delist_numbe:concatenated" sink="barplot:dev_numbers" />
+        <s:link source="hist_distr:hist_plot" sink="hist" />
+        <s:link source="log_plot:log_plot" sink="LogPlot" />
+        <s:link source="output_points:point_list" sink="PointList" />
+        <s:link source="pie_distr:dist_plot" sink="pie" />
+        <s:link source="plot_distribution:dist_plot" sink="DistributionPlot" />
+        <s:source name="i" />
+        <s:sink name="DistributionPlot">
+          <s:metadata>
+            <s:description>PNG plot of the distribution of developers to projects.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="LogPlot">
+          <s:metadata>
+            <s:description>PNG graphic plot of log-log distribution of developers to projects.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="PointList">
+          <s:metadata>
+            <s:description>List of points for plotting in other software.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="hist" />
+        <s:sink name="pie" />
+        <s:sink name="bar" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="getP53_Mutations">
+    <s:description>Get tp53 gene mutations by ids from TP53 IARC database (see http://srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getP53MutationsByIds</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53_Ids">
+    <s:description>Get tp53 ids by field label from one of the IARC TP53 databases (see srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/p53_getz_services.getP53IdsByField</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53_Intron">
+    <s:description>Get any tp53 field value starting  by another field value choosen  from one of the IARC TP53 databases (see srs.o2i.it/srs71/)</s:description>
+    <s:defaults>
+      <s:default name="dataset">tp53_somatic</s:default>
+      <s:default name="field">mid</s:default>
+      <s:default name="return_field">intron</s:default>
+    </s:defaults>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/p53_getz_services.getP53FieldByField</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53_Topography">
+    <s:description>Get any tp53 field value starting  by another field value choosen  from one of the IARC TP53 databases (see srs.o2i.it/srs71/)</s:description>
+    <s:defaults>
+      <s:default name="return_field">sht</s:default>
+    </s:defaults>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/p53_getz_services.getP53FieldByField</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53_Effect">
+    <s:description>Get any tp53 field value starting  by another field value choosen  from one of the IARC TP53 databases (see srs.o2i.it/srs71/)</s:description>
+    <s:defaults>
+      <s:default name="dataset">tp53_somatic</s:default>
+      <s:default name="field">mid</s:default>
+      <s:default name="return_field">effect</s:default>
+    </s:defaults>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/p53_getz_services.getP53FieldByField</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53_Codons">
+    <s:description>Get any tp53 field value starting  by another field value choosen  from one of the IARC TP53 databases (see srs.o2i.it/srs71/)</s:description>
+    <s:defaults>
+      <s:default name="return_field">cno</s:default>
+    </s:defaults>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/p53_getz_services.getP53FieldByField</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53_Mut_Type">
+    <s:description>Get any tp53 field value starting  by another field value choosen  from one of the IARC TP53 databases (see srs.o2i.it/srs71/)</s:description>
+    <s:defaults>
+      <s:default name="dataset">tp53_somatic</s:default>
+      <s:default name="field">mid</s:default>
+      <s:default name="return_field">typ</s:default>
+    </s:defaults>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/p53_getz_services.getP53FieldByField</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53_Exon">
+    <s:description>Get any tp53 field value starting  by another field value choosen  from one of the IARC TP53 databases (see srs.o2i.it/srs71/)</s:description>
+    <s:defaults>
+      <s:default name="dataset">tp53_somatic</s:default>
+      <s:default name="field">mid</s:default>
+      <s:default name="return_field">exon</s:default>
+    </s:defaults>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/p53_getz_services.getP53FieldByField</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="Filter_list_1:filteredlist" sink="R_codons:i" />
+  <s:link source="Filter_list_2:filteredlist" sink="R_topo:i" />
+  <s:link source="Remove_duplicate_strings:strippedlist" sink="count:list" />
+  <s:link source="Split_string_1:split" sink="Filter_list_:stringlist" />
+  <s:link source="Split_string_1:split" sink="count1:list" />
+  <s:link source="Split_string_2:split" sink="Filter_list_2:stringlist" />
+  <s:link source="Split_string_:split" sink="Filter_list_1:stringlist" />
+  <s:link source="Split_string_:split" sink="Remove_duplicate_strings:stringlist" />
+  <s:link source="String_Constant2:value" sink="Split_string_1:regex" />
+  <s:link source="String_Constant2:value" sink="Split_string_2:regex" />
+  <s:link source="String_Constant2:value" sink="Split_string_:regex" />
+  <s:link source="String_Constant3:value" sink="Filter_list_:regex" />
+  <s:link source="dataset:value" sink="getP53_Codons:dataset" />
+  <s:link source="dataset:value" sink="getP53_Ids:dataset" />
+  <s:link source="dataset:value" sink="getP53_Topography:dataset" />
+  <s:link source="query" sink="getP53_Codons:query" />
+  <s:link source="query" sink="getP53_Ids:query" />
+  <s:link source="Filter_list_3:filteredlist" sink="R_exon:i" />
+  <s:link source="Filter_list_:filteredlist" sink="getP53_Effect:query" />
+  <s:link source="Filter_list_:filteredlist" sink="getP53_Exon:query" />
+  <s:link source="Filter_list_:filteredlist" sink="getP53_Intron:query" />
+  <s:link source="Filter_list_:filteredlist" sink="getP53_Mut_Type:query" />
+  <s:link source="Filter_list_:filteredlist" sink="getP53_Mutations:id" />
+  <s:link source="filter_list1:result" sink="R_effect:i" />
+  <s:link source="filter_list:result" sink="R_type:i" />
+  <s:link source="getP53_Codons:result" sink="Split_string_:string" />
+  <s:link source="getP53_Effect:result" sink="filter_list1:inputs" />
+  <s:link source="getP53_Exon:result" sink="Filter_list_3:stringlist" />
+  <s:link source="getP53_Ids:result" sink="Split_string_1:string" />
+  <s:link source="getP53_Mut_Type:result" sink="filter_list:inputs" />
+  <s:link source="getP53_Topography:result" sink="Split_string_2:string" />
+  <s:link source="query" sink="getP53_Topography:query" />
+  <s:link source="Filter_list_2:filteredlist" sink="test2" />
+  <s:link source="Filter_list_:filteredlist" sink="o" />
+  <s:link source="R_codons:DistributionPlot" sink="Codons_distr" />
+  <s:link source="R_codons:LogPlot" sink="Codons_log" />
+  <s:link source="R_codons:PointList" sink="Codons_summ" />
+  <s:link source="R_codons:bar" sink="bar" />
+  <s:link source="R_codons:hist" sink="hist" />
+  <s:link source="R_codons:pie" sink="pie" />
+  <s:link source="R_effect:bar" sink="effect_bar" />
+  <s:link source="R_effect:n_list" sink="effect_list" />
+  <s:link source="R_effect:pie" sink="effect_pie" />
+  <s:link source="R_exon:DistributionPlot" sink="Exons_distr" />
+  <s:link source="R_exon:LogPlot" sink="Exons_log" />
+  <s:link source="R_exon:PointList" sink="Exons_summ" />
+  <s:link source="R_exon:bar" sink="exons_bar" />
+  <s:link source="R_exon:hist" sink="exons_hist" />
+  <s:link source="R_exon:pie" sink="exons_pie" />
+  <s:link source="R_topo:bar" sink="topo_bar" />
+  <s:link source="R_topo:n_list" sink="topo_list" />
+  <s:link source="R_topo:pie" sink="topo_pie" />
+  <s:link source="R_type:bar" sink="bar_type" />
+  <s:link source="R_type:n_list" sink="type_list" />
+  <s:link source="R_type:pie" sink="pie_type" />
+  <s:link source="count1:count" sink="c2" />
+  <s:link source="count:count" sink="c1" />
+  <s:link source="filter_list:result" sink="filt_type" />
+  <s:link source="query_field:value" sink="getP53_Codons:field" />
+  <s:link source="query_field:value" sink="getP53_Ids:field" />
+  <s:link source="query_field:value" sink="getP53_Topography:field" />
+  <s:link source="getP53_Codons:result" sink="Codons_num" />
+  <s:link source="getP53_Effect:result" sink="effect" />
+  <s:link source="getP53_Exon:result" sink="exon" />
+  <s:link source="getP53_Ids:result" sink="Som_Mut_IDs" />
+  <s:link source="getP53_Intron:result" sink="intron" />
+  <s:link source="getP53_Mut_Type:result" sink="type" />
+  <s:link source="getP53_Mutations:result" sink="mut" />
+  <s:link source="getP53_Topography:result" sink="test" />
+  <s:source name="query" />
+  <s:sink name="Som_Mut_IDs" />
+  <s:sink name="Codons_num" />
+  <s:sink name="c1" />
+  <s:sink name="c2" />
+  <s:sink name="o" />
+  <s:sink name="mut" />
+  <s:sink name="Codons_distr" />
+  <s:sink name="Codons_log" />
+  <s:sink name="Codons_summ" />
+  <s:sink name="hist" />
+  <s:sink name="pie" />
+  <s:sink name="bar" />
+  <s:sink name="test" />
+  <s:sink name="test2" />
+  <s:sink name="type" />
+  <s:sink name="effect" />
+  <s:sink name="intron" />
+  <s:sink name="exon" />
+  <s:sink name="Exons_distr" />
+  <s:sink name="Exons_log" />
+  <s:sink name="Exons_summ" />
+  <s:sink name="exons_bar" />
+  <s:sink name="exons_pie" />
+  <s:sink name="exons_hist" />
+  <s:sink name="topo_bar" />
+  <s:sink name="topo_pie" />
+  <s:sink name="filt_type" />
+  <s:sink name="bar_type" />
+  <s:sink name="pie_type" />
+  <s:sink name="type_list" />
+  <s:sink name="topo_list" />
+  <s:sink name="effect_pie" />
+  <s:sink name="effect_bar" />
+  <s:sink name="effect_list" />
+  <s:coordination name="getP53FieldByField1_BLOCKON_getP53FieldByField">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>getP53_Codons</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>getP53_Topography</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="getP53IdsByField_BLOCKON_getP53FieldByField1">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>getP53_Topography</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>getP53_Ids</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="getP53FieldByField2_BLOCKON_getP53FieldByField1">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>getP53_Topography</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>getP53_Mut_Type</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="getP53FieldByField3_BLOCKON_getP53FieldByField2">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>getP53_Mut_Type</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>getP53_Effect</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="getP53FieldByField5_BLOCKON_getP53FieldByField4">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>getP53_Intron</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>getP53_Exon</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="getP53FieldByField4_BLOCKON_getP53FieldByField3">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>getP53_Effect</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>getP53_Intron</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="getP53MutationsByIds_BLOCKON_getP53FieldByField5">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>getP53_Exon</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>getP53_Mutations</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

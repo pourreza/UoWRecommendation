@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:e76467e0-81f5-4732-805f-bc9f3d7da30f" author="Alan R Williams" title="Write text file - overwriting content">The beanshell creates an empty temporary file.  The filepath to the temporary file is then passed to the Write_text_file A service which writes the string 'hello' into the file.  After service A has run, service B writes 'goodbye' into the file.  The file is then read by the Read_Text_File service and its content, 'goodbye', output by the workflow.</s:workflowdescription>
+  <s:processor name="Create_temporary_file">
+    <s:beanshell>
+      <s:scriptvalue>File temp = File.createTempFile("taverna", "txt");
+
+temp.deleteOnExit();
+
+out = temp.getCanonicalPath();</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">out</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Read_Text_File">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="Write_Text_File_B">
+    <s:defaults>
+      <s:default name="filecontents">goodbye</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileWriter</s:local>
+  </s:processor>
+  <s:processor name="Write_Text_File_A">
+    <s:defaults>
+      <s:default name="filecontents" />
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileWriter</s:local>
+  </s:processor>
+  <s:link source="Create_temporary_file:out" sink="Read_Text_File:fileurl" />
+  <s:link source="Create_temporary_file:out" sink="Write_Text_File_A:outputFile" />
+  <s:link source="Create_temporary_file:out" sink="Write_Text_File_B:outputFile" />
+  <s:link source="Read_Text_File:filecontents" sink="out" />
+  <s:sink name="out" />
+  <s:coordination name="Write_Text_File1_BLOCKON_Write_Text_File">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Write_Text_File_A</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Write_Text_File_B</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="Read_Text_File_BLOCKON_Write_Text_File1">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Write_Text_File_B</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Read_Text_File</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

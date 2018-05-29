@@ -1,0 +1,593 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:1284a957-6ffd-4c8b-b0a9-2b90697d1427" author="Mariana de Oliveira Braga Teixeira Monteiro" title="Workflow for Protein Sequence Analysis">This workflow performs a generic protein sequence analysis. In order to do that a novel protein sequence enters into the software along with a list of known protein identifiers chosen by the biologist to perform a homology search, followed by a multiple sequence alignment and finally a phylogenetic analysis.</s:workflowdescription>
+  <s:processor name="Fail_if_false_DNA">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+  </s:processor>
+  <s:processor name="Fail_if_false_Protein">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+  </s:processor>
+  <s:processor name="Not_Protein_Sequence" boring="true">
+    <s:stringconstant>It is not a Protein Sequence, because it does not correspond to the 20 amino acid letters!</s:stringconstant>
+  </s:processor>
+  <s:processor name="Get_Protein_FASTA">
+    <s:local>net.sourceforge.taverna.scuflworkers.ncbi.ProteinFastaWorker</s:local>
+  </s:processor>
+  <s:processor name="Is_DNA_RNA" boring="true">
+    <s:stringconstant>It is a DNA or RNA sequence! This program does not accept it. Please enter a Protein sequence.</s:stringconstant>
+  </s:processor>
+  <s:processor name="Fail_if_true_Protein">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+  </s:processor>
+  <s:processor name="FlattenImage">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Fail_if_true_DNA">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+  </s:processor>
+  <s:processor name="Split_by_newline">
+    <s:defaults>
+      <s:default name="regex">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="MergeString">
+    <s:defaults>
+      <s:default name="seperator" />
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="MergeUserList">
+    <s:defaults>
+      <s:default name="seperator" />
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="Condition_Protein">
+    <s:beanshell>
+      <s:scriptvalue>/* Verifying if the sequence entered by the user is a Protein according to the 20 amino acids.
+Input: sequence
+Output: condition
+*/
+StringBuffer temp= new StringBuffer();
+
+// setting the variable as true
+boolean isDNARNA = true; 
+char ch; 
+
+// Stting the sequence in one line without spaces and the character to upper case
+String seqNoLine = sequence.replaceAll("\n",""); 
+String seq = seqNoLine.toUpperCase(); 
+int seqSize = seq.length();
+
+// Verifying if it is a Protein sequence according to the 20 amino acids letters
+for (int i=0; i&lt;seqSize; i++){ 
+ch = seq.charAt(i); 
+if(ch!=('A')&amp;&amp;ch!=('C')&amp;&amp;ch!=('D')&amp;&amp;ch!=('E')&amp;&amp;ch!=('F')&amp;&amp;ch!=('G')&amp;&amp;ch!=('H')&amp;&amp;ch!=('I')&amp;&amp;ch!=('K')&amp;&amp;ch!=('L')&amp;&amp;ch!=('M')&amp;&amp;ch!=('N')&amp;&amp;ch!=('P')&amp;&amp;ch!=('Q')&amp;&amp;ch!=('R')&amp;&amp;ch!=('S')&amp;&amp;ch!=('T')&amp;&amp;ch!=('V')&amp;&amp;ch!=('W')&amp;&amp;ch!=('Y')){
+ 
+		isDNARNA = false; 
+break; 
+	}
+} 
+
+/* If it is a protein sequence the output will have the word “true”
+If it is not a protein sequence the output will have the word “false”; the condition is going to be verified afterwards;
+*/
+if (isDNARNA){ 
+	temp.append("true"); 
+} 
+else{ 
+	temp.append("false"); 
+} 
+String condition = temp.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">sequence</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">condition</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="toLowerCase">
+    <s:beanshell>
+      <s:scriptvalue>/*As the process for the clustering method has to be entered in lower case letter, this will set the user input as lower case letter
+Input: user input (letter)
+Output: output in lower case letter
+*/
+String output = input.toLowerCase();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="extract_number_sequences">
+    <s:beanshell>
+      <s:scriptvalue>/* It will accept all the sequences: the query, the ones from the GI identifiers and finally from BLAST and it will extract 35 sequences according to this order if the number of sequences is more or equal than this number.
+Input: insertSeq string with all sequences in FASTA format and with a
+ specific order
+Output: result string with 35 sequences or less
+*/
+
+// Extract 35 Sequences if the number of sequences is greater than 35
+StringBuffer temp= new StringBuffer();
+String [] lines = insertSeq.split("&gt;");
+int linesSize = lines.length;
+
+if (linesSize&gt;=36){
+	for (int i=0; i&lt;36; i++){
+		temp.append("&gt;"+lines[i]);
+	}
+}
+//Extract the number of sequences which are available and are less than 35
+else{
+	for (int j=0; j&lt;linesSize; j++){
+		temp.append("&gt;"+lines[j]);
+	}
+}
+
+// Output with 35 sequences or less
+String result = temp.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">insertSeq</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">result</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Extract_Duplicates">
+    <s:beanshell>
+      <s:scriptvalue>/* The GI identifiers provided from the user list and from the privious process had to be compared and the duplicates should be eliminated.
+Inputs: BlastList as string and UserList as string
+Output: result with the GI identifiers in a certain order: GI 
+  identifiers from the user list and after from the BLAST 
+  according to E-values
+*/
+
+//eliminates the duplicates from the user list and from the BLAST
+StringBuffer temp= new StringBuffer();
+
+// setting each strings to different arrays
+String [] lines = BlastList.split("\n");
+String [] elements = UserList.split("\n");
+
+// getting the length from each array
+int sizeBlast = lines.length;
+int sizeUser = elements.length;
+
+// creating a new array with the length of the sum of the other two
+String [] my = new String[lines.length + elements.length];
+
+// entering the the GI identifiers in the one array first user list then BLAST list (Both lists to one array)
+for (int i=0; i&lt;sizeUser; i++){
+	my[i] = elements[i];
+}
+for (int j=0; j&lt;sizeBlast; j++){
+	my[sizeUser + j] = lines[j];
+}
+int mySize = my.length;
+
+// eliminating the duplicates in the order they were entered using LinkedHashSet
+Set mySet = new LinkedHashSet(Arrays.asList(my));
+String [] res= (String[])(mySet.toArray(new String[mySet.size()]));
+int sizeres = res.length;
+
+//passing from an array to String
+for (int k=0; k&lt;sizeres; k++){
+	temp.append(res[k] + "\n");
+}
+
+// output without duplicates
+String result= temp.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">BlastList</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">UserList</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">result</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="insert_query_seq">
+    <s:beanshell>
+      <s:scriptvalue>/* The query sequence has to enter in the multiple sequence alignment in fasta format, which was previously set. This will be entered with the other sequences.
+Inputs: fasta and MergeString
+Output: result
+*/
+
+StringBuffer temp= new StringBuffer();
+
+// Both inputs being set to a variable
+temp.append(fasta + "\n\n" + MergeString + "\n");
+
+// Both inputs to one output
+String result = temp.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">fasta</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">MergeString</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">result</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Extract_GI_Evalue">
+    <s:beanshell>
+      <s:scriptvalue>/*It will see if each GI number from the BLAST report has an E-value less or equal than 0.02 and it will save the ones according to this number in a string. It will use regular expression to extract them.
+Input: BlastReport in a single string with the GI identifiers and the 
+ corresponding E-value
+Output: result with the GI identifiers according to the E-value
+*/
+
+// Extract the GI identifiers according to the e-value. 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+// Regular expression to extract the GI numbers and the corresponding E-value from the String
+Pattern pGI = Pattern.compile("(^.*?$)");
+Pattern pEvalue = Pattern.compile("is: (.*)$");
+Matcher mGI;
+Matcher mEvalue;
+StringBuffer temp = new StringBuffer();
+
+// As the string entered is separated by new line it is possible to enter each in an array
+String [] line = BlastReport.split("\n");
+int arraysize = line.length; 
+
+// Loop to check if each GI identifiers have an e-value less or equal than 0.02
+for (int i=0; i&lt;arraysize; i+=2){
+	String sGI = line[i];
+	String sEvalue = line[i+1];	
+	mGI = pGI.matcher(sGI);
+	mEvalue = pEvalue.matcher(sEvalue);
+	String gi="";
+
+	if (mGI.find()){
+		gi =mGI.group(1);
+	}
+	if (mEvalue.find()){
+		String eval = mEvalue.group(1);
+		if(eval.startsWith("e")){
+			eval= "1".concat(eval);
+		}
+		Double d = new Double (eval);
+		double Evalue = d.doubleValue();
+		
+//Getting the GI numbers, which correspond to the e-value&lt;=0.02
+		if (Evalue&lt;=0.02){
+			temp.append(gi + "\n");
+		}
+	}
+}
+
+// Output with the interesting GI numbers in a single string
+String result = temp.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">BlastReport</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">result</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Setting_fasta">
+    <s:beanshell>
+      <s:scriptvalue>/* The novel sequence is entered from the user, but not in FASTA format. Setting the query sequence in FASTA format to be entered in the BLAST processor and also in the multiple sequence alignment process
+Input: sequence
+Output: fasta
+*/
+StringBuffer temp= new StringBuffer();
+temp.append("&gt;"+"|query|"+"\n"+sequence);
+
+// Sequence returned in FASTA format
+String fasta = temp.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">sequence</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">fasta</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Extract_Seq_Description">
+    <s:beanshell>
+      <s:scriptvalue>/* Accepts the 35 sequences or less in FASTA format and extracts the information from them for a better understanding of the multiple sequence alignment and trees plots. It uses regular expression for the extraction
+Input: Sequences; string with 35 sequences or less
+Output: result; string with description of each sequence in FASTA format
+*/
+
+// Extract the FASTA description from each sequence
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+StringBuffer temp = new StringBuffer();
+String information="";
+// regular expression to extract only the sequence description
+Pattern pattern = Pattern.compile ("&gt;(\\w+.*)\\s");
+Matcher matcher = pattern.matcher(Sequences);
+
+while(matcher.find()){
+	information=matcher.group(1);
+	temp.append(information + "\n");
+}
+
+// Output sequence description
+String result = temp.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">Sequences</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">result</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Condition_DNA_RNA">
+    <s:beanshell>
+      <s:scriptvalue>/* Verifying if the sequence entered by the user is a DNA or RNA
+input: sequence
+output: condition
+*/
+StringBuffer temp= new StringBuffer();
+
+// setting the variable as true
+boolean isDNARNA = true; 
+char ch; 
+
+// Stting the sequence in one line without spaces and the character to upper case
+String seqNoLine = sequence.replaceAll("\n",""); 
+String seq = seqNoLine.toUpperCase(); 
+int seqSize = seq.length();
+
+// Verifying if it is a DNA or RNA sequence
+for (int i=0; i&lt;seqSize; i++){ 
+ch = seq.charAt(i); 
+	if(ch!=('A')&amp;&amp;ch!=('C')&amp;&amp;ch!=('G')&amp;&amp;ch!=('T')&amp;&amp;ch!=('U')){ 
+		isDNARNA = false; 
+		break; 
+	}
+} 
+
+/* If it is a DNA or RNA sequence the output will have the word “true”
+If it is not a DNA or RNA sequence the output will have the word “false”; The condition is going to be verified afterwards;
+*/
+if (isDNARNA){ 
+	temp.append("true"); 
+} 
+else{ 
+	temp.append("false"); 
+} 
+String condition = temp.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">sequence</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">condition</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="blastsimplifier">
+    <s:description>Simplifies BLAST output for later use</s:description>
+    <s:defaults>
+      <s:default name="gi">gi</s:default>
+      <s:default name="exp">exp</s:default>
+    </s:defaults>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.blastsimplifier</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="fdrawgram">
+    <s:description>Plots a cladogram- or phenogram-like rooted
+                  tree diagram</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/phylogeny_tree_drawing.fdrawgram</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="fprotdist">
+    <s:description>Protein distance algorithm</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/phylogeny_molecular_sequence.fprotdist</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="fneighbor">
+    <s:description>Phylogenies from distance matrix by N-J or
+                  UPGMA method</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/phylogeny_distance_matrix.fneighbor</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="fdrawtree">
+    <s:description>Plots an unrooted tree diagram</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/phylogeny_tree_drawing.fdrawtree</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="prettyplot">
+    <s:description>Displays aligned sequences, with colouring
+                  and boxing</s:description>
+    <s:defaults>
+      <s:default name="resbreak">10</s:default>
+      <s:default name="listoptions">No</s:default>
+      <s:default name="consensus">Yes</s:default>
+    </s:defaults>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/alignment_multiple.prettyplot</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="ClustalW">
+    <s:description>Multiple alignment program - interface to
+                  ClustalW program</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/alignment_multiple.emma</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="searchSimple">
+    <s:description>Execute Blast</s:description>
+    <s:defaults>
+      <s:default name="program">blastp</s:default>
+      <s:default name="database">PROTEIN</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/Blast.wsdl</s:wsdl>
+      <s:operation>searchSimple</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="ClustalW:outseq" sink="fprotdist:sequence_direct_data" />
+  <s:link source="ClustalW:outseq" sink="prettyplot:sequences_direct_data" />
+  <s:link source="Condition_Protein:condition" sink="Fail_if_false_Protein:test" />
+  <s:link source="Condition_Protein:condition" sink="Fail_if_true_Protein:test" />
+  <s:link source="Extract_Duplicates:result" sink="Split_by_newline:string" />
+  <s:link source="Extract_GI_Evalue:result" sink="Extract_Duplicates:BlastList" />
+  <s:link source="Input_Sequence" sink="Condition_DNA_RNA:sequence" />
+  <s:link source="Input_Sequence" sink="Condition_Protein:sequence" />
+  <s:link source="Input_Sequence" sink="Setting_fasta:sequence" />
+  <s:link source="ListUser" sink="MergeUserList:stringlist" />
+  <s:link source="Condition_DNA_RNA:condition" sink="Fail_if_false_DNA:test" />
+  <s:link source="Condition_DNA_RNA:condition" sink="Fail_if_true_DNA:test" />
+  <s:link source="Get_Protein_FASTA:outputText" sink="MergeString:stringlist" />
+  <s:link source="MergeString:concatenated" sink="insert_query_seq:MergeString" />
+  <s:link source="MergeUserList:concatenated" sink="Extract_Duplicates:UserList" />
+  <s:link source="N-J or UPGMA" sink="toLowerCase:input" />
+  <s:link source="Setting_fasta:fasta" sink="insert_query_seq:fasta" />
+  <s:link source="Setting_fasta:fasta" sink="searchSimple:query" />
+  <s:link source="Split_by_newline:split" sink="Get_Protein_FASTA:id" />
+  <s:link source="blastsimplifier:output" sink="Extract_GI_Evalue:BlastReport" />
+  <s:link source="extract_number_sequences:result" sink="ClustalW:sequence_direct_data" />
+  <s:link source="extract_number_sequences:result" sink="Extract_Seq_Description:Sequences" />
+  <s:link source="Extract_Seq_Description:result" sink="Protein Description" />
+  <s:link source="FlattenImage:outputlist" sink="Image Alignment" />
+  <s:link source="Is_DNA_RNA:value" sink="It is a DNA or RNA sequence" />
+  <s:link source="Not_Protein_Sequence:value" sink="Not Protein Sequence" />
+  <s:link source="fdrawgram:plotfile" sink="Rooted_Tree" />
+  <s:link source="fdrawtree:plotfile" sink="Unrooted_Tree" />
+  <s:link source="fneighbor:outfile" sink="Distance Outfile" />
+  <s:link source="fneighbor:outtreefile" sink="Output Tree (N or UPGMA)" />
+  <s:link source="fneighbor:outtreefile" sink="fdrawgram:intreefile_direct_data" />
+  <s:link source="fneighbor:outtreefile" sink="fdrawtree:intreefile_direct_data" />
+  <s:link source="fprotdist:outfile" sink="fneighbor:datafile_direct_data" />
+  <s:link source="insert_query_seq:result" sink="extract_number_sequences:insertSeq" />
+  <s:link source="prettyplot:Graphics_in_PNG" sink="FlattenImage:inputlist" />
+  <s:link source="searchSimple:Result" sink="Blast Report" />
+  <s:link source="searchSimple:Result" sink="blastsimplifier:new_direct_data" />
+  <s:link source="toLowerCase:output" sink="fneighbor:treetype" />
+  <s:source name="Input_Sequence">
+    <s:metadata>
+      <s:description>Enter a novel protein sequence. e.g.
+AITRRVACLDGVNTATNAACCALFAVRDDIQQNL
+FDGGECGEEVHESLRLTFHDAIGISPSLAATGKFGG
+GGADGSIMIFDDIEPNFHANNGVDEIINAQKPFVAK
+HNMTAGDFIQFAGAVGVSNCPGAPQLSFFLGRPA</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="ListUser">
+    <s:metadata>
+      <s:description>Enter a list of protein IDs. e.g:
+Q96TS5
+Q12575
+AAA33739
+Q96TS6
+AAA33741</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="N-J or UPGMA">
+    <s:metadata>
+      <s:description>For the cluster method enter "n" for Neighbor-Joining algorithm or "u" for UPGMA algorithm</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="Blast Report" />
+  <s:sink name="Protein Description" />
+  <s:sink name="Image Alignment">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>image/png</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="Output Tree (N or UPGMA)" />
+  <s:sink name="Distance Outfile" />
+  <s:sink name="Rooted_Tree" />
+  <s:sink name="Unrooted_Tree" />
+  <s:sink name="Not Protein Sequence" />
+  <s:sink name="It is a DNA or RNA sequence" />
+  <s:coordination name="Not_Protein_Sequence_BLOCKON_Fail_if_true">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Fail_if_true_Protein</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Not_Protein_Sequence</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="Setting_fasta_BLOCKON_Fail_if_false">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Fail_if_false_Protein</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Setting_fasta</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="Condition_Protein_BLOCKON_Fail_if_true_DNA">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Fail_if_true_DNA</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Condition_Protein</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="Is_DNA_RNA_BLOCKON_Fail_if_false_DNA">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Fail_if_false_DNA</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Is_DNA_RNA</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="MergeUserList_BLOCKON_Fail_if_false_Protein">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Fail_if_false_Protein</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>MergeUserList</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="toLowerCase_BLOCKON_Fail_if_false_Protein">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Fail_if_false_Protein</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>toLowerCase</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

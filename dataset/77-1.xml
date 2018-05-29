@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:03POCSJ1HQ5" author="Peter Li" title="Query Maxd microarray database">Retrieves data from the maxd database given name of data set</s:workflowdescription>
+  <s:processor name="cleanOutput">
+    <s:description>Cleans a data set from maxd to generate a valid csv file</s:description>
+    <s:beanshell>
+      <s:scriptvalue>/*
+ * Clean up the output of MaxdBrowse
+ */
+
+StringBuffer sb =  new StringBuffer(in);
+//Get rid of crap from start of the file
+int i = sb.indexOf("Feature_ID");
+sb.delete(0, i);
+
+//Get rid of crap at the end of the file
+sb.delete(sb.indexOf("#"), sb.length());
+
+//Convert into csv
+String maxd = sb.toString();
+maxd = maxd.trim();
+
+maxd = maxd.replaceFirst("Feature_ID", "FeatureID");
+maxd = maxd.replaceFirst("Reporter", "Reporter");
+maxd = maxd.replaceFirst("Gene", "Gene");
+maxd = maxd.replaceFirst("Normalised data", "NormalisedData");
+maxd = maxd.replaceAll("\t", ",");
+
+//Remove end commas
+String[] maxdLines = maxd.split("\n");
+StringBuffer newMaxd = new StringBuffer();
+for(int x = 0; x &lt; maxdLines.length; x ++)
+{
+  String line = maxdLines[x];
+
+  if(line.endsWith(","))
+  {
+    line = line.substring(0, line.length() - 1);
+    newMaxd.append(line + "\n");
+                
+  }
+}
+
+String out = newMaxd.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">in</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">out</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="queryMaxd">
+    <s:description>Will take a list of Gene names, a list of Measurement names and a list of Column Types and produce a table. All values are coloured in relation to the a reference. In the list of Measurement names, the first Measurement listed is taken to be the reference. Formatted as text.</s:description>
+    <s:defaults>
+      <s:default name="ColumnTypes">*</s:default>
+      <s:default name="listSplitter">,</s:default>
+      <s:default name="profileANDppass">BigExN:9dj2n5g7l</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://dbkgroup.org/software/maxd/maxdBrowse/sequences/MeasurementDataTabTextFAST/wsdl.xml</s:wsdl>
+      <s:operation>query</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="datasetName" boring="true">
+    <s:description>Provides name of data set to be retrieved from maxd database</s:description>
+    <s:stringconstant>JC_C-0.07-1_Measurement</s:stringconstant>
+  </s:processor>
+  <s:link source="datasetName:value" sink="queryMaxd:MeasurementNames" />
+  <s:link source="cleanOutput:out" sink="csv" />
+  <s:link source="queryMaxd:return" sink="cleanOutput:in" />
+  <s:sink name="csv" />
+</s:scufl>
+

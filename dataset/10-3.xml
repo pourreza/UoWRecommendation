@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:d93a16c9-b599-48b4-b2c8-562127456fa3" author="Saeedeh Maleki-Dizaji and Paul Fisher" title="Microarray CEL file to candidate pathways">This workflow takes in a CEL file and a normalisation method then returns a series of images/graphs which represent the same output obtained using the MADAT software package (MicroArray Data Analysis Tool) [http://www.bioinf.manchester.ac.uk/MADAT/index.html]. Also retruned by this workflow are a list of the top differentialy expressed genes (size dependant on the number specified as input - geneNumber), which are then used to find the candidate pathways which may be influencing the observed changes in the microarray data. By identifying the candidate pathways, more detailed insights into the gene expression data can be obtained.
+
+NOTE - You will also need to install R and Rserv on your machine and install the libaries required by the R script into you R library directory (see for basic info: http://www.cs.man.ac.uk/~fisherp/rlib.html)
+
+The example inputs for this workflow are as follows:
+Samples1 = one or more CEL files for cross-correlating with Samples2 CEL files (new line separated including the .CEL): 
+Liver_Day1_Mouse.CEL
+Liver_Day2_Mouse.CEL
+
+Samples2 = one or more CEL files for cross-correlating with Samples1 CEL files (new line separated including the .CEL):
+Kideny_Day1_Mouse.CEL
+Kidney_Day2_Mouse.CEL
+
+geneNumber = the number of differentialy expressed gene to be returned above a given p-value, e.g. 20
+arrayTypeAffy = the name of the Mouse AffyMetrix array used, e.g. mouse4302, hgu133a...
+path = the direct path to the CEL file location, e.g. C:/Microarray_Data/CEL_FILES/ - note the forward slashes
+NormalizationMethod = the type of normalisation to perfrom, e.g. rma, gcrma or mmgmos
+testMethod = e.g. limma, mmtest or pplr
+p-value = the p-value cut-off value for the array data, e.g. 0.05
+foldChange = the fold change value for the microarray data, e.g. 1 (means greater than 1 or less than -1)</s:workflowdescription>
+  <s:processor name="Split_sample1">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Split_sample2">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="AffyDataAnalysis">
+    <s:defaults>
+      <s:default name="dirPath">C:/affy data for Munich course/ShortCelFilesLiver</s:default>
+      <s:default name="arrayType">mouse4302</s:default>
+    </s:defaults>
+    <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+      #@to do: extract  array type automatically then install relevant packages
+
+# installing packages
+#source("http://www.bioconductor.org/biocLite.R")
+#biocLite()
+#biocLite(c("affy "," limma ","mmgmos"," ade4"," affyQCReport"," base","pplr " ," splines "," survival "," multtest "))
+
+library(base)
+library(affy)
+# make sure you are in the directory
+# where the CEL files are
+getwd()
+#setwd("C:/affy data for Munich course/ShortCelFilesLiver")
+
+  # dirPath input from workflow
+setwd(dirPath) 
+fnames = dir(pattern="CEL")
+
+# read in CEL files
+#library(mouse4302cdf, lib="C:/Program Files/R/rw2001/library" )
+#library(mouse4302cdf)
+#library(mouse4302, lib="C:/Program Files/R/rw2001/library")
+#library(mouse4302);
+
+library(arrayType,,character.only = TRUE)
+library(sub(" ","",paste(arrayType,'cdf')), character.only = TRUE)
+
+affyID1 &lt;- NULL
+
+#************ Loadind data
+data.raw = ReadAffy(filenames=fnames)
+sName = sampleNames(data.raw)
+# check whether it read in things correctly
+#data.raw
+
+   #image(data.raw, col=rainbow(100, start=0, end=0.7)[100:1])
+   # boxplot(data.raw, col=rainbow(50))
+    histRawPlot = 'histRawPlot.png' 
+    png(histRawPlot)
+    hist(data.raw, col = 1:length(sName))
+    legend('right',sName, lt = 1:length(sName),col = 1:length(sName), cex = 0.6)
+    dev.off()
+for (i in 1:5) gc()
+
+#************* Normalization Method
+
+normalization &lt;- function (data,method) {
+
+ switch(method,
+             rma = rma(data),
+             gcrma = gcrma(data),
+             mmgmos = mmgmos(data)  
+            
+          )
+                                        }
+data.norm &lt;- normalization(data.raw, normMethod)
+ 
+# Write result into the text file
+normText = 'normText.txt'
+temp = exprs(data.norm)
+#write.exprs(temp, normText)
+write(temp, normText)
+
+# create box plot
+ boxNormPlot = 'boxNormPlot.png' 
+    png(boxNormPlot)
+    boxplot(data.frame(exprs(data.norm)), col=rainbow(30))
+    dev.off()
+#class(data.rma)
+
+
+#*************** Quality control  PCA 
+ library(ade4)
+ library(affyQCReport)
+ library(base)
+
+      
+ data.pca = dudi.pca(exprs(data.norm), scannf = F, nf = length(fnames))
+# produce PCA plot
+     pcaPlot = 'pcaPlot.png'
+     pc1 = data.pca$co[,2]
+     pc2 = data.pca$co[,3]
+     xl =  "1. PC"
+     yl =  "2. PC"
+     title = "PCA Result"
+     png(pcaPlot)
+     plot(pc1,pc2, xlab=xl,ylab=yl,main=title)
+     sName = sampleNames(data.norm)
+     points(pc1,pc2, col = 1:length(sName))
+     legend('topright',sName, col = 1:length(sName),pch = 1, cex = 0.6) 
+     dev.off()
+
+     # write result column to the given file name
+
+       pcaResultFileCol = 'pcaResultCol.txt'
+       pcaResultFileRow = 'pcaResultRow.txt'
+       pcaResultFileEig = 'pcaResultEig.txt'
+
+       se = ','
+
+          
+      # write result column to the given file name
+     
+      write.table(data.pca$co, file = pcaResultFileCol, sep = se, row.names = FALSE)
+
+      #write result raw to the given file name
+  
+
+      # create column names of comp1, comp2,  ...
+      v = data.pca$eig
+      h = length (v)
+      comp= 'Comp'
+      M = 1:h
+      for (i in 1:h) { M[i] = as.character(i) }
+      colNames = paste(comp ,M)
+
+     write.table(data.pca$li, file = pcaResultFileRow, sep = se, row.names = FALSE, col.names =  colNames)
+
+      #write result reigen value to the given file name
+      
+      K = matrix(1:h, h,3)
+
+      #setting cel file names from row.names
+       K[,1] = row.names(data.pca$co)
+       for (i in 1:h) {K[i,2] = v[i]}
+       for (i in 1:h) {K[i,3] =( (v[i]*100) / sum(v))}
+       col = c ('','Eigen Value', ' % Percentage')
+      
+          write.table(K, file =  pcaResultFileEig , sep = se, row.names = FALSE,col.names = col)
+
+
+
+
+
+
+
+#************** start ttest
+library(splines)
+library(limma)
+library(survival)
+library(splines)
+library(multtest)
+
+#*****ttest
+envi = 'mouse4302GENENAME'
+#group1 = c("B05.CEL","B04.CEL")
+#group2 = c("A75.CEL","A74.CEL")
+cl = c(rep(1,length(group1)),rep(2,length(group2)))
+
+# limma function
+limma &lt;- function (data.norm,group1,group2,cl){
+  design &lt;- model.matrix(~ -1+factor(cl))
+  #design &lt;- model.matrix(~ -1+factor(c(1,1,1,2,2,2)))
+  colnames(design)&lt;-c("group1","group2")
+  contrast.matrix = makeContrasts(group1-group2,levels = design)
+  #contrast.matrix &lt;- cbind(group2vs1=c(-1,1))
+  fit = lmFit(exprs(data.norm)[,c(group1,group2)],design)
+  fit2 &lt;-contrasts.fit(fit,contrast.matrix)
+  efit &lt;- eBayes(fit2)
+  
+  tops = topTable(efit,coef=1,adjust='fdr',sort.by='B',number = 50000)
+  affyID = tops[, 'ID']
+  P = tops[,'P.Value']
+  T = tops[,'t']
+  M = tops[,'M']
+  A= tops[,'A']
+  B = tops[,'B']
+
+# result file name should be same as workflow output
+  result2 = 'testResult.txt'
+  write.table(cbind(affyID,A,M,T,P,B), file = result2,sep = ',',row.names = FALSE)
+
+
+
+ # filtering
+  tops = topTable(efit,coef=1,adjust="fdr",sort.by="B",number=gNum)
+  filter = tops[tops$P.Value &lt;pVal &amp; (tops$M &gt; FCVal| tops$M &lt;  (-1*FCVal) ) ,]
+
+  #geneId = c('gene')
+# annotating filterd result 
+
+  num = gNum
+  topsFil = filter
+  fSize = num
+  lenFil = length (topsFil$ID)
+  if (lenFil &lt; fSize)  fSize = lenFil
+  if (fSize &gt; 0) topsFil = topsFil [1: fSize,] else topsFil = NULL
+  if (fSize &gt; 0) testSize = TRUE else testSize = FALSE
+
+  affyID = topsFil[, 'ID']
+ 
+
+  for (i in 1: length(affyID)) { affyID1 = c(affyID1,affyID[i]) }
+ 
+  P = topsFil[,'P.Value']
+  T = topsFil[,'t']
+  M = topsFil[,'M']
+  A= topsFil[,'A']
+  B = topsFil[,'B']
+
+# result file name should be same as workflow output
+  result2 = 'filterResult.txt'
+  envi = sub(" ","",envi)
+ llnames = NULL
+
+#  if  (exists(envi, mode='environment') )  llnames &lt;- mget(affyID, env = mouse4302GENENAME  ,ifnotfound ='NA') else llnames = NULL
+  GeneName &lt;- as.character(llnames)
+  if (length(GeneName) &gt;0) write.table(cbind(affyID,GeneName,A,M,T,P,B), file = result2,sep = ',',row.names = FALSE) else write.table(cbind(affyID,A,M,T,P,B), file = result2,sep = ',',row.names = FALSE) 
+  #affyID1 = c("1418809_at","1418240_at")
+  return(affyID1);  
+    } 
+# end of limma function
+
+# **********mmtest function 
+
+mmtest &lt;- function (data.norm,group1,group2,cl) {
+
+# calculate t statistic
+  cl = cl -1
+  tValue = mt.teststat(exprs(data.norm)[,c(group1,group2)], classlabel=cl)
+
+# calculate P value
+  pValue = 2*pt(-abs(tValue), df=ncol(exprs(data.norm))-2 )
+
+# adjust P value according to Benjamini &amp; Yekutieli
+ adjp = mt.rawp2adjp(pValue, proc="BY")
+
+# order pvals
+ ord = order(adjp$index)
+ adjp.BY = adjp$adj[ord,"BY"]
+
+# calculate fold changes
+  mean.group1 = apply(exprs(data.norm)[,group1], 1, mean, na.rm=T)
+  mean.group2 = apply(exprs(data.norm)[,group2], 1, mean, na.rm=T)
+  FC = 2^( mean.group2 - mean.group1 )
+  
+# writettest result into the file
+  size = length(FC)
+  AffyID = names(FC)
+  FoldChange = numeric(size)
+  for (i in 1:size) { FoldChange[i] = FC[[i]]}
+  Pvalue = adjp.BY
+  result1 = 'testResult.txt'
+  write.table(cbind(AffyID,Pvalue,FoldChange), file= result1,sep = ',',,row.names = FALSE)
+
+
+# filtering 
+ # fRes = which(adjp.BY&lt;pVal &amp;  (FC &gt;FCVal | FC&lt;  (-1*FCVal) ))
+   fRes = which(adjp.BY&lt;pVal &amp;  (FC &gt;FCVal | FC&lt;  (-1*FCVal) ))
+
+  num = gNum
+  size = num
+ lenFil = length (fRes)
+ if (lenFil &lt; size)  size = lenFil
+ if ( size &gt; 0)  fRes = fRes [1: size] else fRes = NULL
+ if (size &gt; 0) testSize = TRUE else testSize = FALSE
+ AffyID = names(fRes)
+ for (i in 1: length(AffyID)) { affyID1 = c(affyID1,AffyID[i]) }
+ FoldChange = numeric(size)
+ Pvalue = numeric(size)
+ llnames = NULL
+ if ( size &gt; 0) for (i in 1:size) { FoldChange[i] = FC[[fRes[[i]]]]; Pvalue[i] = adjp.BY[fRes[[i]]] }
+ result3 = 'filterResult.txt'
+
+ #if  (exists(envi, mode='environment') )  llnames &lt;- mget(AffyID, env = mouse4302GENENAME ,ifnotfound ='NA')  else llnames = NULL
+ GeneName &lt;- llnames
+ GeneName = gsub (',',' ',GeneName)
+
+if (length(GeneName) &gt;0) write.table(cbind(AffyID,GeneName,Pvalue,FoldChange), file= result3,sep = ',',row.names = FALSE)  else  write.table(cbind(AffyID,Pvalue,FoldChange), file= result3,sep = ',',row.names = FALSE)
+ 
+ return(affyID1);               
+   } 
+
+# end of mmtest function
+
+# *********pplr
+pplrTest &lt;-  function (data.norm,group1,group2,cl){
+  library(pplr)
+  num = gNum
+  e &lt;- NULL
+  se &lt;- NULL
+  r &lt;- NULL
+  p1e &lt;- NULL
+  samples &lt;- NULL
+  samples = c(group1,group2)
+  e &lt;- exprs(data.norm)[,samples]
+  se &lt;- se.exprs(data.norm)[,samples]
+  r &lt;- bcomb(e,se,replicate = cl, method='em')
+#//          rCon.eval("r &lt;- bcomb(e,se,replicate = cl, method='map')"); //quick for testing but should be em
+  p1e &lt;- pplr(r,1,2)
+  result1 = 'testResult.txt'
+  write.csv (p1e,result1)
+
+    # do filter
+
+    fSize =  num
+    topsFil = p1e[p1e$PPLR &lt;pVal &amp; (p1e$LRM &gt; FCVal | p1e$LRM &lt; (-1*FCVal)),]
+    lenFil = length (row.names(topsFil)) 
+    if (lenFil &lt; fSize)  fSize = lenFil 
+    if (fSize &gt; 0) topsFil = topsFil [1: fSize,] else topsFil = NULL
+    if (fSize &gt; 0) testSize = TRUE else testSize = FALSE 
+    affyID = row.names(topsFil)
+    for (i in 1: length(affyID)) { affyID1 = c(affyID1,affyID[i]) }
+    PPLR = topsFil[,'PPLR']
+    index = topsFil[,'index']
+    cM = topsFil[,'cM']
+    sM = topsFil[,'sM']
+    cStd = topsFil[,'cStd']
+    sStd = topsFil[,'sStd']
+    LRM= topsFil[,'LRM']
+    LRStd= topsFil[,'LRStd']
+    stat = topsFil[,'stat']
+    llnames = NULL
+    result2 = 'filterResult.txt'
+    ##annotation file
+    # if  (exists(envi, mode='environment') )  llnames &lt;- mget(affyID, env = mouse4302GENENAME  ,ifnotfound ='NA') else  llnames = NULL
+      GeneName &lt;- as.character(llnames)
+
+     if (length(GeneName) &gt;0) write.table(cbind(affyID,GeneName,index,cM,sM,cStd,sStd,LRM,LRStd,stat,PPLR), file = result2,sep = ',',row.names = FALSE) else write.table(cbind(affyID,index,cM,sM,cStd,sStd,LRM,LRStd,stat,PPLR), file = result2,sep = ',',row.names = FALSE) 
+     return(affyID1);
+
+} # end of pplr function
+
+
+
+# selecting ttest method
+ttest &lt;- function (data.norm,method) {
+ switch(method,
+             limma = limma(data.norm,group1,group2,cl), mmtest = mmtest(data.norm,group1,group2,cl), pplr = pplrTest (data.norm,group1,group2,cl))   
+
+                                    }
+
+#ttest(data.norm,"limma")
+#if ((length(ttestMethod) &gt; 0) affyID1 &lt;- ttest(data.norm,ttestMethod) else affyID1 = NULL
+affyID1 &lt;- ttest(data.norm,ttestMethod)
+#ttest(data.norm,"pplr")
+      <s:rshellInputPortList>
+        <s:rshellInputPort s:syntacticType="l('text/plain')" s:symanticType="STRING_LIST">dirPath</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="l('text/plain')" s:symanticType="STRING_LIST">arrayType</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="l('text/plain')" s:symanticType="STRING_LIST">normMethod</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="l('text/plain')" s:symanticType="STRING_LIST">ttestMethod</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="l('text/plain')" s:symanticType="INTEGER_LIST">gNum</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="l('text/plain')" s:symanticType="DOUBLE_LIST">pVal</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="l('text/plain')" s:symanticType="DOUBLE_LIST">FCVal</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="l('text/plain')" s:symanticType="STRING_LIST">group1</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="l('text/plain')" s:symanticType="STRING_LIST">group2</s:rshellInputPort>
+      </s:rshellInputPortList>
+      <s:rshellOutputPortList>
+        <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">histRawPlot</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">boxNormPlot</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">pcaPlot</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="l('text/plain')" s:symanticType="STRING_LIST">affyID1</s:rshellOutputPort>
+      </s:rshellOutputPortList>
+    </s:rshell>
+  </s:processor>
+  <s:processor name="String_Constant" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="Nested_Workflow">
+    <s:workflow>
+      <s:xscufllocation>file:/E:/toolkit/human_probeset_to_pathway_0.7.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:link source="NormalizationMethod" sink="AffyDataAnalysis:normMethod" />
+  <s:link source="arrayTypeAffy" sink="AffyDataAnalysis:arrayType" />
+  <s:link source="foldChange" sink="AffyDataAnalysis:FCVal" />
+  <s:link source="geneNumber" sink="AffyDataAnalysis:gNum" />
+  <s:link source="pValue" sink="AffyDataAnalysis:pVal" />
+  <s:link source="path" sink="AffyDataAnalysis:dirPath" />
+  <s:link source="samples1" sink="Split_sample1:string" />
+  <s:link source="testMethod" sink="AffyDataAnalysis:ttestMethod" />
+  <s:link source="Split_sample1:split" sink="AffyDataAnalysis:group1" />
+  <s:link source="Split_sample2:split" sink="AffyDataAnalysis:group2" />
+  <s:link source="String_Constant:value" sink="Split_sample1:regex" />
+  <s:link source="String_Constant:value" sink="Split_sample2:regex" />
+  <s:link source="samples2" sink="Split_sample2:string" />
+  <s:link source="AffyDataAnalysis:affyID1" sink="Nested_Workflow:probeset_list" />
+  <s:link source="AffyDataAnalysis:affyID1" sink="geneID" />
+  <s:link source="AffyDataAnalysis:boxNormPlot" sink="boxNorm" />
+  <s:link source="AffyDataAnalysis:histRawPlot" sink="hist" />
+  <s:link source="AffyDataAnalysis:pcaPlot" sink="pca" />
+  <s:link source="Nested_Workflow:ensembl_database_release" sink="ensembl_database_release" />
+  <s:link source="Nested_Workflow:gene_descriptions" sink="gene_descriptions" />
+  <s:link source="Nested_Workflow:kegg_pathway_release" sink="KEGG_pathway_release" />
+  <s:link source="Nested_Workflow:merged_pathways" sink="merged_pathways" />
+  <s:link source="Nested_Workflow:pathway_descriptions" sink="pathway_description" />
+  <s:link source="Nested_Workflow:pathway_list" sink="pathway_list" />
+  <s:link source="Nested_Workflow:report" sink="BioMart_report" />
+  <s:source name="arrayTypeAffy" />
+  <s:source name="path" />
+  <s:source name="NormalizationMethod" />
+  <s:source name="testMethod" />
+  <s:source name="pValue" />
+  <s:source name="foldChange" />
+  <s:source name="geneNumber" />
+  <s:source name="samples1" />
+  <s:source name="samples2" />
+  <s:sink name="hist" />
+  <s:sink name="boxNorm" />
+  <s:sink name="pca" />
+  <s:sink name="geneID" />
+  <s:sink name="pathway_description" />
+  <s:sink name="merged_pathways" />
+  <s:sink name="pathway_list" />
+  <s:sink name="gene_descriptions" />
+  <s:sink name="ensembl_database_release" />
+  <s:sink name="KEGG_pathway_release" />
+  <s:sink name="BioMart_report" />
+</s:scufl>
+

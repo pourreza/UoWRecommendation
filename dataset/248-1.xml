@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:aa6f9a00-d509-4785-95c5-413bdd06c089" author="Hamish McWilliam" title="EBI_CiteXplore">Perform a literature search using the EBI's CiteXplore service (http://www.ebi.ac.uk/citexplore/), and get the results in a minimal XML format containing the citation information (i.e. title, author, journal, etc.), the identifier of the citation in the source database (PubMed/Medline, Agricola, Patent Abstracts, CBA, CiteSeer, etc.) and information about abstract and full article availablity including URLs.</s:workflowdescription>
+  <s:processor name="searchCitations">
+    <s:description>Submit the search to CiteXplore.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/webservices/citexplore/v1.0/service?wsdl</s:wsdl>
+      <s:operation>searchCitations</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Search_Parameters">
+    <s:description>Build the search parameters structure. By default this is set to give the first page of results, in the "core" XML format.
+
+See the web service documentation (http://www.ebi.ac.uk/citexplore/webservice.jsp) for more information about the parameters.</s:description>
+    <s:defaults>
+      <s:default name="outputFormat">core</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="searchCitations" name="parameters" qname="{http://webservice.cdb.ebi.ac.uk/}searchCitations">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="luceneQueryString" qname="searchCitations&gt;luceneQueryString" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="outputFormat" qname="searchCitations&gt;outputFormat" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="offSet" qname="searchCitations&gt;offSet" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="email" qname="searchCitations&gt;email" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Unwrap_result">
+    <s:description>Extract the citations XML for the result returned by CiteXplore.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="searchCitationsResponse" name="parameters" qname="{http://webservice.cdb.ebi.ac.uk/}searchCitationsResponse">
+          <s:elements>
+            <s:complextype optional="true" unbounded="false" typename="resultListBean" name="return" qname="searchCitationsResponse&gt;return">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="int" name="hitCount" qname="resultListBean&gt;hitCount" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="offSet" qname="resultListBean&gt;offSet" />
+                <s:arraytype optional="true" unbounded="true" wrapped="false" typename="resultBean" name="resultBeanCollection" qname="resultListBean&gt;resultBeanCollection">
+                  <s:elementtype>
+                    <s:complextype optional="false" unbounded="false" typename="resultBean" name="" qname="{http://webservice.cdb.ebi.ac.uk/}resultBean">
+                      <s:elements>
+                        <s:complextype optional="true" unbounded="false" typename="citation" name="citation" qname="resultBean&gt;citation">
+                          <s:elements>
+                            <s:basetype optional="true" unbounded="false" typename="string" name="abstractText" qname="citation&gt;abstractText" />
+                            <s:basetype optional="true" unbounded="false" typename="string" name="affiliation" qname="citation&gt;affiliation" />
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="author" name="authorCollection" qname="citation&gt;authorCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="author" name="" qname="{http://webservice.cdb.ebi.ac.uk/}author">
+                                  <s:elements>
+                                    <s:basetype optional="true" unbounded="false" typename="int" name="citationId" qname="author&gt;citationId" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="collectiveName" qname="author&gt;collectiveName" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="fullName" qname="author&gt;fullName" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="initials" qname="author&gt;initials" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="initialsNonAscii" qname="author&gt;initialsNonAscii" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="lastName" qname="author&gt;lastName" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="lastNameNonAscii" qname="author&gt;lastNameNonAscii" />
+                                    <s:basetype optional="true" unbounded="false" typename="short" name="orderIn" qname="author&gt;orderIn" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="suffix" qname="author&gt;suffix" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="suffixNonAscii" qname="author&gt;suffixNonAscii" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="valid" qname="author&gt;valid" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:complextype optional="true" unbounded="false" typename="bookOrReport" name="bookOrReportDetails" qname="citation&gt;bookOrReportDetails">
+                              <s:elements>
+                                <s:basetype optional="true" unbounded="false" typename="int" name="citationId" qname="bookOrReport&gt;citationId" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="comprisingTitle" qname="bookOrReport&gt;comprisingTitle" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="comprisingTitleNonAscii" qname="bookOrReport&gt;comprisingTitleNonAscii" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="edition" qname="bookOrReport&gt;edition" />
+                                <s:arraytype optional="true" unbounded="true" wrapped="false" typename="editor" name="editorCollection" qname="bookOrReport&gt;editorCollection">
+                                  <s:elementtype>
+                                    <s:complextype optional="false" unbounded="false" typename="editor" name="" qname="{http://webservice.cdb.ebi.ac.uk/}editor">
+                                      <s:elements>
+                                        <s:basetype optional="true" unbounded="false" typename="int" name="citationId" qname="editor&gt;citationId" />
+                                        <s:basetype optional="true" unbounded="false" typename="string" name="collectiveName" qname="editor&gt;collectiveName" />
+                                        <s:basetype optional="true" unbounded="false" typename="string" name="initials" qname="editor&gt;initials" />
+                                        <s:basetype optional="true" unbounded="false" typename="string" name="initialsNonAscii" qname="editor&gt;initialsNonAscii" />
+                                        <s:basetype optional="true" unbounded="false" typename="string" name="lastName" qname="editor&gt;lastName" />
+                                        <s:basetype optional="true" unbounded="false" typename="string" name="lastNameNonAscii" qname="editor&gt;lastNameNonAscii" />
+                                        <s:basetype optional="false" unbounded="false" typename="short" name="orderIn" qname="editor&gt;orderIn" />
+                                        <s:basetype optional="true" unbounded="false" typename="string" name="suffix" qname="editor&gt;suffix" />
+                                        <s:basetype optional="true" unbounded="false" typename="string" name="suffixNonAscii" qname="editor&gt;suffixNonAscii" />
+                                      </s:elements>
+                                    </s:complextype>
+                                  </s:elementtype>
+                                </s:arraytype>
+                                <s:basetype optional="true" unbounded="false" typename="string" name="extraInformation" qname="bookOrReport&gt;extraInformation" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="isbn10" qname="bookOrReport&gt;isbn10" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="isbn13" qname="bookOrReport&gt;isbn13" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="numberOfPages" qname="bookOrReport&gt;numberOfPages" />
+                                <s:basetype optional="true" unbounded="false" typename="byte" name="publicationDay" qname="bookOrReport&gt;publicationDay" />
+                                <s:basetype optional="true" unbounded="false" typename="byte" name="publicationMonth" qname="bookOrReport&gt;publicationMonth" />
+                                <s:basetype optional="true" unbounded="false" typename="short" name="publicationYear" qname="bookOrReport&gt;publicationYear" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="publisher" qname="bookOrReport&gt;publisher" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="seriesIssn" qname="bookOrReport&gt;seriesIssn" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="seriesName" qname="bookOrReport&gt;seriesName" />
+                              </s:elements>
+                            </s:complextype>
+                            <s:basetype optional="true" unbounded="false" typename="dateTime" name="cachedAt" qname="citation&gt;cachedAt" />
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="chemical" name="chemicalCollection" qname="citation&gt;chemicalCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="chemical" name="" qname="{http://webservice.cdb.ebi.ac.uk/}chemical">
+                                  <s:elements>
+                                    <s:basetype optional="true" unbounded="false" typename="int" name="id" qname="chemical&gt;id" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="name" qname="chemical&gt;name" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="registryNumber" qname="chemical&gt;registryNumber" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="comment" name="commentsAndCorrectionsCollection" qname="citation&gt;commentsAndCorrectionsCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="comment" name="" qname="{http://webservice.cdb.ebi.ac.uk/}comment">
+                                  <s:elements>
+                                    <s:basetype optional="false" unbounded="false" typename="int" name="citationId" qname="comment&gt;citationId" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="externalId" qname="comment&gt;externalId" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="note" qname="comment&gt;note" />
+                                    <s:basetype optional="false" unbounded="false" typename="byte" name="orderIn" qname="comment&gt;orderIn" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="reference" qname="comment&gt;reference" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="source" qname="comment&gt;source" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="type" qname="comment&gt;type" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="authorsConcatenation" name="concatenatedAuthorsCollection" qname="citation&gt;concatenatedAuthorsCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="authorsConcatenation" name="" qname="{http://webservice.cdb.ebi.ac.uk/}authorsConcatenation">
+                                  <s:elements>
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="authorsConcatenation" qname="authorsConcatenation&gt;authorsConcatenation" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="authorsConcatenation_clob" qname="authorsConcatenation&gt;authorsConcatenation_clob" />
+                                    <s:basetype optional="true" unbounded="false" typename="int" name="citationId" qname="authorsConcatenation&gt;citationId" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="hasNonAsciiCharacters" qname="authorsConcatenation&gt;hasNonAsciiCharacters" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="validAuthorsConcatenation" qname="authorsConcatenation&gt;validAuthorsConcatenation" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="validAuthorsConcatenation_clob" qname="authorsConcatenation&gt;validAuthorsConcatenation_clob" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="crossReference" name="crossReferenceAltSpliceFunCollection" qname="citation&gt;crossReferenceAltSpliceFunCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="crossReference" name="" qname="{http://webservice.cdb.ebi.ac.uk/}crossReference">
+                                  <s:elements>
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="dataSource" qname="crossReference&gt;dataSource" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="externalId" qname="crossReference&gt;externalId" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="info1" qname="crossReference&gt;info1" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="info2" qname="crossReference&gt;info2" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="info3" qname="crossReference&gt;info3" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="info4" qname="crossReference&gt;info4" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="crossReference" name="crossReferenceAltSpliceSeqCollection" qname="citation&gt;crossReferenceAltSpliceSeqCollection">
+                              <s:elementtype>
+                                <s:complextype id="{http://webservice.cdb.ebi.ac.uk/}crossReference" optional="false" unbounded="false" typename="crossReference" name="" />
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="crossReference" name="crossReferenceEMBLCollection" qname="citation&gt;crossReferenceEMBLCollection">
+                              <s:elementtype>
+                                <s:complextype id="{http://webservice.cdb.ebi.ac.uk/}crossReference" optional="false" unbounded="false" typename="crossReference" name="" />
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="crossReference" name="crossReferenceInterproCollection" qname="citation&gt;crossReferenceInterproCollection">
+                              <s:elementtype>
+                                <s:complextype id="{http://webservice.cdb.ebi.ac.uk/}crossReference" optional="false" unbounded="false" typename="crossReference" name="" />
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="crossReference" name="crossReferenceUniprotCollection" qname="citation&gt;crossReferenceUniprotCollection">
+                              <s:elementtype>
+                                <s:complextype id="{http://webservice.cdb.ebi.ac.uk/}crossReference" optional="false" unbounded="false" typename="crossReference" name="" />
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="crossReference" name="crossReferencesIntactCollection" qname="citation&gt;crossReferencesIntactCollection">
+                              <s:elementtype>
+                                <s:complextype id="{http://webservice.cdb.ebi.ac.uk/}crossReference" optional="false" unbounded="false" typename="crossReference" name="" />
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="crossReference" name="crossReferencesMSDCollection" qname="citation&gt;crossReferencesMSDCollection">
+                              <s:elementtype>
+                                <s:complextype id="{http://webservice.cdb.ebi.ac.uk/}crossReference" optional="false" unbounded="false" typename="crossReference" name="" />
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:basetype optional="true" unbounded="false" typename="string" name="dataSource" qname="citation&gt;dataSource" />
+                            <s:basetype optional="true" unbounded="false" typename="dateTime" name="dateOfCompletion" qname="citation&gt;dateOfCompletion" />
+                            <s:basetype optional="true" unbounded="false" typename="dateTime" name="dateOfCreation" qname="citation&gt;dateOfCreation" />
+                            <s:basetype optional="true" unbounded="false" typename="dateTime" name="dateOfRevision" qname="citation&gt;dateOfRevision" />
+                            <s:basetype optional="true" unbounded="false" typename="string" name="externalId" qname="citation&gt;externalId" />
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="geneOntology" name="geneOntologyCollection" qname="citation&gt;geneOntologyCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="geneOntology" name="" qname="{http://webservice.cdb.ebi.ac.uk/}geneOntology">
+                                  <s:elements>
+                                    <s:basetype optional="true" unbounded="false" typename="decimal" name="citationId" qname="geneOntology&gt;citationId" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="goId" qname="geneOntology&gt;goId" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="goTerm" qname="geneOntology&gt;goTerm" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="grant" name="grantCollection" qname="citation&gt;grantCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="grant" name="" qname="{http://webservice.cdb.ebi.ac.uk/}grant">
+                                  <s:elements>
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="acronym" qname="grant&gt;acronym" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="agency" qname="grant&gt;agency" />
+                                    <s:basetype optional="false" unbounded="false" typename="int" name="citationId" qname="grant&gt;citationId" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="grantId" qname="grant&gt;grantId" />
+                                    <s:basetype optional="false" unbounded="false" typename="short" name="orderIn" qname="grant&gt;orderIn" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:basetype optional="true" unbounded="false" typename="int" name="id" qname="citation&gt;id" />
+                            <s:complextype optional="true" unbounded="false" typename="journalIssue" name="journalIssue" qname="citation&gt;journalIssue">
+                              <s:elements>
+                                <s:basetype optional="true" unbounded="false" typename="string" name="dateOfPublication" qname="journalIssue&gt;dateOfPublication" />
+                                <s:basetype optional="true" unbounded="false" typename="int" name="id" qname="journalIssue&gt;id" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="issue" qname="journalIssue&gt;issue" />
+                                <s:complextype optional="true" unbounded="false" typename="journal" name="journal" qname="journalIssue&gt;journal">
+                                  <s:elements>
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="ESSN" qname="journal&gt;ESSN" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="ISOAbbreviation" qname="journal&gt;ISOAbbreviation" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="ISSN" qname="journal&gt;ISSN" />
+                                    <s:basetype optional="true" unbounded="false" typename="int" name="id" qname="journal&gt;id" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="medlineAbbreviation" qname="journal&gt;medlineAbbreviation" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="NLMid" qname="journal&gt;NLMid" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="title" qname="journal&gt;title" />
+                                  </s:elements>
+                                </s:complextype>
+                                <s:basetype optional="true" unbounded="false" typename="byte" name="monthOfPublication" qname="journalIssue&gt;monthOfPublication" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="volume" qname="journalIssue&gt;volume" />
+                                <s:basetype optional="true" unbounded="false" typename="short" name="yearOfPublication" qname="journalIssue&gt;yearOfPublication" />
+                              </s:elements>
+                            </s:complextype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="keyword" name="keywordCollection" qname="citation&gt;keywordCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="keyword" name="" qname="{http://webservice.cdb.ebi.ac.uk/}keyword">
+                                  <s:elements>
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="eurofirCode" qname="keyword&gt;eurofirCode" />
+                                    <s:basetype optional="true" unbounded="false" typename="int" name="id" qname="keyword&gt;id" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="keyword" qname="keyword&gt;keyword" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:basetype optional="true" unbounded="false" typename="string" name="language" qname="citation&gt;language" />
+                            <s:complextype optional="true" unbounded="false" typename="medlineXml" name="medlineXML" qname="citation&gt;medlineXML">
+                              <s:elements>
+                                <s:basetype optional="true" unbounded="false" typename="string" name="dataSource" qname="medlineXml&gt;dataSource" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="pubmedID" qname="medlineXml&gt;pubmedID" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="XML" qname="medlineXml&gt;XML" />
+                              </s:elements>
+                            </s:complextype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="meshHeading" name="meshCollection" qname="citation&gt;meshCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="meshHeading" name="" qname="{http://webservice.cdb.ebi.ac.uk/}meshHeading">
+                                  <s:elements>
+                                    <s:basetype optional="true" unbounded="false" typename="int" name="citationId" qname="meshHeading&gt;citationId" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="majorTopic_YN" qname="meshHeading&gt;majorTopic_YN" />
+                                    <s:complextype optional="true" unbounded="false" typename="meshHeadingType" name="meshHeadingType" qname="meshHeading&gt;meshHeadingType">
+                                      <s:elements>
+                                        <s:basetype optional="true" unbounded="false" typename="string" name="descriptor" qname="meshHeadingType&gt;descriptor" />
+                                        <s:basetype optional="true" unbounded="false" typename="int" name="id" qname="meshHeadingType&gt;id" />
+                                      </s:elements>
+                                    </s:complextype>
+                                    <s:arraytype optional="true" unbounded="true" wrapped="false" typename="meshQualifier" name="meshQualifierCollection" qname="meshHeading&gt;meshQualifierCollection">
+                                      <s:elementtype>
+                                        <s:complextype optional="false" unbounded="false" typename="meshQualifier" name="" qname="{http://webservice.cdb.ebi.ac.uk/}meshQualifier">
+                                          <s:elements>
+                                            <s:basetype optional="true" unbounded="false" typename="string" name="majorTopic_YN" qname="meshQualifier&gt;majorTopic_YN" />
+                                            <s:complextype optional="true" unbounded="false" typename="meshQualifierType" name="meshQualifierType" qname="meshQualifier&gt;meshQualifierType">
+                                              <s:elements>
+                                                <s:basetype optional="true" unbounded="false" typename="string" name="abbreviation" qname="meshQualifierType&gt;abbreviation" />
+                                                <s:basetype optional="true" unbounded="false" typename="string" name="id" qname="meshQualifierType&gt;id" />
+                                                <s:basetype optional="true" unbounded="false" typename="string" name="qualifier" qname="meshQualifierType&gt;qualifier" />
+                                              </s:elements>
+                                            </s:complextype>
+                                          </s:elements>
+                                        </s:complextype>
+                                      </s:elementtype>
+                                    </s:arraytype>
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:basetype optional="true" unbounded="false" typename="string" name="originalTitle" qname="citation&gt;originalTitle" />
+                            <s:basetype optional="true" unbounded="false" typename="string" name="pageInfo" qname="citation&gt;pageInfo" />
+                            <s:complextype optional="true" unbounded="false" typename="patentAbstractXml" name="patentAbstractXML" qname="citation&gt;patentAbstractXML">
+                              <s:elements>
+                                <s:basetype optional="true" unbounded="false" typename="string" name="dataSource" qname="patentAbstractXml&gt;dataSource" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="patentNumber" qname="patentAbstractXml&gt;patentNumber" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="XML" qname="patentAbstractXml&gt;XML" />
+                              </s:elements>
+                            </s:complextype>
+                            <s:complextype optional="true" unbounded="false" typename="patentDetails" name="patentDetails" qname="citation&gt;patentDetails">
+                              <s:elements>
+                                <s:basetype optional="true" unbounded="false" typename="int" name="citationId" qname="patentDetails&gt;citationId" />
+                                <s:arraytype optional="true" unbounded="true" wrapped="false" typename="patentClassifier" name="classifierCollection" qname="patentDetails&gt;classifierCollection">
+                                  <s:elementtype>
+                                    <s:complextype optional="false" unbounded="false" typename="patentClassifier" name="" qname="{http://webservice.cdb.ebi.ac.uk/}patentClassifier">
+                                      <s:elements>
+                                        <s:basetype optional="true" unbounded="false" typename="string" name="classification" qname="patentClassifier&gt;classification" />
+                                        <s:basetype optional="true" unbounded="false" typename="string" name="classificationType" qname="patentClassifier&gt;classificationType" />
+                                        <s:basetype optional="true" unbounded="false" typename="string" name="hyperlink" qname="patentClassifier&gt;hyperlink" />
+                                        <s:basetype optional="true" unbounded="false" typename="int" name="patentDetailId" qname="patentClassifier&gt;patentDetailId" />
+                                      </s:elements>
+                                    </s:complextype>
+                                  </s:elementtype>
+                                </s:arraytype>
+                                <s:basetype optional="true" unbounded="false" typename="string" name="country" qname="patentDetails&gt;country" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="countryCode" qname="patentDetails&gt;countryCode" />
+                                <s:basetype optional="true" unbounded="false" typename="int" name="patentDetailId" qname="patentDetails&gt;patentDetailId" />
+                                <s:arraytype optional="true" unbounded="true" wrapped="false" typename="secondaryNumber" name="secondaryNumberCollection" qname="patentDetails&gt;secondaryNumberCollection">
+                                  <s:elementtype>
+                                    <s:complextype optional="false" unbounded="false" typename="secondaryNumber" name="" qname="{http://webservice.cdb.ebi.ac.uk/}secondaryNumber">
+                                      <s:elements>
+                                        <s:basetype optional="true" unbounded="false" typename="string" name="dataType" qname="secondaryNumber&gt;dataType" />
+                                        <s:basetype optional="true" unbounded="false" typename="short" name="orderIn" qname="secondaryNumber&gt;orderIn" />
+                                        <s:basetype optional="true" unbounded="false" typename="int" name="patentDetailId" qname="secondaryNumber&gt;patentDetailId" />
+                                        <s:basetype optional="true" unbounded="false" typename="string" name="value" qname="secondaryNumber&gt;value" />
+                                      </s:elements>
+                                    </s:complextype>
+                                  </s:elementtype>
+                                </s:arraytype>
+                                <s:basetype optional="true" unbounded="false" typename="string" name="typeCode" qname="patentDetails&gt;typeCode" />
+                                <s:basetype optional="true" unbounded="false" typename="string" name="typeDescription" qname="patentDetails&gt;typeDescription" />
+                              </s:elements>
+                            </s:complextype>
+                            <s:basetype optional="true" unbounded="false" typename="string" name="pubModel" qname="citation&gt;pubModel" />
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="publicationType" name="pubTypeCollection" qname="citation&gt;pubTypeCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="publicationType" name="" qname="{http://webservice.cdb.ebi.ac.uk/}publicationType">
+                                  <s:elements>
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="description" qname="publicationType&gt;description" />
+                                    <s:basetype optional="true" unbounded="false" typename="int" name="id" qname="publicationType&gt;id" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="name" qname="publicationType&gt;name" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="reference" name="referenceCollection" qname="citation&gt;referenceCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="reference" name="" qname="{http://webservice.cdb.ebi.ac.uk/}reference">
+                                  <s:elements>
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="authors" qname="reference&gt;authors" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="citationType" qname="reference&gt;citationType" />
+                                    <s:basetype optional="false" unbounded="false" typename="int" name="citedOrder" qname="reference&gt;citedOrder" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="comments" qname="reference&gt;comments" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="doi" qname="reference&gt;doi" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="edition" qname="reference&gt;edition" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="editors" qname="reference&gt;editors" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="essn" qname="reference&gt;essn" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="externalId" qname="reference&gt;externalId" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="externalLink" qname="reference&gt;externalLink" />
+                                    <s:basetype optional="true" unbounded="false" typename="decimal" name="id" qname="reference&gt;id" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="isbn" qname="reference&gt;isbn" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="issn" qname="reference&gt;issn" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="issue" qname="reference&gt;issue" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="journalAbbr" qname="reference&gt;journalAbbr" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="match" qname="reference&gt;match" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="pageInfo" qname="reference&gt;pageInfo" />
+                                    <s:basetype optional="false" unbounded="false" typename="int" name="parentId" qname="reference&gt;parentId" />
+                                    <s:basetype optional="false" unbounded="false" typename="int" name="pubYear" qname="reference&gt;pubYear" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="publisherLoc" qname="reference&gt;publisherLoc" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="publisherName" qname="reference&gt;publisherName" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="refId" qname="reference&gt;refId" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="seriesName" qname="reference&gt;seriesName" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="source" qname="reference&gt;source" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="title" qname="reference&gt;title" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="unstructuredInformation" qname="reference&gt;unstructuredInformation" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="volume" qname="reference&gt;volume" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="textFragment" name="refererCollection" qname="citation&gt;refererCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="textFragment" name="" qname="{http://webservice.cdb.ebi.ac.uk/}textFragment">
+                                  <s:elements>
+                                    <s:basetype optional="false" unbounded="false" typename="int" name="citationId" qname="textFragment&gt;citationId" />
+                                    <s:basetype optional="false" unbounded="false" typename="int" name="lineNum" qname="textFragment&gt;lineNum" />
+                                    <s:basetype optional="false" unbounded="false" typename="int" name="orderInReference" qname="textFragment&gt;orderInReference" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="referencedBy_ExternalId" qname="textFragment&gt;referencedBy_ExternalId" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="referencedBy_Source" qname="textFragment&gt;referencedBy_Source" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="text" qname="textFragment&gt;text" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="subSet" name="subsetCollection" qname="citation&gt;subsetCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="subSet" name="" qname="{http://webservice.cdb.ebi.ac.uk/}subSet">
+                                  <s:elements>
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="code" qname="subSet&gt;code" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="name" qname="subSet&gt;name" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:basetype optional="true" unbounded="false" typename="string" name="title" qname="citation&gt;title" />
+                            <s:basetype optional="true" unbounded="false" typename="string" name="titleNonAscii" qname="citation&gt;titleNonAscii" />
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="fullTextURL" name="urlCollection" qname="citation&gt;urlCollection">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="fullTextURL" name="" qname="{http://webservice.cdb.ebi.ac.uk/}fullTextURL">
+                                  <s:elements>
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="availability" qname="fullTextURL&gt;availability" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="availabilityCode" qname="fullTextURL&gt;availabilityCode" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="documentStyle" qname="fullTextURL&gt;documentStyle" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="externalId" qname="fullTextURL&gt;externalId" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="id" qname="fullTextURL&gt;id" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="site" qname="fullTextURL&gt;site" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="source" qname="fullTextURL&gt;source" />
+                                    <s:basetype optional="true" unbounded="false" typename="string" name="url" qname="fullTextURL&gt;url" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                          </s:elements>
+                        </s:complextype>
+                        <s:basetype optional="false" unbounded="false" typename="float" name="score" qname="resultBean&gt;score" />
+                      </s:elements>
+                    </s:complextype>
+                  </s:elementtype>
+                </s:arraytype>
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="Query" sink="Search_Parameters:luceneQueryString" />
+  <s:link source="Search_Parameters:output" sink="searchCitations:parameters" />
+  <s:link source="Unwrap_result:return" sink="Citations" />
+  <s:link source="searchCitations:parameters" sink="Unwrap_result:input" />
+  <s:source name="Query">
+    <s:metadata>
+      <s:description>Query terms for citation search. For example: auxin resistance
+
+This is a Lucene query string, see the CiteXplore help for details of accepted syntax (http://www.ebi.ac.uk/citexplore/help.jsp#query).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="Citations">
+    <s:metadata>
+      <s:description>Citation details from CiteXplore in the "core" XML format.
+
+This includes all the citation details (e.g. authors, title, journal, PubMed ID, etc.) and the document availability information and URLs.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

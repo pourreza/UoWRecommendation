@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:85187e42-e01e-4df8-803a-dbee10f0d9d7" author="Mikołaj Rybiński" title="Probabilistic Model Checking (PMC): plot results" />
+  <s:processor name="string2List">
+    <s:beanshell>
+      <s:scriptvalue>list = Arrays.asList(new String[]{string});</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">string</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">list</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="extendList">
+    <s:beanshell>
+      <s:scriptvalue>list = new LinkedList(firstList);
+list.addAll(secondList);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">firstList</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">secondList</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">list</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="getPropertiesNames">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:dd497604-43f4-43ec-9b1c-9077da9dc7b0" author="" title="Get properties names" />
+        <s:processor name="Remove_duplicate_strings">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringStripDuplicates</s:local>
+        </s:processor>
+        <s:processor name="XPath_From_Text">
+          <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+        </s:processor>
+        <s:processor name="propertyNameXPath" boring="true">
+          <s:stringconstant>//property/@name</s:stringconstant>
+        </s:processor>
+        <s:link source="Remove_duplicate_strings:strippedlist" sink="propertyNameList" />
+        <s:link source="propertyNameXPath:value" sink="XPath_From_Text:xpath" />
+        <s:link source="resultsXml" sink="XPath_From_Text:xml-text" />
+        <s:link source="XPath_From_Text:nodelist" sink="Remove_duplicate_strings:stringlist" />
+        <s:source name="resultsXml" />
+        <s:sink name="propertyNameList" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="MathPlot">
+    <s:workflow>
+      <s:xscufllocation>http://bioputer.mimuw.edu.pl/tav4sb/workflows/ws_mathPlot.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="resultsXml2dataXmlList">
+    <s:workflow>
+      <s:xscufllocation>http://bioputer.mimuw.edu.pl/tav4sb/workflows/elementXml2dataXmlList.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:link source="constantNameList" sink="extendList:firstList" />
+  <s:link source="constantNameList" sink="resultsXml2dataXmlList:argNameList" />
+  <s:link source="extendList:list" sink="MathPlot:axisList" />
+  <s:link source="getPropertiesNames:propertyNameList" sink="extendList:secondList" />
+  <s:link source="getPropertiesNames:propertyNameList" sink="string2List:string" />
+  <s:link source="plotOptionList" sink="MathPlot:optionList" />
+  <s:link source="resultsXml" sink="getPropertiesNames:resultsXml" />
+  <s:link source="resultsXml" sink="resultsXml2dataXmlList:elementXml" />
+  <s:link source="resultsXml2dataXmlList:dataXmlList" sink="MathPlot:dataXmlList" />
+  <s:link source="string2List:list" sink="resultsXml2dataXmlList:valNameListList" />
+  <s:link source="MathPlot:plots" sink="plot" />
+  <s:source name="resultsXml" />
+  <s:source name="constantNameList" />
+  <s:source name="plotOptionList" />
+  <s:sink name="plot">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>image/png</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

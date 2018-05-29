@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:QM8274VGE529" author="Paul Fisher" title="Perform a search through NCBI eUtils eSearch">This workflow takes in a search term and a database (e.g. snp, gene, protein) in which to perfom the search over. The result is an xml file containing summary information about the search term</s:workflowdescription>
+  <s:processor name="parametersXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="eSearchRequest" name="parameters" qname="{}eSearchRequest">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="db" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="term" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="WebEnv" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="QueryKey" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="usehistory" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="tool" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="email" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="field" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="reldate" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="mindate" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="maxdate" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="datetype" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="RetStart" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="RetMax" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="rettype" qname="{}string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="sort" qname="{}string" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="NCBI_eSearch">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://eutils.ncbi.nlm.nih.gov/entrez/eutils/soap/eutils.wsdl</s:wsdl>
+      <s:operation>run_eSearch</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="database" sink="parametersXML:db" />
+  <s:link source="parametersXML:output" sink="NCBI_eSearch:parameters" />
+  <s:link source="terms" sink="parametersXML:term" />
+  <s:link source="NCBI_eSearch:parameters" sink="xml_output" />
+  <s:source name="terms" />
+  <s:source name="database" />
+  <s:sink name="xml_output" />
+</s:scufl>
+

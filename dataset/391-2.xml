@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:edb39d95-9097-4c39-91f9-1f36c59d375b" author="Thomas Kelder" title="Get pathways by external reference">Finds pathways on WikiPathways by an external gene/protein/metabolite reference. See http://www.pathvisio.org/Help_1.1#Supported_database_systems for a list of supported database systems.</s:workflowdescription>
+  <s:processor name="getId">
+    <s:defaults>
+      <s:default name="xpath">//*[local-name()="id"]</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="getNames">
+    <s:description>XPath query to extract the names list from the xml response.</s:description>
+    <s:defaults>
+      <s:default name="xpath">//*[local-name()="result"]/*[local-name()="name"]</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="getSpecies">
+    <s:description>XPath query to extract the species list from the xml response.</s:description>
+    <s:defaults>
+      <s:default name="xpath">//*[local-name()="species"]</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="findPathwaysByXrefInput">
+    <s:defaults>
+      <s:default name="code" />
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="findPathwaysByXref" name="parameters" qname="{http://www.wso2.org/php/xsd}findPathwaysByXref">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="id" qname="{http://www.wso2.org/php/xsd}&gt;findPathwaysByXref&gt;id" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="code" qname="{http://www.wso2.org/php/xsd}&gt;findPathwaysByXref&gt;code" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="code" />
+        <i:iterator name="id" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="findPathwaysByXref">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.wikipathways.org/wpi/webservice/webservice.php?wsdl</s:wsdl>
+      <s:operation>findPathwaysByXref</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="findPathwaysByXref:parameters" sink="getNames:xml-text" />
+  <s:link source="findPathwaysByXref:parameters" sink="getSpecies:xml-text" />
+  <s:link source="findPathwaysByXrefInput:output" sink="findPathwaysByXref:parameters" />
+  <s:link source="identifier" sink="findPathwaysByXrefInput:id" />
+  <s:link source="system_code" sink="findPathwaysByXrefInput:code" />
+  <s:link source="findPathwaysByXref:parameters" sink="getId:xml-text" />
+  <s:link source="getId:nodelist" sink="pathway_ids" />
+  <s:link source="getNames:nodelist" sink="pathway_names" />
+  <s:link source="getSpecies:nodelist" sink="pathway_species" />
+  <s:source name="identifier">
+    <s:metadata>
+      <s:description>The identifier of the external reference (e.g. P48039).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="system_code">
+    <s:metadata>
+      <s:description>The code of the external database to use. Use an empty string if you don't want to restrict the database system.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="pathway_names">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+        <s:mimeType>image/png</s:mimeType>
+        <s:mimeType>application/octet-stream</s:mimeType>
+      </s:mimeTypes>
+      <s:description>A list with the names of the pathways that were found.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="pathway_species">
+    <s:metadata>
+      <s:description>A list with the species of the pathways that were found.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="pathway_ids" />
+</s:scufl>
+

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:577039e3-afdc-42e7-a666-7c98258e175b" author="Hamish McWilliam" title="EBI_IntAct">Find protein binary interactions using the EBI's IntAct service.
+
+See http://www.ebi.ac.uk/intact/ for further details.</s:workflowdescription>
+  <s:processor name="findBinaryInteractions">
+    <s:description>Get interactions from IntAct.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/intact/binary-search-ws/binarysearch?wsdl</s:wsdl>
+      <s:operation>findBinaryInteractions</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Input_parameters">
+    <s:description>Build input parameters structure.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="findBinaryInteractions" name="parameters" qname="{http://ebi.ac.uk/intact/binarysearch/wsclient/generated}findBinaryInteractions">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="query" qname="{http://ebi.ac.uk/intact/binarysearch/wsclient/generated}findBinaryInteractions&gt;query" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Unwrap_result">
+    <s:description>Unwrap result XML.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="findBinaryInteractionsResponse" name="parameters" qname="{http://ebi.ac.uk/intact/binarysearch/wsclient/generated}findBinaryInteractionsResponse">
+          <s:elements>
+            <s:complextype optional="true" unbounded="false" typename="simplifiedSearchResult" name="return" qname="findBinaryInteractionsResponse&gt;return">
+              <s:elements>
+                <s:basetype optional="true" unbounded="false" typename="int" name="firstResult" qname="simplifiedSearchResult&gt;firstResult" />
+                <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="interactionLines" qname="simplifiedSearchResult&gt;interactionLines">
+                  <s:elementtype>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  </s:elementtype>
+                </s:arraytype>
+                <s:basetype optional="true" unbounded="false" typename="string" name="luceneQuery" qname="simplifiedSearchResult&gt;luceneQuery" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="maxResults" qname="simplifiedSearchResult&gt;maxResults" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="totalResults" qname="simplifiedSearchResult&gt;totalResults" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="Input_parameters:output" sink="findBinaryInteractions:parameters" />
+  <s:link source="Query" sink="Input_parameters:query" />
+  <s:link source="Unwrap_result:return" sink="IntAct_result" />
+  <s:link source="findBinaryInteractions:parameters" sink="Unwrap_result:input" />
+  <s:source name="Query">
+    <s:metadata>
+      <s:description>Query terms. For example: P42643
+
+Note: UniProtKB names cannot be used with this service, they must be converted to accessions first.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="IntAct_result">
+    <s:metadata>
+      <s:description>XML document describing the interactions found.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

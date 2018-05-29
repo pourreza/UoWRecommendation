@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:5e07145e-44bd-4154-890b-c74e2c3aff83" author="Sean Bechhofer" title="What's On Next">Queries the BBC to find out what's on next for a particular channel.</s:workflowdescription>
+  <s:processor name="method" boring="true">
+    <s:stringconstant>method=bbc.schedule.getProgrammes</s:stringconstant>
+  </s:processor>
+  <s:processor name="Concat1">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="channel" boring="true">
+    <s:description>Channel to Query</s:description>
+    <s:stringconstant>&amp;channel_id=BBCOne</s:stringconstant>
+  </s:processor>
+  <s:processor name="limit" boring="true">
+    <s:description>Controls the number of programmes to look for.</s:description>
+    <s:stringconstant>&amp;limit=1</s:stringconstant>
+  </s:processor>
+  <s:processor name="ProgrammeTitleQuery" boring="true">
+    <s:stringconstant>//programme/@title</s:stringconstant>
+  </s:processor>
+  <s:processor name="DetailsURL" boring="true">
+    <s:stringconstant>http://www0.rdthdo.bbc.co.uk/cgi-perl/api/query.pl?method=bbc.programme.getInfo&amp;programme_id=</s:stringconstant>
+  </s:processor>
+  <s:processor name="ProgrammeIdQuery" boring="true">
+    <s:stringconstant>//programme/@programme_id</s:stringconstant>
+  </s:processor>
+  <s:processor name="SynopsisQuery" boring="true">
+    <s:stringconstant>//programme/synopsis</s:stringconstant>
+  </s:processor>
+  <s:processor name="Concat2">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="Concat3">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="TitleXPath">
+    <s:defaults>
+      <s:default name="xml-text" />
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="Concat4">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="GetProgrammeDetails">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="IdXPath">
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="GetProgrammeSynopsis">
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="FlattenList">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="bbcAPI" boring="true">
+    <s:stringconstant>http://www0.rdthdo.bbc.co.uk/cgi-perl/api/query.pl?</s:stringconstant>
+  </s:processor>
+  <s:processor name="GetSchedule">
+    <s:defaults>
+      <s:default name="url" />
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="ProgrammeStartQuery" boring="true">
+    <s:stringconstant>//programme/event/start</s:stringconstant>
+  </s:processor>
+  <s:processor name="StartXPath">
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="FlattenList2">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:link source="Concat1:output" sink="Concat2:string1" />
+  <s:link source="Concat2:output" sink="Concat3:string1" />
+  <s:link source="Concat3:output" sink="GetSchedule:url" />
+  <s:link source="Concat4:output" sink="GetProgrammeDetails:url" />
+  <s:link source="DetailsURL:value" sink="Concat4:string1" />
+  <s:link source="FlattenList2:concatenated" sink="ProgrammeStart" />
+  <s:link source="GetProgrammeDetails:contents" sink="StartXPath:xml-text" />
+  <s:link source="ProgrammeIdQuery:value" sink="IdXPath:xpath" />
+  <s:link source="ProgrammeStartQuery:value" sink="StartXPath:xpath" />
+  <s:link source="ProgrammeTitleQuery:value" sink="TitleXPath:xpath" />
+  <s:link source="StartXPath:nodelist" sink="FlattenList2:stringlist" />
+  <s:link source="SynopsisQuery:value" sink="GetProgrammeSynopsis:xpath" />
+  <s:link source="FlattenList:outputlist" sink="ProgrammeSynopsis" />
+  <s:link source="GetProgrammeDetails:contents" sink="GetProgrammeSynopsis:xml-text" />
+  <s:link source="GetProgrammeSynopsis:nodelist" sink="FlattenList:inputlist" />
+  <s:link source="GetSchedule:contents" sink="IdXPath:xml-text" />
+  <s:link source="GetSchedule:contents" sink="TitleXPath:xml-text" />
+  <s:link source="IdXPath:nodelist" sink="Concat4:string2" />
+  <s:link source="TitleXPath:nodelist" sink="ProgrammeTitle" />
+  <s:link source="bbcAPI:value" sink="Concat1:string1" />
+  <s:link source="channel:value" sink="Concat2:string2" />
+  <s:link source="limit:value" sink="Concat3:string2" />
+  <s:link source="method:value" sink="Concat1:string2" />
+  <s:sink name="ProgrammeTitle" />
+  <s:sink name="ProgrammeSynopsis" />
+  <s:sink name="ProgrammeStart" />
+</s:scufl>
+

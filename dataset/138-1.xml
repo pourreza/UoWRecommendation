@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:cf3bb3f6-aa37-4719-b75b-9ab562992a36" author="" title="ExampleWorkflow1" />
+  <s:processor name="Get_Protein_FASTA">
+    <s:local>net.sourceforge.taverna.scuflworkers.ncbi.ProteinFastaWorker</s:local>
+  </s:processor>
+  <s:processor name="searchSimple">
+    <s:description>Execute Blast</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/Blast.wsdl</s:wsdl>
+      <s:operation>searchSimple</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="database" boring="true">
+    <s:stringconstant>SWISS</s:stringconstant>
+  </s:processor>
+  <s:processor name="program" boring="true">
+    <s:stringconstant>blastp</s:stringconstant>
+  </s:processor>
+  <s:processor name="pscan">
+    <s:description>Scans proteins using PRINTS</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/protein_motifs.pscan</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="patmatmotifs">
+    <s:description>Search a PROSITE motif database with a
+                  protein sequence</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/protein_motifs.patmatmotifs</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="geneIdentifier" sink="Get_Protein_FASTA:id" />
+  <s:link source="Get_Protein_FASTA:outputText" sink="patmatmotifs:sequence_usa" />
+  <s:link source="Get_Protein_FASTA:outputText" sink="pscan:sequence_usa" />
+  <s:link source="Get_Protein_FASTA:outputText" sink="searchSimple:query" />
+  <s:link source="database:value" sink="searchSimple:database" />
+  <s:link source="program:value" sink="searchSimple:program" />
+  <s:link source="Get_Protein_FASTA:outputText" sink="fastaSequence" />
+  <s:link source="searchSimple:Result" sink="blast_report" />
+  <s:source name="geneIdentifier" />
+  <s:sink name="fastaSequence" />
+  <s:sink name="blast_report" />
+</s:scufl>
+

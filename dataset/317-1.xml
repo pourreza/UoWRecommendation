@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:M763988GGM1" author="Tom Oinn" title="Show Gene Ontology Term Context">This workflow builds up a subgraph of the Gene Ontology (http://www.geneontology.org) to show the context for a supplied term or terms. It shows this context by colouring all ancestors of the term, all children and all siblings. By default, ancestors of the supplied term or terms are coloured orange, siblings purple and direct children teal. Other terms appear in the default wheat colour.</s:workflowdescription>
+  <s:processor name="childColour" boring="true">
+    <s:stringconstant>darkslategray3</s:stringconstant>
+  </s:processor>
+  <s:processor name="getChildren">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>getChildren</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getresults">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>getDot</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getAncestry">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>getAncestors</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="markAncestors">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>markTerm</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getParents">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>getParents</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="add">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>addTerm</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="colourChildren">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>markTerm</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="colourInputTerm">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>markTerm</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="addImmediateChildren">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>addTerm</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="finish">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>destroySession</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="create">
+    <s:arbitrarywsdl critical="true">
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>createSession</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getImmediateChildren">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>getChildren</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="inputTermColour" boring="true">
+    <s:stringconstant>darkolivegreen3</s:stringconstant>
+  </s:processor>
+  <s:processor name="ancestorColour" boring="true">
+    <s:stringconstant>gold1</s:stringconstant>
+  </s:processor>
+  <s:link source="termID" sink="getParents:geneOntologyID" />
+  <s:link source="ancestorColour:value" sink="markAncestors:colour" />
+  <s:link source="create:createSessionReturn" sink="add:sessionID" />
+  <s:link source="create:createSessionReturn" sink="finish:sessionID" />
+  <s:link source="create:createSessionReturn" sink="getresults:sessionID" />
+  <s:link source="getChildren:getChildrenReturn" sink="add:geneOntologyID" />
+  <s:link source="getParents:getParentsReturn" sink="getChildren:geneOntologyID" />
+  <s:link source="termID" sink="getAncestry:geneOntologyID" />
+  <s:link source="create:createSessionReturn" sink="markAncestors:sessionID" />
+  <s:link source="getAncestry:getAncestorsReturn" sink="markAncestors:geneOntologyID" />
+  <s:link source="termID" sink="getImmediateChildren:geneOntologyID" />
+  <s:link source="childColour:value" sink="colourChildren:colour" />
+  <s:link source="create:createSessionReturn" sink="addImmediateChildren:sessionID" />
+  <s:link source="create:createSessionReturn" sink="colourChildren:sessionID" />
+  <s:link source="getImmediateChildren:getChildrenReturn" sink="addImmediateChildren:geneOntologyID" />
+  <s:link source="getImmediateChildren:getChildrenReturn" sink="colourChildren:geneOntologyID" />
+  <s:link source="inputTermColour:value" sink="colourInputTerm:colour" />
+  <s:link source="termID" sink="colourInputTerm:geneOntologyID" />
+  <s:link source="create:createSessionReturn" sink="colourInputTerm:sessionID" />
+  <s:link source="getresults:getDotReturn" sink="graphical" />
+  <s:source name="termID">
+    <s:metadata>
+      <s:description>The term for which to display context within the Gene Ontology. An example is the term for vision, GO:0007601</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="graphical">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/x-graphviz</s:mimeType>
+      </s:mimeTypes>
+      <s:description>A text file containing the dot coded representation of the GO subgraph generated by this workflow. To see the graph you'll have to run it through the 'dot' tool, part of AT&amp;T's graphviz package.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:coordination name="finish_BLOCKON_getresults">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>getresults</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>finish</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="markAncestors_BLOCKON_add">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>add</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>markAncestors</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="colourChildren_BLOCKON_addImmediateChildren">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>addImmediateChildren</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>colourChildren</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="getresults_BLOCKON_colourChildren">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>colourChildren</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>getresults</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="colourInputTerm_BLOCKON_markAncestors">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>markAncestors</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>colourInputTerm</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="getresults_BLOCKON_colourInputTerm">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>colourInputTerm</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>getresults</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+
+

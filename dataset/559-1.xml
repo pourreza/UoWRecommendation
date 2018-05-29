@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:7b64453d-1ffb-485d-848d-2dc7dc4f56a1" author="Thomas Kuhn" title="Molecular Weight Distribution">This workflow calculates the molecular weight of molecules stored in a postgres sql database with the Pgchem::tigress chemoinformatics cardridge. The cardridge perform the molecular weight calculation. The get a moleculear weight distribution worker creates a chart of the available data.</s:workflowdescription>
+  <s:processor name="Get_a_molecular_weight_distribution">
+    <s:cdk>org.openscience.cdk.applications.taverna.tools.GetMolecularWeightDistribution</s:cdk>
+  </s:processor>
+  <s:processor name="Get_Molecular_Weight_from_database">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.database.pgchem.GetMolecularWeightFromDB
+      <s:extensions>
+        <s:GetQSARVectorFromDB>
+          <DBConnectionPostgres>
+            <DBURL>jdbc:postgresql://localhost/cdktaverna</DBURL>
+            <DBUserName />
+            <DBUserPassword />
+            <SQLQuery>Select id, molweight(molecule) From molecules</SQLQuery>
+          </DBConnectionPostgres>
+        </s:GetQSARVectorFromDB>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:link source="Get_Molecular_Weight_from_database:MoleuclarWeight" sink="Get_a_molecular_weight_distribution:molecularWeights" />
+  <s:link source="Get_Molecular_Weight_from_database:moleculeIDList" sink="Get_a_molecular_weight_distribution:moleculeids" />
+</s:scufl>
+

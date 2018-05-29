@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:TPZT6DLP5V39" author="Tom Oinn" title="Fetch Dragon images from BioMoby v2">Use the local java plugins and some filtering operations to fetch the comic strip image from http://www.dilbert.com</s:workflowdescription>
+  <s:processor name="id" boring="true">
+    <s:stringconstant>cho</s:stringconstant>
+  </s:processor>
+  <s:processor name="namespace" boring="true">
+    <s:stringconstant>DragonDB:Allele</s:stringconstant>
+  </s:processor>
+  <s:processor name="Decode_base64_to_byte">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.DecodeBase64</s:local>
+  </s:processor>
+  <s:processor name="Parse_moby_data___updated__2006">
+    <s:local>org.biomoby.client.taverna.plugin.ExtractMobyData</s:local>
+  </s:processor>
+  <s:processor name="getJpegFromAnnotatedImage">
+    <s:description>This service takes in an annotated jpeg image and returns just the image.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://mobycentral.icapture.ubc.ca/cgi-bin/MOBY05/mobycentral.pl</s:mobyEndpoint>
+      <s:serviceName>getJpegFromAnnotatedImage</s:serviceName>
+      <s:authorityName>bioinfo.icapture.ubc.ca</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="getDragonSimpleAnnotatedImages">
+    <s:description>Consumes DragonDB allele identifiers and returns a collection of images of plants homozygous for that allele</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://mobycentral.icapture.ubc.ca/cgi-bin/MOBY05/mobycentral.pl</s:mobyEndpoint>
+      <s:serviceName>getDragonSimpleAnnotatedImages</s:serviceName>
+      <s:authorityName>antirrhinum.net</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Object">
+    <s:description>an object</s:description>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://mobycentral.icapture.ubc.ca/cgi-bin/MOBY05/mobycentral.pl</s:mobyEndpoint>
+      <s:serviceName>Object</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:link source="Decode_base64_to_byte:bytes" sink="images" />
+  <s:link source="Object:mobyData" sink="getDragonSimpleAnnotatedImages:Object(input)" />
+  <s:link source="Parse_moby_data___updated__2006:value" sink="Decode_base64_to_byte:base64" />
+  <s:link source="getDragonSimpleAnnotatedImages:SimpleAnnotatedJPEGImage(Collection - 'image' As Simples)" sink="getJpegFromAnnotatedImage:SimpleAnnotatedJPEGImage(annotatedImage)" />
+  <s:link source="getJpegFromAnnotatedImage:b64_encoded_jpeg(image)" sink="Parse_moby_data___updated__2006:mobydata" />
+  <s:link source="id:value" sink="Object:id" />
+  <s:link source="namespace:value" sink="Object:namespace" />
+  <s:sink name="images">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>image/*</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

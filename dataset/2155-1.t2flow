@@ -1,0 +1,149 @@
+<workflow xmlns="http://taverna.sf.net/2008/xml/t2flow" version="1" producedBy="taverna-2.3-SNAPSHOT-20110512"><dataflow id="c0d01119-872a-4e5d-92b8-5bcd559fa8ea" role="top"><name>Find_Reactome_pathways_and_reactions_by_GO</name><inputPorts><port><name>GO_accession</name><depth>0</depth><granularDepth>0</granularDepth><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.ExampleValue">
+        <text>0006915</text>
+      </annotationBean>
+      <date>2011-05-29 19:31:46.505 CEST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>Use a GO (Gene Ontology) accession. Do not forget to leave out the GO prefix, so you do not input "GO:0006915" but "0006915" instead. To find GO accessions and browse the GO you can use Amigo ... http://amigo.geneontology.org/cgi-bin/amigo/browse.cgi ... or the OLS ... http://www.ebi.ac.uk/ontology-lookup/</text>
+      </annotationBean>
+      <date>2011-05-29 19:36:11.48 CEST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain></annotations></port></inputPorts><outputPorts><port><name>pathway_name</name><annotations /></port><port><name>stable_identifier</name><annotations /></port><port><name>reaction_name</name><annotations /></port><port><name>reaction_identifier</name><annotations /></port></outputPorts><processors><processor><name>pathway</name><inputPorts><port><name>pathway.gobiologicalprocess_accession_filter</name><depth>0</depth></port><port><name>pathway.species_selection_filter</name><depth>0</depth></port></inputPorts><outputPorts><port><name>pathway._displayname</name><depth>1</depth><granularDepth>0</granularDepth></port><port><name>pathway.stableidentifier_identifier</name><depth>1</depth><granularDepth>0</granularDepth></port><port><name>pathway.reaction__dm__displayname</name><depth>1</depth><granularDepth>0</granularDepth></port><port><name>pathway.reaction__dm_stableidentifier_identifier</name><depth>1</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>biomart-activity</artifact><version>1.3-SNAPSHOT</version></raven><class>net.sf.taverna.t2.activities.biomart.BiomartActivity</class><inputMap><map from="pathway.species_selection_filter" to="pathway.species_selection_filter" /><map from="pathway.gobiologicalprocess_accession_filter" to="pathway.gobiologicalprocess_accession_filter" /></inputMap><outputMap><map from="pathway.reaction__dm_stableidentifier_identifier" to="pathway.reaction__dm_stableidentifier_identifier" /><map from="pathway.reaction__dm__displayname" to="pathway.reaction__dm__displayname" /><map from="pathway._displayname" to="pathway._displayname" /><map from="pathway.stableidentifier_identifier" to="pathway.stableidentifier_identifier" /></outputMap><configBean encoding="jdomxml"><MartQuery xmlns=""><MartService location="http://www.biomart.org/biomart/martservice" /><MartDataset displayName="pathway" name="pathway" type="TableSet" initialBatchSize="200" maximumBatchSize="50000" visible="false" interface="default" modified="2010-10-22 10:35:32"><MartURLLocation database="test_reactome_mart" default="0" displayName="REACTOME (CSHL US)" host="reactome.oicr.on.ca" includeDatasets="complex,pathway,reaction,interaction" martUser="" name="REACTOME" path="/biomart/martservice" port="5555" serverVirtualSchema="default" virtualSchema="default" visible="1" redirect="1" /></MartDataset><Query virtualSchemaName="default" count="0" uniqueRows="0" softwareVersion="0.6" requestId="taverna"><Dataset name="pathway"><Attribute name="_displayname" /><Attribute name="stableidentifier_identifier" /><Attribute name="reaction__dm_stableidentifier_identifier" /><Attribute name="reaction__dm__displayname" /><Filter name="gobiologicalprocess_accession" value="" /><Filter name="species_selection" value="Homo sapiens" /></Dataset></Query></MartQuery></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.3-SNAPSHOT</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.3-SNAPSHOT</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.3-SNAPSHOT</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.3-SNAPSHOT</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.3-SNAPSHOT</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="pathway.gobiologicalprocess_accession_filter" depth="0" /><port name="pathway.species_selection_filter" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>species_selection</name><inputPorts /><outputPorts><port><name>value</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>stringconstant-activity</artifact><version>1.3-SNAPSHOT</version></raven><class>net.sf.taverna.t2.activities.stringconstant.StringConstantActivity</class><inputMap /><outputMap><map from="value" to="value" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.stringconstant.StringConstantConfigurationBean xmlns="">
+  <value>Homo sapiens</value>
+</net.sf.taverna.t2.activities.stringconstant.StringConstantConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.3-SNAPSHOT</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.3-SNAPSHOT</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.3-SNAPSHOT</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.3-SNAPSHOT</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.3-SNAPSHOT</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy /></iteration></iterationStrategyStack></processor></processors><conditions /><datalinks><datalink><sink type="processor"><processor>pathway</processor><port>pathway.gobiologicalprocess_accession_filter</port></sink><source type="dataflow"><port>GO_accession</port></source></datalink><datalink><sink type="processor"><processor>pathway</processor><port>pathway.species_selection_filter</port></sink><source type="processor"><processor>species_selection</processor><port>value</port></source></datalink><datalink><sink type="dataflow"><port>pathway_name</port></sink><source type="processor"><processor>pathway</processor><port>pathway._displayname</port></source></datalink><datalink><sink type="dataflow"><port>stable_identifier</port></sink><source type="processor"><processor>pathway</processor><port>pathway.stableidentifier_identifier</port></source></datalink><datalink><sink type="dataflow"><port>reaction_name</port></sink><source type="processor"><processor>pathway</processor><port>pathway.reaction__dm__displayname</port></source></datalink><datalink><sink type="dataflow"><port>reaction_identifier</port></sink><source type="processor"><processor>pathway</processor><port>pathway.reaction__dm_stableidentifier_identifier</port></source></datalink></datalinks><annotations><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>8db38f96-ea55-4810-81c0-941ab71ae2ae</identification>
+      </annotationBean>
+      <date>2011-05-29 19:19:48.209 CEST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>812c7905-6a7b-423c-8e1e-0b02a9f6e7bf</identification>
+      </annotationBean>
+      <date>2011-05-29 19:26:24.126 CEST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>b31f8a60-dd4a-4c5a-9a55-ea001df4e49d</identification>
+      </annotationBean>
+      <date>2011-05-29 19:41:53.539 CEST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.Author">
+        <text>Rafael C. Jimenez</text>
+      </annotationBean>
+      <date>2011-05-29 19:41:49.614 CEST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>de560b68-b6d7-4789-88e5-89a719898f07</identification>
+      </annotationBean>
+      <date>2011-05-29 19:22:07.663 CEST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>Find Reactome pathways and reactions (names and accessions) in Human querying by a Gene Ontology term. This is an example of how to use the Reactome Biomart service in Taverna. Many other possibilities are possible by modifying the filters and attributes options of the service.</text>
+      </annotationBean>
+      <date>2011-05-29 19:41:14.330 CEST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>2eeba4e1-102c-4608-849b-1991a5d48844</identification>
+      </annotationBean>
+      <date>2011-05-29 19:29:16.241 CEST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>8d3e0867-cf30-4cb1-81c5-dfdaab1b75f6</identification>
+      </annotationBean>
+      <date>2011-05-29 19:30:46.948 CEST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.DescriptiveTitle">
+        <text>Find Reactome pathways and reactions by GO</text>
+      </annotationBean>
+      <date>2011-05-29 19:41:23.926 CEST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>c0d01119-872a-4e5d-92b8-5bcd559fa8ea</identification>
+      </annotationBean>
+      <date>2011-05-29 19:57:23.570 CEST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2></annotations></dataflow></workflow>

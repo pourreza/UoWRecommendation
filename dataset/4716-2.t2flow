@@ -1,0 +1,515 @@
+<workflow xmlns="http://taverna.sf.net/2008/xml/t2flow" version="1" producedBy="taverna-core-2.5.0"><dataflow id="3fb5c8a8-4548-43fa-aa25-26e2b123abc5" role="top"><name>Workflow18</name><inputPorts><port><name>ImpactID</name><depth>0</depth><granularDepth>0</granularDepth><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>ID of the REF2014 impact study</text>
+      </annotationBean>
+      <date>2015-09-05 11:53:44.303 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.ExampleValue">
+        <text>911</text>
+      </annotationBean>
+      <date>2015-09-05 11:53:20.717 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain></annotations></port></inputPorts><outputPorts><port><name>ImpactSummary</name><lastPredictedDepth>0</lastPredictedDepth><annotations /></port></outputPorts><processors><processor><name>Get_Ref2014_impact_study_REST_Service</name><inputPorts><port><name>ImpactID</name><depth>0</depth></port></inputPorts><outputPorts><port><name>responseBody</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>rest-activity</artifact><version>1.5</version></raven><class>net.sf.taverna.t2.activities.rest.RESTActivity</class><inputMap><map from="ImpactID" to="ImpactID" /></inputMap><outputMap><map from="responseBody" to="responseBody" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.rest.RESTActivityConfigurationBean xmlns="">
+  <httpMethod>GET</httpMethod>
+  <urlSignature>http://impact.ref.ac.uk/casestudiesapi/REFAPI.svc/SearchCaseStudies?UoA=16&amp;ID={ImpactID}&amp;format=xml</urlSignature>
+  <acceptsHeaderValue>application/xml</acceptsHeaderValue>
+  <contentTypeForUpdates>application/xml</contentTypeForUpdates>
+  <outgoingDataFormat>String</outgoingDataFormat>
+  <sendHTTPExpectRequestHeader>false</sendHTTPExpectRequestHeader>
+  <showRedirectionOutputPort>false</showRedirectionOutputPort>
+  <showActualUrlPort>false</showActualUrlPort>
+  <showResponseHeadersPort>false</showResponseHeadersPort>
+  <escapeParameters>true</escapeParameters>
+  <otherHTTPHeaders />
+  <activityInputs>
+    <entry>
+      <string>ImpactID</string>
+      <java-class>java.lang.String</java-class>
+    </entry>
+  </activityInputs>
+</net.sf.taverna.t2.activities.rest.RESTActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.5</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.5</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.5</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.5</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.5</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="ImpactID" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>Extract_ImpactSummary_XPath_Service</name><inputPorts><port><name>xml_text</name><depth>0</depth></port></inputPorts><outputPorts><port><name>firstNode</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>xpath-activity</artifact><version>1.5</version></raven><class>net.sf.taverna.t2.activities.xpath.XPathActivity</class><inputMap><map from="xml_text" to="xml_text" /></inputMap><outputMap><map from="firstNode" to="firstNode" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.xpath.XPathActivityConfigurationBean xmlns="">
+  <xmlDocument>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;ArrayOfCaseStudyDump xmlns="http://schemas.datacontract.org/2004/07/REFAPIService" xmlns:i="http://www.w3.org/2001/XMLSchema-instance"&gt;
+&lt;CaseStudyDump&gt;
+&lt;CaseStudyId&gt;911&lt;/CaseStudyId&gt;
+&lt;Continent&gt;
+&lt;GeoLocation&gt;
+&lt;GeoNamesId&gt;6255148&lt;/GeoNamesId&gt;
+&lt;Name&gt;Europe&lt;/Name&gt;
+&lt;/GeoLocation&gt;
+&lt;GeoLocation&gt;
+&lt;GeoNamesId&gt;6255147&lt;/GeoNamesId&gt;
+&lt;Name&gt;Asia&lt;/Name&gt;
+&lt;/GeoLocation&gt;
+&lt;/Continent&gt;
+&lt;Country&gt;
+&lt;GeoLocation&gt;
+&lt;GeoNamesId&gt;2635167&lt;/GeoNamesId&gt;
+&lt;Name&gt;United Kingdom&lt;/Name&gt;
+&lt;/GeoLocation&gt;
+&lt;GeoLocation&gt;
+&lt;GeoNamesId&gt;1814991&lt;/GeoNamesId&gt;
+&lt;Name&gt;China&lt;/Name&gt;
+&lt;/GeoLocation&gt;
+&lt;/Country&gt;
+&lt;Funders xmlns:a="http://schemas.microsoft.com/2003/10/Serialization/Arrays"&gt;&lt;/Funders&gt;
+&lt;ImpactDetails&gt;
+The Greenfoot system and research has a direct impact in several
+ different ways:
+ 
+ During the REF period, it has benefited more than a million school
+ students in 49+ countries directly ([I1], [I2], all references to
+ Section 5).
+ It benefits thousands of teachers who use it to teach programming
+ differently ([S2],[S3]).
+ It has influenced national curriculum design in the UK ([S1]).
+ 
+ Impact for students. Students benefit by being able to
+ achieve more tangible results more quickly, leading to increased motivation and satisfaction, as well as better understanding of programming
+ concepts. Before using Greenfoot, many students were taught using
+ text-based development environments designed mainly for professional
+ programmers. These environments are difficult to use, force learners
+ through large amounts of detail before achieving the first motivating
+ impact, and possible outputs in reach of early learners are a long way off
+ of meeting expectations of students who have grown up with interactive
+ graphical software systems. Greenfoot removes all of these problems.
+ Many teachers have long been aware of this problem and have struggled to
+ teach programming in a more engaging manner. This has been especially
+ difficult if the goal was to teach modern concepts of software
+ engineering, usually with an object oriented language. Greenfoot helps
+ teachers by giving them a tool to meet their goals — teaching
+ software development principles and object orientation in a modern,
+ graphical context. The impact is aided by the availability of a
+ Greenfoot-based textbook: Introduction to Programming with Greenfoot — Object-Oriented Programming in Java with Games and Simulations.
+ Michael Kölling. Pearson Education, 2009. ISBN-13: 978-0-13-603753-8. More
+ than 16,000 copies of the book have been sold, providing further evidence
+ of the popularity of this approach.
+ User engagement. User engagement in the research results
+ and the resulting software has been achieved via a number of different
+ channels. These include keynote talks at educational conferences
+ in several different countries, research talks and invited talks at
+ conferences, and a large number of teacher and student workshops.
+ Publishing the software itself is not sufficient to create lasting impact;
+ it was highly effective to go out to conferences where we could interact
+ with stakeholders and present the system to them directly. Over the last
+ three years, we have reached more than 300 teachers directly in
+ face-to-face workshops. A Greenfoot channel on YouTube (http://www.youtube.com/user/18km)
+ with instructional videos has received more than 290,000 views over two
+ years.
+ Computing at School (CAS). Our research group works with
+ the Computing At School (CAS) group (www.computingatschool.org.uk),
+ which aims to improve the provision of computer science in schools in the
+ UK. Greenfoot has become one of the frequently used tools in the group's
+ activities, including teacher training workshops. In a letter [S1]
+ supporting this case study, Simon Humphreys, BCS and coordinator of CAS,
+ wrote: "The pedagogy that underpins Greenfoot is exemplary. It has an
+ active, supportive, worldwide community, tutorials and teaching plans.
+ It has a special place with pupils at KS4 and A Level and CAS are
+ privileged to be able to work with the Greenfoot team in supporting
+ classroom practitioners."
+ Feedback. The impact for students and the effectiveness of
+ the dissemination is evidenced by frequent unsolicited feedback from
+ teachers. Following are two typical quotes from instructors:
+ "By the way, I gave my Year 12/13s a choice of what to do their
+ projects in, and 16 out of 18 chose Greenfoot. The progress they've made
+ so far compared to this time last year on VB or php/Javascript is
+ amazing. I see a whole pile of A's appearing in due course!"
+ - Andrew Tringham, Teacher, Archbishop Tenison's School, Croydon,
+ (see statement [S2])
+ "On Monday they could stay at home for me to see and exercise your
+ `Joy of Code' movies. With the notion that they would receive an
+ assignment on Tuesday. I'm always very suspicious, and I didn't thought
+ that they would go seriously through the material. Monday at midnight, I
+ gave the assignment free. Normally in the morning when I enter a
+ classroom, IT-students are still half sleeping or reading the online
+ journal, or checking their Facebook,... Yesterday, it was amazing. The
+ room was fully occupied before 9 o'clock with 80 students! There was an
+ enormous rumor. I saw drawings, heard discussions, saw already things
+ pass on a colored screens. So, they needed no introduction, yet there
+ were already fully occupied with their scenario. The whole day long they
+ were working in pairs on their scenario and asked many questions. Some
+ students went on Monday through all your 33 movies of the Joy of Code.
+ Incredible! For me, one of the big advantages of Greenfoot is, that the
+ students `see' immediately result. And therefore they are urged to get
+ further on."
+ - Chantal Teerlinck HUB-Hogeschool Universiteit Brussel (see statement
+ [S3])
+ James Gosling, the creator of Java, also commented on Greenfoot after
+ seeing his daughter use it:
+ "Greenfoot makes it fun to learn programming. It starts out with very
+ logo-ish exercises (moving a wombat around via method calls to find
+ food), then automating the characters so that they can find their own
+ food, and progressing to a variety of video games. The scenarios really
+ absorb kids." (Full statement available.) (see statement [S4])
+ The direct feedback from teachers shows that the goal of increasing
+ motivation and engagement in learners is being reached, and that the
+ Greenfoot system has indeed made a significant contribution in causing
+ change in students' attitudes. The value as seen by the wider community is
+ also evidenced by a significant number of volunteer contributions to
+ the project, often in the form of translations. The Greenfoot user
+ interface has been translated into 12 languages (including Chinese,
+ Portuguese, German and Spanish), and the Greenfoot tutorials have been
+ translated into seven languages. These translations were produced by
+ volunteers who invested significant amounts of time to make these
+ contributions.
+ Scaling up. For international support and distribution and
+ the scaling up of face-to-face support, we have established 8 Greenfoot Hubs in different parts of the world (concentrating mainly on
+ the US, following our user distribution, see http://www.greenfoot.org/hubs/).
+ These Hubs are run by volunteer academics from other institutions in close
+ coordination with us, and they provide local Greenfoot training and
+ support, using resources developed and shared by all hubs. In 2012, the
+ hubs have delivered 12 teacher training workshops.
+ To establish a self-sustaining community we developed two supporting
+ websites — one for end users (students) and one for teachers. The user
+ site provides direct help and discussion about Greenfoot programming and
+ the teacher site provides teaching material and advice on educational
+ topics. The Greenfoot user site currently has approximately
+ 4500 users subscribed and receives more than 47,000 site visits
+ (210,000 page views) per month. It contains more than 2,500 programmed
+ Greenfoot examples, uploaded by approximately 1,900 distinct users, and an
+ active discussion section. The Greenfoot teacher site, the
+ Greenroom, currently has more than 2,400 teachers signed up, who
+ uploaded more than 120 resources and are engaged in discussion. We
+ estimate that through these teachers alone we reach more than 30,000
+ students.
+ Downloads. The impact is plainly evidenced by download
+ numbers. The Greenfoot software is currently downloaded more than
+ 350,000 times per year, with annual downloads increasing.
+ National and international reach. Most of the impact is
+ international, with adoption spread through more than 49 countries (see
+ section 5, reference 2). Adoption is strongest in North America and
+ western Europe. Nationally, Greenfoot is now also highly recommended by Computing At Schools, who are involved with the development of UK curricula
+ (see reference 9, below) and Greenfoot is referenced in national
+ curriculum documents as one of the useful tools to enable the
+ teaching of programming for that age group. Through this, the research has
+ an impact in changing the way computing is presented in UK schools.
+ In conclusion, we note that Alison J. Derbenwick Miller, Vice President
+ of Oracle Academy confirms the impact and reach of Greenfoot in a
+ statement [S5]: "Our continued philanthropic investment in the project
+ reflect our recognition of the impact and importance of Greenfoot to
+ support the learning of computer science and programming using [Java].
+ Greenfoot makes initial programming more easily accessible and has
+ helped millions of beginning programmers to become engaged with software
+ development. ... Oracle Academy has chosen to include Greenfoot in its
+ Java Fundamentals course curriculum used by K-12 teachers globally. ...
+ During the 2013 academic year Oracle Academy delivered introduction to
+ Computer Science training to approx. 6,000 teachers worldwide. The
+ Greenfoot environment is an important part of our Java curriculum, and
+ we are proud to continue to support its development at the University of
+ Kent."
+&lt;/ImpactDetails&gt;
+&lt;ImpactSummary&gt;
+Greenfoot is a software system to support the learning of programming at
+ school level (age 13 upwards). During the REF period, over a million
+ students worldwide have learned programming through Greenfoot: at school,
+ in after school clubs and workshops, and privately at home. Greenfoot has
+ helped to raise the profile of programming in schools and outside in a
+ number of countries. The research described here has had impact on a
+ variety of stakeholders, including pupils, teachers and those involved in
+ national curriculum development. Greenfoot is currently downloaded more
+ than 350,000 times/year and is in active use in thousands of schools.
+ Greenfoot is one of very few systems, internationally, to have this level
+ of impact on programming education.
+&lt;/ImpactSummary&gt;
+&lt;ImpactType&gt;Societal&lt;/ImpactType&gt;
+&lt;Institution&gt;University of Kent&lt;/Institution&gt;
+&lt;Institutions&gt;
+&lt;HEI&gt;
+&lt;AlternativeName&gt;Kent (University of)&lt;/AlternativeName&gt;
+&lt;InstitutionName&gt;University of Kent&lt;/InstitutionName&gt;
+&lt;PeerGroup&gt;66&lt;/PeerGroup&gt;
+&lt;Region&gt;South East&lt;/Region&gt;
+&lt;UKPRN&gt;10007150&lt;/UKPRN&gt;
+&lt;/HEI&gt;
+&lt;/Institutions&gt;
+&lt;Panel&gt;B&lt;/Panel&gt;
+&lt;PlaceName/&gt;
+&lt;References&gt;
+[** — 1, 2,3 best indicate the quality of the underpinning research]
+ [1] ** Game programming in introductory courses with direct state
+ manipulation. M Kölling and P Henriksen. In ITiCSE 2005
+ Proceedings, pp 59-63, Portugal, 2005. ACM.
+ [2] ** The Greenfoot Programming Environment. M Kölling. ACM
+ Transactions on Computing Education (TOCE), 10(4):21, 21 pages,
+ 2010. [REF2 Kölling #1.]
+ [3] ** Repositories of teaching material and communities of use:
+ Nifty assignments and the Greenroom. S Fincher, M Kölling, I Utting,
+ N Brown, and P Stevens. In SIGCSE Proceedings, pp 107-114. ACM
+ SIGCSE, 2010. [REF2 Utting #1.]
+ [4] Motivating programmers via an online community. Poul
+ Henriksen, Michael Kölling, and Davin McCall. Journal of Computing
+ Sciences in Colleges, 25(3):82-93, 2010.
+ [5] A Tale of Three Sites: Resource and Knowledge Sharing Amongst
+ Computer Science Educators. N Brown and M Kölling. Proceedings
+ of the Ninth Annual International Computing Education Research
+ Conference (ICER), pp 27-34, ACM, 2013. [REF2 Kölling #4]
+&lt;/References&gt;
+&lt;ResearchSubjectAreas&gt;
+&lt;SubjectArea&gt;
+&lt;Level1&gt;8&lt;/Level1&gt;
+&lt;Level2&gt;3&lt;/Level2&gt;
+&lt;Subject&gt;Computer Software&lt;/Subject&gt;
+&lt;/SubjectArea&gt;
+&lt;SubjectArea&gt;
+&lt;Level1&gt;13&lt;/Level1&gt;
+&lt;Level2&gt;3&lt;/Level2&gt;
+&lt;Subject&gt;Specialist Studies In Education&lt;/Subject&gt;
+&lt;/SubjectArea&gt;
+&lt;SubjectArea&gt;
+&lt;Level1&gt;13&lt;/Level1&gt;
+&lt;Level2&gt;2&lt;/Level2&gt;
+&lt;Subject&gt;Curriculum and Pedagogy&lt;/Subject&gt;
+&lt;/SubjectArea&gt;
+&lt;/ResearchSubjectAreas&gt;
+&lt;Sources&gt;
+Corroborating statements have been received from
+ 
+ 
+ 
+ [S1]
+ http://www.cs.kent.ac.uk/research/REF2014/Humphreys.pdf
+ [Computing at School, BCS]
+ 
+ 
+ [S2]
+ http://www.cs.kent.ac.uk/research/REF2014/Teerlinck.pdf
+ [Schoolteacher, Belgium]
+ 
+ 
+ [S3]
+ http://www.cs.kent.ac.uk/research/REF2014/Tringham.pdf
+ [Schoolteacher, UK]
+ 
+ 
+ [S4]
+ http://www.cs.kent.ac.uk/research/REF2014/Gosling.png
+ [Inventor of the Java language
+ 
+ 
+ [S5]
+ http://www.cs.kent.ac.uk/research/REF2014/Oracle.pdf
+ [Industrial sponsors and users]
+ 
+ 
+ 
+ Other information
+ [I1] Greenfoot user statistics: total annual number of users &amp;gt; 350,000
+ in 2012, stats.greenfoot.org
+ [I2] Greenroom: number of subscribers (who are instructors) &amp;gt; 2400 greenroom.greenfoot.org.
+ To see map of subscribers in 50+ countries, log in with guest@example.com
+ / guestpassword
+ [I3] The impact on CS education is evidenced by the ACM SIGCSE
+ "Outstanding Contribution to Computer Science Education" award to Michael
+ Kölling in 2013 (http://www.sigcse.org/programs/awards/outstanding) and the "Premier Award for
+ Excellence in Engineering Education Courseware" awarded to Greenfoot in
+ 2010 (http://www.k-grayengineeringeducation.com/blog/index.php/2010/10/29/2010-premier-courseware-award-winners/)
+ [I4] The value ascribed to the system by industry is shown by an industry
+ award, the "Duke's Choice Award", awarded to Greenfoot in 2007, http://www.cs.kent.ac.uk/news/2007/GreenfootPrize
+ [i5] The impact of the online videos on the general population is
+ evidenced by view numbers on the Greenfoot Youtube channel (&amp;gt;290,000
+ views; see http://www.youtube.com/user/18km).
+&lt;/Sources&gt;
+&lt;Title&gt;
+Greenfoot: Transforming the way programming is taught
+&lt;/Title&gt;
+&lt;UKLocation/&gt;
+&lt;UKRegion/&gt;
+&lt;UOA&gt;Computer Science and Informatics&lt;/UOA&gt;
+&lt;UnderpinningResearch&gt;
+The research for this project has two strands: pedagogical research
+ and technical computer science research. Our project group at the
+ University of Kent carried out the research in both areas, including the
+ development of new interaction techniques to support the learning of
+ programming, designed and implemented the software, and conducted
+ additional research on the usability and effectiveness of the resulting
+ system. The overall Greenfoot project is reported in [2], [3] provides an
+ introduction to parts of the ecosystem created as a result of the
+ pedagogical research, and the Greenfoot textbook (see Section 4) embodies
+ the pedagogical approach created as part of the Greenfoot project.
+ The project is led by Michael Kölling, Professor, University of Kent,
+ (hereafter Kent), 2005-present, and the initial pedagogical research
+ and system design was carried out jointly with Poul Henriksen,
+ Research Associate, (hereafter RA) Kent, 2005-2009, in cooperation with
+ John Rosenberg (Professor, La Trobe University) and Bruce Quig (RA, La
+ Trobe). Later research work from 2007 to 2013 made original
+ contributions to HCI in the context of novice programming systems,
+ introducing interaction techniques that allow more experimentation and
+ exploration, accelerate feedback, and — through this — increase
+ engagement and motivation. This work allows new learning approaches
+ that invert traditional curricula (allowing discussion of high level
+ ("advanced") concepts before discussion of syntax; see [1], section 3). We
+ contributed novel interaction techniques to programming
+ environment technology that allow a more direct and experimental approach
+ to interacting with a programming system. This work was carried out by
+ Kölling, Ian Utting (Senior Lecturer, Kent), Neil Brown (RA, Kent) and
+ Davin McCall (RA, Kent).
+ Pedagogically, we based the work on constructivist learning theories. We
+ specialised general constructivist theories and applied them to the
+ initial learning of programming, and specifically to the learning and
+ teaching of concepts of object orientation ([1], sec. 3). This led us to
+ formulate goals and targets for system characteristics, such as interactivity,
+ visualisation, and support for self-directed experimentation,
+ thus making original contributions to computing pedagogy.
+ The second strand of our research was concerned with developing computer
+ system abstractions and interaction techniques to realise
+ these goals in the context of a modern, statically typed, object-oriented
+ language (Java, in our case). Some of the techniques are adapted from
+ earlier highly interactive programming systems, such as Smalltalk and
+ Self, and have been adapted to the statically typed nature of Java.
+ Specifically, we developed a new conceptual framework of
+ object-oriented programming concepts and concrete novel interaction
+ techniques ([1, 2]).
+ Another important aspect of this project concerns community and social support for learners. Our research showed that the ecosystem
+ (community, discussion, availability of material) has a major influence on
+ learning success, and we developed a technology-supported online community
+ around Greenfoot. This part of the project included the development of novel social interaction models, combining aspects of resource
+ repositories and social networks. These research
+ contributions to computing education and HCI were reported in conference
+ papers [4,5].
+ The research was supported by a series of industry grants over a period
+ of several years. Each grant was for a one-year term, and each grant was
+ awarded based on the outputs of the research previously completed. Grants
+ received include $650,000 from SUN Microsystems (2005-2008), $450,000 SUN
+ foundation (2009-2010), $1.1m from Oracle Corp (2011-2013) and $36,000
+ from Google (2011-2013), totalling more than US$2.2 million. These
+ companies see the value of Greenfoot in "filling the pipeline" of software
+ developers, thus sustaining the health of the industry.
+&lt;/UnderpinningResearch&gt;
+&lt;/CaseStudyDump&gt;
+&lt;/ArrayOfCaseStudyDump&gt;</xmlDocument>
+  <xpathExpression>/default:ArrayOfCaseStudyDump/default:CaseStudyDump/default:ImpactSummary</xpathExpression>
+  <xpathNamespaceMap>
+    <entry>
+      <string>default</string>
+      <string>http://schemas.datacontract.org/2004/07/REFAPIService</string>
+    </entry>
+    <entry>
+      <string>i</string>
+      <string>http://www.w3.org/2001/XMLSchema-instance</string>
+    </entry>
+  </xpathNamespaceMap>
+</net.sf.taverna.t2.activities.xpath.XPathActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.5</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.5</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.5</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.5</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.5</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="xml_text" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor></processors><conditions /><datalinks><datalink><sink type="processor"><processor>Get_Ref2014_impact_study_REST_Service</processor><port>ImpactID</port></sink><source type="dataflow"><port>ImpactID</port></source></datalink><datalink><sink type="processor"><processor>Extract_ImpactSummary_XPath_Service</processor><port>xml_text</port></sink><source type="processor"><processor>Get_Ref2014_impact_study_REST_Service</processor><port>responseBody</port></source></datalink><datalink><sink type="dataflow"><port>ImpactSummary</port></sink><source type="processor"><processor>Extract_ImpactSummary_XPath_Service</processor><port>firstNode</port></source></datalink></datalinks><annotations><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>6b3b2803-033f-432d-8985-becc73ddc4f2</identification>
+      </annotationBean>
+      <date>2015-09-05 11:35:32.145 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>40a22153-c947-41bf-8480-47112a94d48c</identification>
+      </annotationBean>
+      <date>2015-09-05 11:31:32.591 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>76465e09-25d9-4c5a-87f0-3fc6e03953a6</identification>
+      </annotationBean>
+      <date>2015-09-05 11:58:14.855 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>18d693ed-215f-4738-9b05-74644ed62423</identification>
+      </annotationBean>
+      <date>2015-09-05 11:11:49.801 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>1f19986e-e527-404f-8dd1-161301ee4710</identification>
+      </annotationBean>
+      <date>2015-09-05 11:16:17.949 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>cb56dbba-24a6-45af-8a3d-34ee54220722</identification>
+      </annotationBean>
+      <date>2015-09-05 11:06:56.957 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>0d16f302-4b6c-45ee-9058-13cd0a86e889</identification>
+      </annotationBean>
+      <date>2015-09-05 11:53:50.790 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>3fb5c8a8-4548-43fa-aa25-26e2b123abc5</identification>
+      </annotationBean>
+      <date>2015-09-05 14:50:09.755 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>6b8aa250-ebf3-41bd-aa95-00dce7eeb4d2</identification>
+      </annotationBean>
+      <date>2015-09-05 11:21:37.340 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2></annotations></dataflow></workflow>

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:d049d11a-a0d5-4b14-81f8-4304781a97ba" author="Franck Tanoh" title="Get weather information">Get the weather forcast of the day for you city. 
+Info display:  wind, visibility, temperature, sky conditions and pressure. 
+The default value is my home town. 
+To find out any supported city run the 'Get cities by country name' workflow</s:workflowdescription>
+  <s:processor name="GetWeatherResult">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetWeatherResponse" name="parameters" qname="{http://www.webserviceX.NET}GetWeatherResponse">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="GetWeatherResult" qname="{http://www.webserviceX.NET}&gt;GetWeatherResponse&gt;GetWeatherResult" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="GetWeather">
+    <s:description>Get weather report for all major cities around the world.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.webservicex.com/globalweather.asmx?WSDL</s:wsdl>
+      <s:operation>GetWeather</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="SelectFirstCities">
+    <s:beanshell>
+      <s:scriptvalue>List extract = list.subList(0,5);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">list</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">extract</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="CountryName" boring="true">
+    <s:stringconstant>Norway</s:stringconstant>
+  </s:processor>
+  <s:processor name="CountryAndCity">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetWeather" name="parameters" qname="{http://www.webserviceX.NET}GetWeather">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="CityName" qname="{http://www.webserviceX.NET}&gt;GetWeather&gt;CityName" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="CountryName" qname="{http://www.webserviceX.NET}&gt;GetWeather&gt;CountryName" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="ExtractTemperature">
+    <s:defaults>
+      <s:default name="xpath">/*[local-name(.)='CurrentWeather']/*[local-name(.)='Temperature']</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="FindCitiesByCountry">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:fbdc48ce-671d-4066-95fd-669ac4e9d1c2" author="Franck Tanoh" title="Get cities by country name">Get all the cities supported by the 'Get Weather info' workflow.... just enter your country name as input.</s:workflowdescription>
+        <s:processor name="CountryName">
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="GetCitiesByCountry" name="parameters" qname="{http://www.webserviceX.NET}GetCitiesByCountry">
+                <s:elements>
+                  <s:basetype optional="true" unbounded="false" typename="string" name="CountryName" qname="{http://www.webserviceX.NET}&gt;GetCitiesByCountry&gt;CountryName" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="GetCitiesByCountry">
+          <s:description>Get all major cities by country name(full / part).</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.webservicex.com/globalweather.asmx?WSDL</s:wsdl>
+            <s:operation>GetCitiesByCountry</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="ExtractCity">
+          <s:defaults>
+            <s:default name="xpath">//City</s:default>
+          </s:defaults>
+          <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+        </s:processor>
+        <s:processor name="GetCitiesResult">
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="GetCitiesByCountryResponse" name="parameters" qname="{http://www.webserviceX.NET}GetCitiesByCountryResponse">
+                <s:elements>
+                  <s:basetype optional="true" unbounded="false" typename="string" name="GetCitiesByCountryResult" qname="{http://www.webserviceX.NET}&gt;GetCitiesByCountryResponse&gt;GetCitiesByCountryResult" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:link source="Country" sink="CountryName:CountryName" />
+        <s:link source="CountryName:output" sink="GetCitiesByCountry:parameters" />
+        <s:link source="GetCitiesByCountry:parameters" sink="GetCitiesResult:input" />
+        <s:link source="GetCitiesResult:GetCitiesByCountryResult" sink="ExtractCity:xml-text" />
+        <s:link source="ExtractCity:nodelist" sink="lotsOfCities" />
+        <s:link source="GetCitiesResult:GetCitiesByCountryResult" sink="Cities" />
+        <s:source name="Country">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>text/xml</s:mimeType>
+            </s:mimeTypes>
+            <s:description>input example: 
+Cote D'Ivoire</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="Cities">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>text/xml</s:mimeType>
+            </s:mimeTypes>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="lotsOfCities" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="CountryAndCity:output" sink="GetWeather:parameters" />
+  <s:link source="CountryName:value" sink="CountryAndCity:CountryName" />
+  <s:link source="CountryName:value" sink="FindCitiesByCountry:Country" />
+  <s:link source="ExtractTemperature:nodelist" sink="outp2" />
+  <s:link source="FindCitiesByCountry:lotsOfCities" sink="SelectFirstCities:list" />
+  <s:link source="GetWeather:parameters" sink="GetWeatherResult:input" />
+  <s:link source="GetWeatherResult:GetWeatherResult" sink="ExtractTemperature:xml-text" />
+  <s:link source="GetWeatherResult:GetWeatherResult" sink="WeatherInfo" />
+  <s:link source="SelectFirstCities:extract" sink="CountryAndCity:CityName" />
+  <s:sink name="WeatherInfo">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+        <s:mimeType>'text/plain'</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="outp2">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>l('text/plain')</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

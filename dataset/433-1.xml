@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:792f948f-5948-4899-9d0f-6fdd35c85549" author="Alan R Williams" title="Get image URLs from HTML document and output the results">Retrieve the web page at http://www.mygrid.org.uk, examine it for images and output the images.</s:workflowdescription>
+  <s:processor name="Get_image_URLs_from_HTTP_document">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ExtractImageLinks</s:local>
+  </s:processor>
+  <s:processor name="Get_web_page_from_URL">
+    <s:defaults>
+      <s:default name="url">http://www.mygrid.org.uk</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="Get_image_from_URL">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebImageFetcher</s:local>
+  </s:processor>
+  <s:link source="Get_image_URLs_from_HTTP_document:imagelinks" sink="Get_image_from_URL:url" />
+  <s:link source="Get_image_from_URL:image" sink="out" />
+  <s:link source="Get_web_page_from_URL:contents" sink="Get_image_URLs_from_HTTP_document:document" />
+  <s:sink name="out">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/plain</s:mimeType>
+        <s:mimeType>text/html</s:mimeType>
+        <s:mimeType>text/x-taverna-web-url</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

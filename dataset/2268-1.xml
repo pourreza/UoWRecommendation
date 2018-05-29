@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:07048a42-adf7-4292-bbb3-05c0b112d45f" author="Dr Kieren Lythgow" title="ELM Database Retrieval Workflow">This workflow retrieves all the current entries stored in the Eukaryotic Linear Motif (ELM) Database and returns all entries in a collated readable format.
+This requires the ELM Database retrieval WSDL file: http://elm.eu.org/webservice/ELMdb.wsdl</s:workflowdescription>
+  <s:processor name="Nested_Workflow">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:ae55ea29-f484-4b30-a7ed-96c16a224568" author="" title="Inner ELM workflow" />
+        <s:processor name="Split_ELMS">
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="ELM" name="" qname="{http://elm.eu.org/ELM}ELM">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="Identifier" qname="{http://elm.eu.org/ELM}ELMType&gt;Identifier" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="Regex" qname="{http://elm.eu.org/ELM}ELMType&gt;Regex" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="FunctionalSite" qname="{http://elm.eu.org/ELM}ELMType&gt;FunctionalSite" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="LongDescription" qname="{http://elm.eu.org/ELM}ELMType&gt;LongDescription" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="ShortDescription" qname="{http://elm.eu.org/ELM}ELMType&gt;ShortDescription" />
+                  <s:arraytype optional="true" unbounded="true" wrapped="false" typename="GOtermType" name="GOterm" qname="{http://elm.eu.org/ELM}ELMType&gt;GOterm">
+                    <s:elementtype>
+                      <s:complextype optional="false" unbounded="false" typename="GOtermType" name="" qname="{http://elm.eu.org/ELM}GOtermType">
+                        <s:elements>
+                          <s:basetype optional="false" unbounded="false" typename="string" name="Ontology" qname="{http://elm.eu.org/ELM}GOtermType&gt;Ontology" />
+                          <s:basetype optional="false" unbounded="false" typename="boolean" name="ForFiltering" qname="{http://elm.eu.org/ELM}GOtermType&gt;ForFiltering" />
+                          <s:complextype optional="false" unbounded="false" typename="GOAccessionType" name="Accession" qname="{http://elm.eu.org/ELM}GOtermType&gt;Accession">
+                            <s:elements>
+                              <s:basetype optional="false" unbounded="false" typename="string" name="Database" qname="{http://elm.eu.org/ELM}GOAccessionType&gt;Database" />
+                              <s:basetype optional="false" unbounded="false" typename="string" name="Accession" qname="{http://elm.eu.org/ELM}GOAccessionType&gt;Accession" />
+                            </s:elements>
+                          </s:complextype>
+                        </s:elements>
+                      </s:complextype>
+                    </s:elementtype>
+                  </s:arraytype>
+                  <s:arraytype optional="true" unbounded="true" wrapped="false" typename="TaxonomyIDType" name="IncludeTaxonomy" qname="{http://elm.eu.org/ELM}ELMType&gt;IncludeTaxonomy">
+                    <s:elementtype>
+                      <s:complextype optional="false" unbounded="false" typename="TaxonomyIDType" name="" qname="{http://elm.eu.org/ELM}TaxonomyIDType">
+                        <s:elements>
+                          <s:basetype optional="false" unbounded="false" typename="string" name="Database" qname="{http://elm.eu.org/ELM}TaxonomyIDType&gt;Database" />
+                          <s:basetype optional="false" unbounded="false" typename="string" name="Accession" qname="{http://elm.eu.org/ELM}TaxonomyIDType&gt;Accession" />
+                        </s:elements>
+                      </s:complextype>
+                    </s:elementtype>
+                  </s:arraytype>
+                  <s:arraytype optional="true" unbounded="true" wrapped="false" typename="TaxonomyIDType" name="ExcludeTaxonomy" qname="{http://elm.eu.org/ELM}ELMType&gt;ExcludeTaxonomy">
+                    <s:elementtype>
+                      <s:complextype id="{http://elm.eu.org/ELM}TaxonomyIDType" optional="false" unbounded="false" typename="TaxonomyIDType" name="" />
+                    </s:elementtype>
+                  </s:arraytype>
+                  <s:arraytype optional="true" unbounded="true" wrapped="false" typename="PubMedIDType" name="LiteratureReference" qname="{http://elm.eu.org/ELM}ELMType&gt;LiteratureReference">
+                    <s:elementtype>
+                      <s:complextype optional="false" unbounded="false" typename="PubMedIDType" name="" qname="{http://elm.eu.org/ELM}PubMedIDType">
+                        <s:elements>
+                          <s:basetype optional="false" unbounded="false" typename="string" name="Database" qname="{http://elm.eu.org/ELM}PubMedIDType&gt;Database" />
+                          <s:basetype optional="false" unbounded="false" typename="string" name="Accession" qname="{http://elm.eu.org/ELM}PubMedIDType&gt;Accession" />
+                        </s:elements>
+                      </s:complextype>
+                    </s:elementtype>
+                  </s:arraytype>
+                  <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="Instance" qname="{http://elm.eu.org/ELM}ELMType&gt;Instance">
+                    <s:elementtype>
+                      <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                    </s:elementtype>
+                  </s:arraytype>
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+          <s:iterationstrategy>
+            <i:iterator xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10" name="input" />
+          </s:iterationstrategy>
+        </s:processor>
+        <s:processor name="MergeELMS">
+          <s:beanshell>
+            <s:scriptvalue>StringBuffer ELM = new StringBuffer();
+
+ELM.append (Id + " : " + Regex + " : " + FuncSite + "\n" +
+LongDes + "\n" + ShortDes);
+
+String Entry = ELM.toString();</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">Id</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">Regex</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">FuncSite</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">LongDes</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">ShortDes</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">Entry</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+          <s:iterationstrategy>
+            <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="Instance" />
+              <i:iterator name="LitRef" />
+              <i:iterator name="ExTaxon" />
+              <i:iterator name="IncTaxon" />
+              <i:iterator name="GO" />
+              <i:iterator name="ShortDes" />
+              <i:iterator name="LongDes" />
+              <i:iterator name="FuncSite" />
+              <i:iterator name="Regex" />
+              <i:iterator name="Id" />
+            </i:dot>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:link source="ELM_XMLs" sink="Split_ELMS:input" />
+        <s:link source="Split_ELMS:FunctionalSite" sink="MergeELMS:FuncSite" />
+        <s:link source="Split_ELMS:Identifier" sink="MergeELMS:Id" />
+        <s:link source="Split_ELMS:LongDescription" sink="MergeELMS:LongDes" />
+        <s:link source="Split_ELMS:Regex" sink="MergeELMS:Regex" />
+        <s:link source="Split_ELMS:ShortDescription" sink="MergeELMS:ShortDes" />
+        <s:link source="MergeELMS:Entry" sink="ELMs" />
+        <s:source name="ELM_XMLs" />
+        <s:sink name="ELMs">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>text/xml</s:mimeType>
+            </s:mimeTypes>
+          </s:metadata>
+        </s:sink>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="getAllELMs">
+    <s:description>Retrives all ELMs present in the database</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://elm.eu.org/webservice/ELMdb.wsdl</s:wsdl>
+      <s:operation>getAllELMs</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="SplitXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getAllELMsResponse" name="parameters" qname="{http://elm.eu.org/ELMdb}getAllELMsResponse">
+          <s:elements>
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="ELM" name="ELM" qname="{http://elm.eu.org/ELM}&gt;getAllELMsResponse&gt;ELM">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="ELM" name="" qname="{http://elm.eu.org/ELM}ELM">
+                  <s:elements>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="Identifier" qname="{http://elm.eu.org/ELM}ELMType&gt;Identifier" />
+                    <s:basetype optional="false" unbounded="false" typename="string" name="Regex" qname="{http://elm.eu.org/ELM}ELMType&gt;Regex" />
+                    <s:basetype optional="false" unbounded="false" typename="string" name="FunctionalSite" qname="{http://elm.eu.org/ELM}ELMType&gt;FunctionalSite" />
+                    <s:basetype optional="false" unbounded="false" typename="string" name="LongDescription" qname="{http://elm.eu.org/ELM}ELMType&gt;LongDescription" />
+                    <s:basetype optional="false" unbounded="false" typename="string" name="ShortDescription" qname="{http://elm.eu.org/ELM}ELMType&gt;ShortDescription" />
+                    <s:arraytype optional="true" unbounded="true" wrapped="false" typename="GOtermType" name="GOterm" qname="{http://elm.eu.org/ELM}ELMType&gt;GOterm">
+                      <s:elementtype>
+                        <s:complextype optional="false" unbounded="false" typename="GOtermType" name="" qname="{http://elm.eu.org/ELM}GOtermType">
+                          <s:elements>
+                            <s:basetype optional="false" unbounded="false" typename="string" name="Ontology" qname="{http://elm.eu.org/ELM}GOtermType&gt;Ontology" />
+                            <s:basetype optional="false" unbounded="false" typename="boolean" name="ForFiltering" qname="{http://elm.eu.org/ELM}GOtermType&gt;ForFiltering" />
+                            <s:complextype optional="false" unbounded="false" typename="GOAccessionType" name="Accession" qname="{http://elm.eu.org/ELM}GOtermType&gt;Accession">
+                              <s:elements>
+                                <s:basetype optional="false" unbounded="false" typename="string" name="Database" qname="{http://elm.eu.org/ELM}GOAccessionType&gt;Database" />
+                                <s:basetype optional="false" unbounded="false" typename="string" name="Accession" qname="{http://elm.eu.org/ELM}GOAccessionType&gt;Accession" />
+                              </s:elements>
+                            </s:complextype>
+                          </s:elements>
+                        </s:complextype>
+                      </s:elementtype>
+                    </s:arraytype>
+                    <s:arraytype optional="true" unbounded="true" wrapped="false" typename="TaxonomyIDType" name="IncludeTaxonomy" qname="{http://elm.eu.org/ELM}ELMType&gt;IncludeTaxonomy">
+                      <s:elementtype>
+                        <s:complextype optional="false" unbounded="false" typename="TaxonomyIDType" name="" qname="{http://elm.eu.org/ELM}TaxonomyIDType">
+                          <s:elements>
+                            <s:basetype optional="false" unbounded="false" typename="string" name="Database" qname="{http://elm.eu.org/ELM}TaxonomyIDType&gt;Database" />
+                            <s:basetype optional="false" unbounded="false" typename="string" name="Accession" qname="{http://elm.eu.org/ELM}TaxonomyIDType&gt;Accession" />
+                          </s:elements>
+                        </s:complextype>
+                      </s:elementtype>
+                    </s:arraytype>
+                    <s:arraytype optional="true" unbounded="true" wrapped="false" typename="TaxonomyIDType" name="ExcludeTaxonomy" qname="{http://elm.eu.org/ELM}ELMType&gt;ExcludeTaxonomy">
+                      <s:elementtype>
+                        <s:complextype id="{http://elm.eu.org/ELM}TaxonomyIDType" optional="false" unbounded="false" typename="TaxonomyIDType" name="" />
+                      </s:elementtype>
+                    </s:arraytype>
+                    <s:arraytype optional="true" unbounded="true" wrapped="false" typename="PubMedIDType" name="LiteratureReference" qname="{http://elm.eu.org/ELM}ELMType&gt;LiteratureReference">
+                      <s:elementtype>
+                        <s:complextype optional="false" unbounded="false" typename="PubMedIDType" name="" qname="{http://elm.eu.org/ELM}PubMedIDType">
+                          <s:elements>
+                            <s:basetype optional="false" unbounded="false" typename="string" name="Database" qname="{http://elm.eu.org/ELM}PubMedIDType&gt;Database" />
+                            <s:basetype optional="false" unbounded="false" typename="string" name="Accession" qname="{http://elm.eu.org/ELM}PubMedIDType&gt;Accession" />
+                          </s:elements>
+                        </s:complextype>
+                      </s:elementtype>
+                    </s:arraytype>
+                    <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="Instance" qname="{http://elm.eu.org/ELM}ELMType&gt;Instance">
+                      <s:elementtype>
+                        <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                      </s:elementtype>
+                    </s:arraytype>
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="Nested_Workflow:ELMs" sink="ELMs" />
+  <s:link source="SplitXML:ELM" sink="Nested_Workflow:ELM_XMLs" />
+  <s:link source="getAllELMs:parameters" sink="SplitXML:input" />
+  <s:sink name="ELMs" />
+</s:scufl>
+

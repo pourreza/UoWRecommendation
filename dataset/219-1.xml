@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:a01996fc-9aeb-4227-af74-8143756f9121" author="Hamish McWilliam" title="EBI_MAFFT">Perform a multiple sequence alignment using the MAFFT tool (see http://align.bmr.kyushu-u.ac.jp/mafft/software/). The EBI's WSMafft web service (see http://www.ebi.ac.uk/Tools/webservices/services/mafft) is used to access to tool.</s:workflowdescription>
+  <s:processor name="runMafft">
+    <s:description>Submit a MAFFT analysis job (see http://www.ebi.ac.uk/Tools/webservices/services/mafft#runmafft_params_content)</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSMafft.wsdl</s:wsdl>
+      <s:operation>runMafft</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Job_params">
+    <s:description>MAFFT parameters.</s:description>
+    <s:defaults>
+      <s:default name="async">1</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="inputParams" name="params" qname="{http://www.ebi.ac.uk/WSMafft}inputParams">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="float" name="gapopen" qname="inputParams&gt;gapopen" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="gepen" qname="inputParams&gt;gepen" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="retree" qname="inputParams&gt;retree" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="maxiterate" qname="inputParams&gt;maxiterate" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="pair" qname="inputParams&gt;pair" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="localpair" qname="inputParams&gt;localpair" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="globalpair" qname="inputParams&gt;globalpair" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="genafpair" qname="inputParams&gt;genafpair" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="reorder" qname="inputParams&gt;reorder" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="clustalout" qname="inputParams&gt;clustalout" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="inputParams&gt;email" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="async" qname="inputParams&gt;async" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="matrix" qname="inputParams&gt;matrix" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Contents_list">
+    <s:description>Wrap input data in list.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:arraytype optional="false" unbounded="false" wrapped="false" typename="WSArrayofData" name="content" qname="{http://www.ebi.ac.uk/WSMafft}WSArrayofData">
+          <s:elementtype>
+            <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSMafft}data">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+              </s:elements>
+            </s:complextype>
+          </s:elementtype>
+        </s:arraytype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Input_data">
+    <s:description>Add type to input data.</s:description>
+    <s:defaults>
+      <s:default name="type">sequence</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSMafft}data">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Get_alignment">
+    <s:description>Get the results of a job (see http://www.ebi.ac.uk/Tools/webservices/services/mafft#poll_jobid_type)</s:description>
+    <s:defaults>
+      <s:default name="type">tooloutput</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSMafft.wsdl</s:wsdl>
+      <s:operation>poll</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Unpack_alignment">
+    <s:description>Convert byte[] from service into string.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+  </s:processor>
+  <s:processor name="EBI_MAFFT_poll_job" boring="true">
+    <s:description>Check for job completion.</s:description>
+    <s:workflow maxretries="100" retrydelay="15000">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:aff7f8bb-e7aa-439f-b47b-d9275375fc1d" author="" title="EBI_MAFFT_poll_job" />
+        <s:processor name="Success">
+          <s:description>Fail if job not done.</s:description>
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="Is_done">
+          <s:description>Map job status code to true/false.</s:description>
+          <s:beanshell>
+            <s:scriptvalue>if(job_status.equals("DONE")) {
+  is_done = "true";
+} else {
+  is_done = "false";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">job_status</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">is_done</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="checkStatus">
+          <s:description>Get the status of a submited job (see http://www.ebi.ac.uk/Tools/webservices/services/mafft#checkstatus_jobid)</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSMafft.wsdl</s:wsdl>
+            <s:operation>checkStatus</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:link source="Job_ID" sink="checkStatus:jobid" />
+        <s:link source="Is_done:is_done" sink="Success:test" />
+        <s:link source="checkStatus:status" sink="Is_done:job_status" />
+        <s:link source="checkStatus:status" sink="Job_status" />
+        <s:source name="Job_ID">
+          <s:metadata>
+            <s:description>EBI job ID for MAFFT job to check.</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="Job_status">
+          <s:metadata>
+            <s:description>Status of the job.</s:description>
+          </s:metadata>
+        </s:sink>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Contents_list:output" sink="runMafft:content" />
+  <s:link source="Email_address" sink="Job_params:email" />
+  <s:link source="Input_data:output" sink="Contents_list:WSArrayofData" />
+  <s:link source="Job_params:output" sink="runMafft:params" />
+  <s:link source="Sequences" sink="Input_data:content" />
+  <s:link source="Get_alignment:result" sink="Unpack_alignment:bytes" />
+  <s:link source="runMafft:jobid" sink="EBI_MAFFT_poll_job:Job_ID" />
+  <s:link source="Unpack_alignment:string" sink="MAFFT_alignment" />
+  <s:link source="runMafft:jobid" sink="Get_alignment:jobid" />
+  <s:link source="runMafft:jobid" sink="MAFFT_job_ID" />
+  <s:source name="Email_address">
+    <s:metadata>
+      <s:description>User e-mail address.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Sequences">
+    <s:metadata>
+      <s:description>Sequences to align (fasta format recommended).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="MAFFT_job_ID">
+    <s:metadata>
+      <s:description>EBI job identifier</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="MAFFT_alignment">
+    <s:metadata>
+      <s:description>MAFFT alignment of sequences. By default in fasta format.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:coordination name="Get_alignment_BLOCKON_EBI_MAFFT_poll_job">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>EBI_MAFFT_poll_job</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Get_alignment</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

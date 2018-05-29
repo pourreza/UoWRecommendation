@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:5caecd13-e7bd-40d7-afc7-01af080ee0e0" author="Steffen Möller" title="Retrieve Single Molecule from ZINC - structure and figure">The ZINC database (http;//zinc.docking.org) is a collection of substances with known structures and some chemical characterisation that are commercially available. It is freely available and a much respected resource for computational screening for functional compounds.
+
+With the ZINC ID at hand, the ZINC web site is contacted and from there the URL parsed the refence to the real data. This workflow does not scale for regular docking applications.  One would retrieve a collection of data instead. However, this workflow might find its audience for some experimental workflows towards docking experiments and their interpretation.</s:workflowdescription>
+  <s:processor name="Form_URL_Image">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="Retrieve_ZINC_Molecule_Figure">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebImageFetcher</s:local>
+  </s:processor>
+  <s:processor name="Retrieve_ZINC_Molecular_Summary_Page">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="Form_URL_Summary">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="ZINC_URL_Single_Molecule_Figure" boring="true">
+    <s:stringconstant>http://marilyn2.compbio.ucsf.edu/cgi-bin/depict4.pl?sub_id=</s:stringconstant>
+  </s:processor>
+  <s:processor name="Regex_for_internal_id" boring="true">
+    <s:stringconstant>.*fget.pl.*SMILES.*</s:stringconstant>
+  </s:processor>
+  <s:processor name="Split_string_into_string_list_by_regular_expression">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="LineBreak" boring="true">
+    <s:stringconstant>[\n\r]+</s:stringconstant>
+  </s:processor>
+  <s:processor name="Filter_list_of_strings_by_regex">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.FilterStringList</s:local>
+  </s:processor>
+  <s:processor name="ZINC_URL_Fetch" boring="true">
+    <s:stringconstant>http://zinc.docking.org/fget.pl?z=</s:stringconstant>
+  </s:processor>
+  <s:processor name="ZINC_Fetch_Param_SMILE" boring="true">
+    <s:stringconstant>&amp;f=s&amp;l=0</s:stringconstant>
+  </s:processor>
+  <s:processor name="ZINC_Fetch_Param_MOL2" boring="true">
+    <s:stringconstant>&amp;f=m&amp;l=0</s:stringconstant>
+  </s:processor>
+  <s:processor name="Retrieve_Internal_ID">
+    <s:defaults>
+      <s:default name="group">1</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="ZINC_URL_Single_Molecule" boring="true">
+    <s:stringconstant>http://zinc.docking.org/srchdb.pl?zinc=</s:stringconstant>
+  </s:processor>
+  <s:processor name="ZINC_URL_Fetch_Prefix">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="ZINC_URL_SMILES">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="ZINC_URL_MOL2">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="Regex_for_internal_id_with_group" boring="true">
+    <s:stringconstant>.*fget.pl.z=([0-9]+)&amp;f=s&amp;l=0.&gt;SMILES&lt;/A&gt;.*</s:stringconstant>
+  </s:processor>
+  <s:processor name="Fetch_MOL2_Data_from_URL">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="Fetch_SMILES_Data_from_URL">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:link source="ZINC_ID" sink="Form_URL_Summary:string2" />
+  <s:link source="Retrieve_ZINC_Molecular_Summary_Page:contents" sink="Split_string_into_string_list_by_regular_expression:string" />
+  <s:link source="Split_string_into_string_list_by_regular_expression:split" sink="Filter_list_of_strings_by_regex:stringlist" />
+  <s:link source="ZINC_URL_SMILES:output" sink="Fetch_SMILES_Data_from_URL:url" />
+  <s:link source="Fetch_MOL2_Data_from_URL:contents" sink="ZINC_Data_MOL2" />
+  <s:link source="Fetch_SMILES_Data_from_URL:contents" sink="ZINC_Data_SMILES_String" />
+  <s:link source="Filter_list_of_strings_by_regex:filteredlist" sink="Retrieve_Internal_ID:stringlist" />
+  <s:link source="Form_URL_Summary:output" sink="Retrieve_ZINC_Molecular_Summary_Page:url" />
+  <s:link source="ZINC_ID" sink="Form_URL_Image:string2" />
+  <s:link source="Form_URL_Image:output" sink="Retrieve_ZINC_Molecule_Figure:url" />
+  <s:link source="LineBreak:value" sink="Split_string_into_string_list_by_regular_expression:regex" />
+  <s:link source="Regex_for_internal_id:value" sink="Filter_list_of_strings_by_regex:regex" />
+  <s:link source="Regex_for_internal_id_with_group:value" sink="Retrieve_Internal_ID:regex" />
+  <s:link source="Retrieve_Internal_ID:filteredlist" sink="InternalID" />
+  <s:link source="Retrieve_Internal_ID:filteredlist" sink="ZINC_URL_Fetch_Prefix:string2" />
+  <s:link source="Retrieve_ZINC_Molecule_Figure:image" sink="ZINC_Molecule_Figure" />
+  <s:link source="ZINC_Fetch_Param_MOL2:value" sink="ZINC_URL_MOL2:string2" />
+  <s:link source="ZINC_Fetch_Param_SMILE:value" sink="ZINC_URL_SMILES:string2" />
+  <s:link source="ZINC_URL_Fetch:value" sink="ZINC_URL_Fetch_Prefix:string1" />
+  <s:link source="ZINC_URL_Fetch_Prefix:output" sink="ZINC_URL_MOL2:string1" />
+  <s:link source="ZINC_URL_Fetch_Prefix:output" sink="ZINC_URL_SMILES:string1" />
+  <s:link source="ZINC_URL_MOL2:output" sink="Fetch_MOL2_Data_from_URL:url" />
+  <s:link source="ZINC_URL_Single_Molecule:value" sink="Form_URL_Summary:string1" />
+  <s:link source="ZINC_URL_Single_Molecule_Figure:value" sink="Form_URL_Image:string1" />
+  <s:link source="ZINC_URL_MOL2:output" sink="ZINC_URL_MOL2" />
+  <s:link source="ZINC_URL_SMILES:output" sink="ZINC_URL_SMILES" />
+  <s:source name="ZINC_ID">
+    <s:metadata>
+      <s:description>A ZINC ID like '3395872' .</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="ZINC_Molecule_Figure">
+    <s:metadata>
+      <s:description>2D graphics that is shown on the summary page of a molecule.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="ZINC_Data_SMILES_String">
+    <s:metadata>
+      <s:description>The structural representation of a 3D molecule as a 1D string.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="ZINC_Data_MOL2" />
+  <s:sink name="InternalID">
+    <s:metadata>
+      <s:description>A numeric ID representing the molecule in datasets.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="ZINC_URL_SMILES">
+    <s:metadata>
+      <s:description>The URL at which to retrieve the SMILE string.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="ZINC_URL_MOL2">
+    <s:metadata>
+      <s:description>The URL at which to retrieve the MOL2-formatted structural representation.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:63a36920-9187-4407-adf8-f73602cd80a4" author="" title="Validating_Workflow_BioMart_v5_5" />
+  <s:processor name="XPath_Processor" boring="true">
+    <s:stringconstant>//*[(local-name()="Dataset" and (namespace-uri()="http://org.embl.ebi.escience/xscufl-biomart/0.1alpha")] /ancestor::s:processor/@name</s:stringconstant>
+  </s:processor>
+  <s:processor name="Flattenlist_Filtered_Processor">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="FlattenList_DatasetName">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Merge_Attribute_result_list">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="XPath_Extract_Processor">
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="XPath_extract_DatasetName">
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="Merge_Filter_result_list">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="XPath_Filter_Processor">
+    <s:beanshell>
+      <s:scriptvalue>//Filter to remove nested processor name
+/*
+//*[(local-name(.)='processor') and (@name='hsapiens_snp1')]
+/*[local-name(.)='biomart']/parent::s:processor/@name
+*/
+
+String xpath1 = "//*[(local-name(.)='processor') and (@name='" + allProcessorName + "')]";
+String xpath2 = "/*[local-name(.)='biomart']/parent::s:processor/@name";
+
+XPathExp = xpath1 + xpath2;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">allProcessorName</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">XPathExp</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="DatasetName_XPath_Exp">
+    <s:beanshell>
+      <s:scriptvalue>// Finding biomart:MartDataset-name from processorName
+// //*[(local-name(.)='processor') and (@name='" + processorName + "')]
+// /*[local-name(.)='biomart']/*[local-name(.)='MartQuery']/*[local-name(.)='MartDataset']
+// /*[local-name(.)='MartURLLocation']/@name
+String xpath1 = "//*[(local-name(.)='processor') and (@name='" + processorName + "')]";
+String xpath2 = "/*[local-name(.)='biomart']/*[local-name(.)='MartQuery']";
+String xpath3 = "/*[local-name(.)='MartDataset']";
+String xpath4 = "/*[local-name(.)='MartURLLocation']/@name";
+
+MartDatasetXPathExpression = xpath1 + xpath2 + xpath3 + xpath4;
+
+
+// Finding biomart:Dataset/@name from processorName
+// //*[(local-name(.)='processor') and (@name='" + processorName +'")]
+// /*[local-name(.)='biomart']
+// /*[local-name(.)='MartQuery'] 
+// /*[local-name(.)='Query']
+//  /*[local-name(.)='Dataset']/@name
+String xpath5 = "/*[local-name(.)='Query']";
+String xpath6 = "/*[local-name(.)='Dataset']/@name";
+
+DatasetXPathExpression = xpath1 + xpath2 + xpath5 + xpath6;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">processorName</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">MartDatasetXPathExpression</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">DatasetXPathExpression</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="XPath_Filter_Nested_Processor">
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+    <s:iterationstrategy>
+      <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="xpath" />
+        <i:iterator name="xml-text" />
+      </i:cross>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="Check_Filter">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:63a36920-9187-4407-adf8-f73602cd80a4" author="" title="Check_Available_Filter_v5_5" />
+        <s:processor name="Biomart_Base_URL" boring="true">
+          <s:stringconstant>http://www.biomart.org</s:stringconstant>
+        </s:processor>
+        <s:processor name="XPath_Extract_Filter">
+          <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+        </s:processor>
+        <s:processor name="get_filter_from_dataset">
+          <s:defaults>
+            <s:default name="url">/biomart/martservice?type=attributes&amp;dataset=hsapiens_snp</s:default>
+            <s:default name="base">http://www.biomart.org</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+        </s:processor>
+        <s:processor name="XPath_Filter">
+          <s:beanshell>
+            <s:scriptvalue>// /*[local-name(.)='scufl']/*[(local-name(.)='processor') and (@name="hsapiens_gene_ensembl1")]
+// /*[local-name(.)='biomart']
+// /*[local-name(.)='MartQuery'] 
+// /*[local-name(.)='Query']
+// /*[local-name(.)='Dataset']
+// /*[local-name(.)='Attribute']/@name
+
+//String xpath1 = "/*[local-name(.)='scufl']
+String xpath1 = "//*[(local-name(.)='processor') and (@name='" + ProcessorName + "')]";
+String xpath2 = "/*[local-name(.)='biomart']";
+String xpath3 = "/*[local-name(.)='MartQuery'] ";
+String xpath4 = "/*[local-name(.)='Query']";
+String xpath5 = "/*[local-name(.)='Dataset']";
+String xpath6 = "/*[local-name(.)='Filter']/@name";
+
+XPathExp = xpath1 + xpath2 + xpath3 + xpath4 + xpath5 + xpath6;</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">ProcessorName</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">XPathExp</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="prepare_filter_url">
+          <s:beanshell>
+            <s:scriptvalue>url = "/biomart/martservice?type=filters&amp;virtualschema=default&amp;dataset="+datasetName;</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">datasetName</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Check_Filter">
+          <s:beanshell>
+            <s:scriptvalue>String filterDescription;
+String[] splitString; 
+String[] splitFilter;
+int ack = 0;
+
+splitString = stringInput.split("\n");
+for(int i=0; i&lt;splitString.length;i++){
+	splitFilter = splitString[i].split("\t");
+	String temp = splitFilter[0]; //filter name is in index 0
+	if( temp.contentEquals(filter)){
+		filterDescription = splitString[i];
+		ack = 1;
+		break;
+	}
+}
+
+if(ack==1)
+	result = "Processor Name: " + ProcessorName + ", Filter: " + filter + " is up-to-date\n"  + "Detail: " + filterDescription + "\n\n";
+
+else
+	result = "Processor Name: " + ProcessorName + ", Filter: " + filter + " is out-of-date\n\n";</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">stringInput</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">filter</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">ProcessorName</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">result</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+          <s:iterationstrategy>
+            <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="ProcessorName" />
+              <i:iterator name="filter" />
+              <i:iterator name="stringInput" />
+            </i:cross>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:link source="ProcessorName" sink="Check_Filter:ProcessorName" />
+        <s:link source="ProcessorName" sink="XPath_Filter:ProcessorName" />
+        <s:link source="Workflow_Scufl" sink="XPath_Extract_Filter:xml-text" />
+        <s:link source="datasetName" sink="prepare_filter_url:datasetName" />
+        <s:link source="Biomart_Base_URL:value" sink="get_filter_from_dataset:base" />
+        <s:link source="Check_Filter:result" sink="result" />
+        <s:link source="XPath_Extract_Filter:nodelist" sink="Check_Filter:filter" />
+        <s:link source="XPath_Filter:XPathExp" sink="XPath_Extract_Filter:xpath" />
+        <s:link source="get_filter_from_dataset:contents" sink="Check_Filter:stringInput" />
+        <s:link source="prepare_filter_url:url" sink="get_filter_from_dataset:url" />
+        <s:source name="datasetName">
+          <s:metadata>
+            <s:description>hsapiens_snp
+hsapiens_gene_ensembl</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Workflow_Scufl" />
+        <s:source name="ProcessorName" />
+        <s:sink name="result" />
+      </s:scufl>
+    </s:workflow>
+    <s:iterationstrategy>
+      <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:dot>
+          <i:iterator name="ProcessorName" />
+          <i:iterator name="datasetName" />
+        </i:dot>
+        <i:iterator name="Workflow_Scufl" />
+      </i:cross>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="Check_Attribute">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:63a36920-9187-4407-adf8-f73602cd80a4" author="" title="Check_Available_Attribute_v5_5" />
+        <s:processor name="Biomart_Base_URL" boring="true">
+          <s:stringconstant>http://www.biomart.org</s:stringconstant>
+        </s:processor>
+        <s:processor name="get_attribute_from_dataset">
+          <s:defaults>
+            <s:default name="url">/biomart/martservice?type=attributes&amp;dataset=hsapiens_snp</s:default>
+            <s:default name="base">http://www.biomart.org</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+        </s:processor>
+        <s:processor name="XPath_Extract_Attribute">
+          <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+        </s:processor>
+        <s:processor name="prepare_attribute_url">
+          <s:beanshell>
+            <s:scriptvalue>url = "/biomart/martservice?type=attributes&amp;virtualschema=default&amp;dataset="+datasetName;</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">datasetName</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="XPath_Attribute">
+          <s:defaults>
+            <s:default name="ProcessorName">hsapiens_snp1</s:default>
+          </s:defaults>
+          <s:beanshell>
+            <s:scriptvalue>// /*[local-name(.)='scufl']/*[(local-name(.)='processor') and (@name="hsapiens_gene_ensembl1")]
+// /*[local-name(.)='biomart']
+// /*[local-name(.)='MartQuery'] 
+// /*[local-name(.)='Query']
+// /*[local-name(.)='Dataset']
+// /*[local-name(.)='Attribute']/@name
+
+//String xpath1 = "/*[local-name(.)='scufl']
+String xpath1 = "//*[(local-name(.)='processor') and (@name='" + ProcessorName + "')]";
+String xpath2 = "/*[local-name(.)='biomart']";
+String xpath3 = "/*[local-name(.)='MartQuery'] ";
+String xpath4 = "/*[local-name(.)='Query']";
+String xpath5 = "/*[local-name(.)='Dataset']";
+String xpath6 = "/*[local-name(.)='Attribute']/@name";
+
+XPathExp = xpath1 + xpath2 + xpath3 + xpath4 + xpath5 + xpath6;</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">ProcessorName</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">XPathExp</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Check_Attribute">
+          <s:beanshell>
+            <s:scriptvalue>String attributeDescription;
+String[] splitString; //String stringInput2 = "This_is_a_test_text_ABC";
+String[] splitAttribute;
+int ack = 0;
+
+splitString = stringInput.split("\n");
+for(int i=0; i&lt;splitString.length;i++){
+	splitAttribute = splitString[i].split("\t");
+	String temp = splitAttribute[0]; //attribute name is in index 0
+	if( temp.contentEquals(attribute)){
+		attributeDescription = splitString[i];
+		ack = 1;
+		break;
+	}
+}
+
+if(ack==1)
+	result = "Processor Name: " + ProcessorName + ", Attibute: " + attribute + " is up-to-date\n"  + "Detail: " + attributeDescription + "\n\n";
+
+else
+	result = "Processor Name: " + ProcessorName + ", Attibute: " + attribute + " is out-of-date\n\n";</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">stringInput</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">attribute</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">ProcessorName</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">result</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+          <s:iterationstrategy>
+            <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="ProcessorName" />
+              <i:iterator name="attribute" />
+              <i:iterator name="stringInput" />
+            </i:cross>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:link source="ProcessorName" sink="Check_Attribute:ProcessorName" />
+        <s:link source="ProcessorName" sink="XPath_Attribute:ProcessorName" />
+        <s:link source="Workflow_Scufl" sink="XPath_Extract_Attribute:xml-text" />
+        <s:link source="datasetName" sink="prepare_attribute_url:datasetName" />
+        <s:link source="Biomart_Base_URL:value" sink="get_attribute_from_dataset:base" />
+        <s:link source="XPath_Attribute:XPathExp" sink="XPath_Extract_Attribute:xpath" />
+        <s:link source="XPath_Extract_Attribute:nodelist" sink="Check_Attribute:attribute" />
+        <s:link source="get_attribute_from_dataset:contents" sink="Check_Attribute:stringInput" />
+        <s:link source="prepare_attribute_url:url" sink="get_attribute_from_dataset:url" />
+        <s:link source="Check_Attribute:result" sink="result" />
+        <s:source name="datasetName">
+          <s:metadata>
+            <s:description>hsapiens_snp
+hsapiens_gene_ensembl</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Workflow_Scufl" />
+        <s:source name="ProcessorName" />
+        <s:sink name="result" />
+      </s:scufl>
+    </s:workflow>
+    <s:iterationstrategy>
+      <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:dot>
+          <i:iterator name="ProcessorName" />
+          <i:iterator name="datasetName" />
+        </i:dot>
+        <i:iterator name="Workflow_Scufl" />
+      </i:cross>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:link source="Workflow_Scufl" sink="XPath_Extract_Processor:xml-text" />
+  <s:link source="Workflow_Scufl" sink="XPath_Filter_Nested_Processor:xml-text" />
+  <s:link source="Workflow_Scufl" sink="XPath_extract_DatasetName:xml-text" />
+  <s:link source="Check_Attribute:result" sink="Merge_Attribute_result_list:stringlist" />
+  <s:link source="Check_Filter:result" sink="Merge_Filter_result_list:stringlist" />
+  <s:link source="DatasetName_XPath_Exp:DatasetXPathExpression" sink="XPath_extract_DatasetName:xpath" />
+  <s:link source="FlattenList_DatasetName:outputlist" sink="Check_Attribute:datasetName" />
+  <s:link source="FlattenList_DatasetName:outputlist" sink="Check_Filter:datasetName" />
+  <s:link source="Flattenlist_Filtered_Processor:outputlist" sink="Check_Attribute:ProcessorName" />
+  <s:link source="Flattenlist_Filtered_Processor:outputlist" sink="Check_Filter:ProcessorName" />
+  <s:link source="Flattenlist_Filtered_Processor:outputlist" sink="DatasetName_XPath_Exp:processorName" />
+  <s:link source="Workflow_Scufl" sink="Check_Attribute:Workflow_Scufl" />
+  <s:link source="Workflow_Scufl" sink="Check_Filter:Workflow_Scufl" />
+  <s:link source="FlattenList_DatasetName:outputlist" sink="DatasetName" />
+  <s:link source="Flattenlist_Filtered_Processor:outputlist" sink="ProcessorName" />
+  <s:link source="Merge_Attribute_result_list:concatenated" sink="Attibute_Checked" />
+  <s:link source="Merge_Filter_result_list:concatenated" sink="Filter_Checked" />
+  <s:link source="XPath_Extract_Processor:nodelist" sink="XPath_Filter_Processor:allProcessorName" />
+  <s:link source="XPath_Filter_Nested_Processor:nodelist" sink="Flattenlist_Filtered_Processor:inputlist" />
+  <s:link source="XPath_Filter_Processor:XPathExp" sink="XPath_Filter_Nested_Processor:xpath" />
+  <s:link source="XPath_Processor:value" sink="XPath_Extract_Processor:xpath" />
+  <s:link source="XPath_extract_DatasetName:nodelist" sink="FlattenList_DatasetName:inputlist" />
+  <s:source name="Workflow_Scufl">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/plain</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:source>
+  <s:sink name="DatasetName" />
+  <s:sink name="ProcessorName" />
+  <s:sink name="Attibute_Checked" />
+  <s:sink name="Filter_Checked" />
+</s:scufl>
+

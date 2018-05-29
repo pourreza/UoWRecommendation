@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f930f2fc-7b4b-48f9-abb0-e336b76e0ea0" author="Hamish McWilliam" title="EBI_InterProScan">Perform an InterProScan analysis of a protein sequence using the EBI’s WSInterProScan service (see http://www.ebi.ac.uk/Tools/webservices/services/interproscan). The input sequence to use and the user e-mail address are inputs, the other parameters for the analysis (see Job_params) are allowed to default.
+
+InterProScan searches a protein sequence against the protein family and domain signature databases integrated into InterPro (see http://www.ebi.ac.uk/interpro/). A set of matches to the signatures are returned, which are annotated with the corresponding InterPro and GO term assignments for these signature matches.</s:workflowdescription>
+  <s:processor name="Input_data">
+    <s:description>Populate input data structure with input sequence and data type.</s:description>
+    <s:defaults>
+      <s:default name="type">sequence</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSInterProScan}data">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Unpack_XML_result">
+    <s:description>Unpack byte[] version of result into a string.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+  </s:processor>
+  <s:processor name="Content_list">
+    <s:description>Wrap input data in a list.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:arraytype optional="false" unbounded="false" wrapped="false" typename="WSArrayofData" name="content" qname="{http://www.ebi.ac.uk/WSInterProScan}WSArrayofData">
+          <s:elementtype>
+            <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSInterProScan}data">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+              </s:elements>
+            </s:complextype>
+          </s:elementtype>
+        </s:arraytype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Unpack_text_result">
+    <s:description>Unpack byte[] version of result into a string.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+  </s:processor>
+  <s:processor name="Job_params">
+    <s:description>InterProScan job parameters.</s:description>
+    <s:defaults>
+      <s:default name="crc">1</s:default>
+      <s:default name="seqtype">p</s:default>
+      <s:default name="goterms">1</s:default>
+      <s:default name="async">1</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="inputParams" name="params" qname="{http://www.ebi.ac.uk/WSInterProScan}inputParams">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="app" qname="inputParams&gt;app" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="crc" qname="inputParams&gt;crc" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="seqtype" qname="inputParams&gt;seqtype" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="trlen" qname="inputParams&gt;trlen" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="trtable" qname="inputParams&gt;trtable" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="goterms" qname="inputParams&gt;goterms" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="async" qname="inputParams&gt;async" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="outformat" qname="inputParams&gt;outformat" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="inputParams&gt;email" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Format_as_GFF">
+    <s:description>Using the text output of InterProScan generate GFF format (see http://www.sanger.ac.uk/Software/formats/GFF/) output.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>import java.util.StringTokenizer;
+
+interproscan_gff = "";
+
+// Split into lines
+StringTokenizer tok1 = new StringTokenizer(interproscan_text, "\n");
+while(tok1.hasMoreElements()) {
+  feat1 = tok1.nextElement();
+  // Split into fields
+  StringTokenizer tok2 = new StringTokenizer(feat1, "\t");
+  fieldCount = 0;
+  attributeStr = "";
+  while(tok2.hasMoreElements()) {
+    fieldCount++;
+    fieldStr = tok2.nextElement();
+    if(fieldCount &lt; 2) { // First field is the ID
+      interproscan_gff += fieldStr;
+    }
+    // The tool, feature, start and stop
+    else if(fieldCount == 4 || (fieldCount &gt; 5 &amp;&amp; fieldCount &lt; 9)) {
+      interproscan_gff += "\t" + fieldStr;
+    }
+    // Score
+    else if(fieldCount == 9) {
+      if(fieldStr.equals("NA")) {
+        interproscan_gff += "\t.";
+      } else {
+        interproscan_gff += "\t" + fieldStr;
+      }
+    }
+    // Matching InterPro entry
+    else if(fieldCount == 12 &amp;&amp; !fieldStr.equals("NULL")) {
+      attributeStr += fieldStr;
+    }
+    // Matching InterPro entry name
+    else if(fieldCount == 13 &amp;&amp; !fieldStr.equals("NULL")) {
+      attributeStr += " " + fieldStr;
+    }
+  }
+  interproscan_gff += "\t.\t.\tInterProScan";
+  if(attributeStr.length() &gt; 0) {
+    interproscan_gff += " ; " + attributeStr;
+  }
+  interproscan_gff += "\n";
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">interproscan_text</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">interproscan_gff</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Get_text_result">
+    <s:description>Get the plain text format result.</s:description>
+    <s:defaults>
+      <s:default name="type">toolraw</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSInterProScan.wsdl</s:wsdl>
+      <s:operation>poll</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="runInterProScan">
+    <s:description>Submit the InterProScan job.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSInterProScan.wsdl</s:wsdl>
+      <s:operation>runInterProScan</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Get_XML_result">
+    <s:description>Get the XML format result.</s:description>
+    <s:defaults>
+      <s:default name="type">toolxml</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSInterProScan.wsdl</s:wsdl>
+      <s:operation>poll</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="EBI_InterProScan_poll_job" boring="true">
+    <s:description>Wait for the job to complete.</s:description>
+    <s:workflow maxretries="100" retrydelay="30000">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:e3e01aab-c09b-4006-8fc1-31696b6c727d" author="Hamish McWilliam" title="EBI_InterProScan_poll_job">Check status of an InterProScan job.</s:workflowdescription>
+        <s:processor name="Is_done">
+          <s:description>Map status codes into true/false is done flag.</s:description>
+          <s:beanshell>
+            <s:scriptvalue>if(job_status.equals("DONE")) {
+  is_done = "true";
+} else {
+  is_done = "false";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">job_status</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">is_done</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Success">
+          <s:description>If job has not finished fail the workflow.</s:description>
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="checkStatus">
+          <s:description>Get the current status of the InterProScan job.</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSInterProScan.wsdl</s:wsdl>
+            <s:operation>checkStatus</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:link source="Job_ID" sink="checkStatus:jobid" />
+        <s:link source="Is_done:is_done" sink="Success:test" />
+        <s:link source="checkStatus:status" sink="Is_done:job_status" />
+        <s:link source="checkStatus:status" sink="Job_status" />
+        <s:source name="Job_ID">
+          <s:metadata>
+            <s:description>EBI job identifer for the InterProScan job.</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="Job_status">
+          <s:metadata>
+            <s:description>Status of job.</s:description>
+          </s:metadata>
+        </s:sink>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Content_list:output" sink="runInterProScan:content" />
+  <s:link source="Email_address" sink="Job_params:email" />
+  <s:link source="Get_XML_result:result" sink="Unpack_XML_result:bytes" />
+  <s:link source="Get_text_result:result" sink="Unpack_text_result:bytes" />
+  <s:link source="Input_data:output" sink="Content_list:WSArrayofData" />
+  <s:link source="Job_params:output" sink="runInterProScan:params" />
+  <s:link source="Sequence_or_ID" sink="Input_data:content" />
+  <s:link source="Unpack_text_result:string" sink="Format_as_GFF:interproscan_text" />
+  <s:link source="runInterProScan:jobid" sink="EBI_InterProScan_poll_job:Job_ID" />
+  <s:link source="runInterProScan:jobid" sink="Get_XML_result:jobid" />
+  <s:link source="Unpack_text_result:string" sink="InterProScan_text_result" />
+  <s:link source="runInterProScan:jobid" sink="Get_text_result:jobid" />
+  <s:link source="Format_as_GFF:interproscan_gff" sink="InterProScan_GFF" />
+  <s:link source="Unpack_XML_result:string" sink="InterProScan_XML_result" />
+  <s:link source="runInterProScan:jobid" sink="Job_ID" />
+  <s:source name="Email_address">
+    <s:metadata>
+      <s:description>User e-mail address</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Sequence_or_ID">
+    <s:metadata>
+      <s:description>Input protein sequence for analysis. This can either be the actual sequence (fasta format recommended) or a database identifier in database:identifer format (e.g. uniprot:wap_rat).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="InterProScan_text_result">
+    <s:metadata>
+      <s:description>InterProScan result in tab delimited plain text format.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="InterProScan_XML_result">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>application/xml</s:mimeType>
+      </s:mimeTypes>
+      <s:description>InterProScan result in XML format.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="Job_ID">
+    <s:metadata>
+      <s:description>EBI job identifier for the InterProScan job.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="InterProScan_GFF">
+    <s:metadata>
+      <s:description>InterProScan result in plain text GFF format (see http://www.sanger.ac.uk/Software/formats/GFF/).</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:coordination name="Get_text_result_BLOCKON_EBI_InterProScan_poll_job">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>EBI_InterProScan_poll_job</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Get_text_result</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="Get_XML_result_BLOCKON_EBI_InterProScan_poll_job">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>EBI_InterProScan_poll_job</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Get_XML_result</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

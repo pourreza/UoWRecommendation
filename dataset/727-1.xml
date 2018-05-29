@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:E51AE8IPB73" author="Tom Oinn" title="Fetch PDB flatfile from RCSB server">Given an identifier such as '1crn' fetches the PDB format flatfile from the RCSB</s:workflowdescription>
+  <s:processor name="RCSBSuffix">
+    <s:stringconstant>&amp;compression=None</s:stringconstant>
+  </s:processor>
+  <s:processor name="RCSBPrefix">
+    <s:stringconstant>http://www.rcsb.org/pdb/cgi/export.cgi/1CRN.pdb?format=PDB&amp;pdbId=</s:stringconstant>
+  </s:processor>
+  <s:processor name="FetchPage">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="AddSuffix">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="AddPrefixToID">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:link source="RCSBPrefix:value" sink="AddPrefixToID:string1" />
+  <s:link source="pdbID" sink="AddPrefixToID:string2" />
+  <s:link source="AddPrefixToID:output" sink="AddSuffix:string1" />
+  <s:link source="RCSBSuffix:value" sink="AddSuffix:string2" />
+  <s:link source="AddSuffix:output" sink="FetchPage:url" />
+  <s:link source="FetchPage:contents" sink="pdbFlatFile" />
+  <s:source name="pdbID">
+    <s:metadata>
+      <s:description>PDB identifier such as '1crn'</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="pdbFlatFile">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>chemical/x-pdb</s:mimeType>
+        <s:mimeType>text/plain</s:mimeType>
+        <s:mimeType>text/html</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+
+

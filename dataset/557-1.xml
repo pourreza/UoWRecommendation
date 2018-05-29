@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:0516f8e8-aa0f-41a7-8678-323ace25617d" author="Thomas Kuhn" title="Topological Substructure Search Workflow">This workflow performs a topological substructure search. The molecules to be searched are loaded from a MDL SD file. The substructure is loaded from a SMILES (workflow input). The matched molecules are converted to CML and for the molecules which do not contain the substructure the InChI is generated.</s:workflowdescription>
+  <s:processor name="Substructure_Filter">
+    <s:cdk>org.openscience.cdk.applications.taverna.isomorphism.SubstructureFilter</s:cdk>
+  </s:processor>
+  <s:processor name="Parse_SMILES">
+    <s:cdk>org.openscience.cdk.applications.taverna.smiles.SMILESParser</s:cdk>
+  </s:processor>
+  <s:processor name="Convert_to_CML_String">
+    <s:cdk>org.openscience.cdk.applications.taverna.io.ConvertToCMLString</s:cdk>
+  </s:processor>
+  <s:processor name="Generate_InChI">
+    <s:cdk>org.openscience.cdk.applications.taverna.inchi.InChIGeneratorWorker</s:cdk>
+  </s:processor>
+  <s:processor name="File_Reader">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.io.FileReader
+      <s:extensions>
+        <s:filereader>
+          <s:filenamelist />
+        </s:filereader>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:link source="Parse_SMILES:resultStructure" sink="Substructure_Filter:subStructure" />
+  <s:link source="Substructure_Filter:matchingStructures" sink="Convert_to_CML_String:inputStructures" />
+  <s:link source="Substructure_Filter:otherStructures" sink="Generate_InChI:structures" />
+  <s:link source="in_SMILES" sink="Parse_SMILES:SMILE" />
+  <s:link source="File_Reader:resultStructure" sink="Substructure_Filter:inputStructures" />
+  <s:link source="Convert_to_CML_String:CML" sink="matched_CML" />
+  <s:link source="Generate_InChI:InChI" sink="NOT Matched_InChI" />
+  <s:source name="in_SMILES" />
+  <s:sink name="matched_CML" />
+  <s:sink name="NOT Matched_InChI" />
+</s:scufl>
+

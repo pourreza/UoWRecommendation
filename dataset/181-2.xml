@@ -1,0 +1,967 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:03POCSJ1HQ5" author="Peter Li" title="Identification of differential genes using t-tests by R">This workflow starts by retrieving the names of microarray datasets from the Maxd database. The user has to select sets of control and test data for analysis using t-tests by R. A list of significant differentially expressed genes is then analysed using the Go Term Finder tool which generates a list of GO terms associated with the genes. A CSV file containing the list of significant genes is also generated.</s:workflowdescription>
+  <s:processor name="Ttest_pvalue" boring="true">
+    <s:stringconstant>0.05</s:stringconstant>
+  </s:processor>
+  <s:processor name="GoTermFinder_pvalue" boring="true">
+    <s:stringconstant>0.05</s:stringconstant>
+  </s:processor>
+  <s:processor name="getNamesUsingXPath">
+    <s:description>Parses the measurement names of microarray datasets from the XML output from maxdBrowse</s:description>
+    <s:defaults>
+      <s:default name="xpath">/entries/browse/Measurement/@Name</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="flatten">
+    <s:description>Removes a layer of lists</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="performT_tests">
+    <s:description>This R script performs a series of t-tests for each gene expression level between its 2 input data sets.</s:description>
+    <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+      #Load data
+control &lt;- read.csv(file=control_csv, head=TRUE, sep=",");
+test &lt;- read.csv(file=test_csv, head=TRUE, sep=",");
+
+#Transpose data and convert to data frames
+tControl &lt;- t(control);
+tControl &lt;- data.frame(tControl);
+tTest &lt;- t(test);
+tTest &lt;- data.frame(tTest);
+
+#Do t-test
+ttest &lt;- mapply(t.test, tControl, tTest);
+
+#Transform as data frame and transpose
+ttest &lt;- data.frame(ttest);
+ttest &lt;- t(ttest);
+ttest &lt;- data.frame(ttest);
+
+#Look for genes at the 1% level
+sig &lt;- subset(ttest, p.value &lt; pvalue);
+
+#Need to extract gene names and p values into a file
+p &lt;- sig$p.value;
+
+#Convert to data frame
+p &lt;- data.frame(p);
+
+#Transpose p data object
+tp &lt;- t(p);
+
+#Order by p-value
+names &lt;- rownames(tp);
+df &lt;- data.frame(names, tp)
+df2 &lt;- df[order(df$tp),]
+
+#Output fold changes as csv file
+write.csv(df2, eol = "\n", row.names = FALSE, col.names = FALSE, file=file);
+      <s:rshellInputPortList>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="TEXT_FILE">control_csv</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="TEXT_FILE">test_csv</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">pvalue</s:rshellInputPort>
+      </s:rshellInputPortList>
+      <s:rshellOutputPortList>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="TEXT_FILE">file</s:rshellOutputPort>
+      </s:rshellOutputPortList>
+    </s:rshell>
+  </s:processor>
+  <s:processor name="mergeOutput1">
+    <s:description>Merges the selected input data sets into a single data set</s:description>
+    <s:beanshell>
+      <s:scriptvalue>/*
+ * Merge transposed measurements output from MaxdBrowse
+ */
+
+String out = "Some output data"; //The output of this beanshell
+
+String colName = "";
+ArrayList features = new ArrayList(); 
+ArrayList measurementNames = new ArrayList(); 
+ArrayList listOfData = new ArrayList(); //To hold gene expn data
+
+for(int i = 0; i &lt; in.size(); i++)
+{
+  String inStr = in.get(i);
+  String[] lines = inStr.split("\n");
+  String measurementName = lines[1];
+  measurementName = measurementName.replaceAll("_Measurement", "");
+
+  //Replace 'Normalised data' column name with proper measurement name
+  inStr = inStr.replace("RMA Normalised Expression", measurementName);
+  inStr = inStr.replace("Normalised data", measurementName);
+  lines = inStr.split("\n");
+
+  measurementNames.add(measurementName);
+
+  //Get probe set identifiers from 1st dataset
+  if(i == 0)
+  {    
+    String featureLine = lines[3];
+    String[] featureItems = featureLine.split("\t");
+    for(int x = 0; x &lt; featureItems.length; x++)
+    {
+      features.add(featureItems[x]);
+    }     
+  }
+
+  String data = lines[6];  //gene exp values
+  listOfData.add(data);
+
+}
+
+String str = listOfData.get(0);
+String[] items = str.split("\t");
+ArrayList joinedData = new ArrayList();
+//Add first load of exp values into arraylist
+for(int s = 0; s &lt; items.length; s ++)
+{
+  joinedData.add((String) items[s]);
+}
+
+//Concat exp values
+for(int e = 1; e &lt; listOfData.size(); e++)
+{
+  String str = listOfData.get(e);
+  String[] moreItems = str.split("\t");
+  
+  for(int u = 0; u &lt; moreItems.length; u++)
+  {
+    String joinedStr = joinedData.get(u) + "," + moreItems[u];
+    joinedData.remove(u);
+    joinedData.add(u, joinedStr);
+  }
+}
+
+System.out.println("Size of features: " + features.size());
+System.out.println("Size of joinedData: " + joinedData.size());
+
+//Create csv
+StringBuffer csvSb = new StringBuffer();
+for(int y = 0; y &lt; features.size(); y ++)
+{
+  //Not specifying row names so create header line with one less entry than the number of columns,
+  //the first column will be taken to be the row names when csv file is read in by R
+  if(y == 0)  
+  {
+    csvSb = csvSb.append(joinedData.get(y) + "\n");
+    continue;
+  }
+
+  csvSb = csvSb.append(features.get(y) + "," + joinedData.get(y) + "\n");
+}
+
+out = csvSb.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">in</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">out</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:mergemode input="in" mode="merge" />
+  </s:processor>
+  <s:processor name="createFinalCSV">
+    <s:description>Creates a text file in CSV format contain a list of the all the differentially expressed genes identified by the R script.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>//Create vector of redundant affy ids
+String[] affy = {"2354_at","2359_at","2361_s_at","2357_at","2358_at","2365_at","2381_s_at","2362_s_at","2363_s_at","2336_at","2372_at","5819_at","2343_at","2346_s_at","2351_s_at","2353_at","2347_s_at","2350_s_at","2389_s_at","2390_s_at","2383_at","2385_at","2406_at","2407_at","2391_s_at","2405_at","2366_s_at","2370_s_at","2371_at","2367_s_at","2369_s_at","2378_g_at","2379_s_at","2374_at","2375_s_at","2309_at","2310_at","5793_at","2266_s_at","2314_at","2329_at","2393_s_at","2313_at","5821_at","2394_s_at","5911_at","2324_s_at","5841_at","5912_at","5903_at","5889_at","2345_s_at","2334_s_at","2335_s_at","2331_s_at","2333_s_at","2341_g_at","2342_s_at","2337_at","2315_at","2338_at","2321_at","5857_g_at","2316_at","2317_at","2326_s_at","2327_s_at","2323_g_at","2325_s_at","3407_at","3426_f_at","5818_at","3414_f_at","3420_f_at","5803_at","5865_at","2312_at","2352_at","2339_at","5827_at","2364_s_at","5868_at","2388_s_at","5905_i_at","5929_at","2332_s_at","5860_g_at","2392_s_at","2340_at","5869_at","2320_at","2380_s_at","2355_at","2368_s_at","2356_at","3409_f_at","5853_at","5877_i_at","2322_at","2416_at","2330_g_at","2373_at","5873_at","5885_at","5879_at","2420_s_at","5906_r_at","5854_at","3393_f_at","5861_at","5801_at","5897_at","2409_at","2413_at","2414_at","2410_g_at","2411_s_at","2418_at","2419_g_at","2415_at","2417_at","5834_s_at","2408_at","5901_at","2267_s_at","3443_f_at","2386_at","5825_r_at","5845_at","2382_s_at","2412_at","2376_s_at","5835_i_at","2344_g_at","5851_at","5817_at","2360_g_at","5933_at","5884_r_at","5867_at","5866_at","5870_at","2311_at","5864_at","5859_at","5858_at","5863_at","5862_at","5930_at","5880_at","5883_i_at","5882_at","5878_r_at","5874_at","5871_at","5876_at","5875_s_at","5839_at","5838_at","5842_at","5840_at","5836_at","5830_at","5828_at","5832_i_at","5831_at","5852_at","5850_at","5856_at","5855_at","5848_at","5844_at","5843_at","5847_at","5846_at","5872_at","5934_at","5932_at","2377_at","5833_r_at","5931_at","5910_at","5908_at","5881_at","5928_at","5893_at","5829_at","5797_at","5849_at","2349_s_at","5837_at","2319_f_at","2384_at","2387_at","5894_at","5892_at","5896_at","5895_at","5891_f_at","5887_i_at","5886_at","5890_i_at","5888_at","5904_at","5902_at","5907_at","5909_at","2348_s_at","5899_i_at","5898_at","3431_f_at","5900_at","5798_at","5799_at","5800_at","5802_at","5792_at","5794_i_at","5795_at","5796_at","5823_at","5826_at","5822_at","5824_i_at","2328_at","5820_at","4647_at","4648_i_at","2255_at","4640_at","4642_i_at","4644_i_at","4641_s_at","4654_at","4658_at","4659_at","4693_i_at","4651_at","4652_at","2146_at","4636_i_at","4620_at","4590_at","4624_at","4622_at","4616_at","2189_at","4619_at","4618_at","4634_at","2261_s_at","4635_g_at","4656_f_at","4627_at","4626_at","4631_at","4628_at","2182_s_at","4699_at","2192_at","4702_at","4700_at","4692_f_at","4676_at","4698_at","4695_at","4589_g_at","2143_at","2150_g_at","2152_s_at","2193_at","2148_at","2191_s_at","2149_at","4697_at","4671_at","4668_at","4675_at","4672_at","4663_at","4662_at","4667_at","4664_at","4690_at","4684_at","4683_at","4688_at","4687_at","4679_at","4678_at","4682_at","4680_at","4681_at","2222_at","4665_at","4637_r_at","2188_at","4657_at","2142_at","4669_i_at","4608_g_at","2163_s_at","4630_at","2219_at","4643_f_at","2201_at","4686_s_at","4629_at","2147_at","2215_g_at","2211_s_at","2175_s_at","2181_s_at","4677_at","2180_s_at","2155_s_at","4592_at","2178_at","2251_at","2186_at","2199_at","2184_s_at","2259_at","2185_at","4649_r_at","4615_at","4588_at","4587_at","4595_at","4594_at","4701_at","2144_at","4586_at","2145_at","4610_at","4602_at","4614_at","4611_at","4598_g_at","4596_at","4600_at","4599_i_at","2220_at","2249_at","2190_g_at","4597_at","2171_at","2258_at","4691_at","2202_g_at","2138_at","4613_at","2141_s_at","4670_f_at","4621_at","3249_s_at","2140_s_at","3247_s_at","3248_s_at","2196_s_at","2197_s_at","4625_at","4685_at","2164_at","4694_at","2212_at","2169_s_at","2183_s_at","2210_s_at","4617_at","2160_at","2156_s_at","4661_r_at","2158_at","4612_at","2214_at","4601_at","2216_s_at","2167_s_at","4585_at","4666_r_at","2153_s_at","2154_s_at","4609_at","2194_at","2213_at","4703_at","4653_at","2247_at","2263_g_at","4593_at","4632_g_at","2209_s_at","4645_at","2203_s_at","4689_at","2205_at","2159_at","2207_s_at","2157_at","2204_s_at","2206_g_at","4660_i_at","4674_at","2151_s_at","2208_s_at","2198_at","4638_i_at","4591_at","4623_at","3250_s_at","4633_at","4650_f_at","4728_at","2200_at","2187_at","2256_at","4655_at","2176_s_at","2262_at","2260_g_at","2257_at","2139_g_at","2252_g_at","4639_f_at","2253_s_at","2254_at","2172_at","2173_g_at","2265_s_at","2195_at","4704_at","2170_s_at","2264_s_at","4646_at","4673_at","2174_s_at","2166_s_at","2218_s_at","2248_at","2162_g_at","2217_s_at","2221_at","2177_s_at","2161_at","2250_at","2165_g_at","2168_s_at","4696_at","9830_at","9829_at","9833_at","3787_f_at","3786_s_at","3788_f_at","2856_at","2941_at","3717_s_at","2958_at","9789_at","2933_at","9821_at","2845_g_at","9784_at","2794_s_at","3718_s_at","2859_at","2881_at","2798_g_at","3779_f_at","9813_at","2875_at","2945_s_at","2916_s_at","2832_s_at","3798_s_at","3762_s_at","3774_f_at","3763_s_at","2853_s_at","2885_s_at","2849_at","3728_f_at","3719_s_at","2908_at","2907_at","2902_at","2936_at","2911_s_at","2866_s_at","2900_at","2882_at","2906_at","2904_s_at","2903_g_at","2935_at","2915_g_at","2940_at","2939_at","2938_at","2914_at","2912_at","2934_at","2932_at","2864_at","2880_at","2870_s_at","2895_at","2884_g_at","2883_at","2872_at","2871_s_at","2878_at","2868_s_at","2876_at","2894_at","2867_s_at","2899_at","2898_at","2896_at","2888_at","2887_s_at","2892_at","2891_at","2890_at","2839_s_at","2840_s_at","2846_s_at","9780_at","2834_at","2836_g_at","2847_s_at","2954_at","2843_at","2844_at","2833_s_at","9845_at","2793_s_at","9812_at","2913_at","2950_at","2796_f_at","2797_at","9849_at","2789_s_at","2791_s_at","2952_at","2943_at","2852_s_at","2956_g_at","2955_at","2942_at","2863_s_at","2948_s_at","2947_s_at","2946_s_at","2792_s_at","2860_g_at","2848_s_at","2850_g_at","2851_s_at","2862_s_at","2959_at","2854_s_at","2855_s_at","2858_at","9806_at","9807_at","9808_at","9810_at","2889_at","2905_at","3720_f_at","9804_at","9809_at","9872_at","9871_at","9816_s_at","9811_at","9814_at","2861_s_at","9815_at","2879_at","9837_s_at","2909_at","9779_at","2937_at","2957_at","2835_at","2874_g_at","9786_at","9787_at","9788_at","2838_s_at","9782_at","9783_at","9834_at","2910_at","9838_s_at","9839_s_at","9840_f_at","9836_at","2951_at","2953_at","2869_s_at","9847_at","9843_at","9846_at","9844_at","9848_at","9841_at","9842_at","2901_at","9823_at","9824_at","9826_at","9805_at","2944_g_at","9819_at","9820_s_at","9822_at","9818_at","9832_at","2949_at","9835_at","2790_s_at","9827_at","9831_at","9828_at","9825_s_at","2842_at","2837_s_at","2795_s_at","2897_at","2893_at","9781_at","2841_s_at","2857_at","2886_s_at","2865_g_at","9817_at","9785_at","2873_at","2877_at","2642_s_at","2649_at","8153_at","2637_g_at","2638_s_at","2641_g_at","8081_at","8101_at","2628_s_at","2656_at","8086_at","2647_at","8044_at","2645_s_at","2650_g_at","2654_at","2655_at","2693_at","2632_at","2657_at","2692_at","2658_at","2624_s_at","2659_g_at","8107_at","8125_at","2651_s_at","2653_at","2701_g_at","2695_at","2694_at","2699_at","2697_g_at","2639_at","2589_g_at","8079_s_at","2578_s_at","8129_at","2580_at","2640_at","2618_s_at","2593_s_at","8045_at","2591_s_at","2577_s_at","2696_at","2583_g_at","2581_at","2579_at","2582_at","8042_at","2590_s_at","2575_s_at","8090_at","2631_s_at","8104_at","2634_at","2648_at","2627_at","2629_s_at","8097_i_at","2635_at","2644_s_at","2620_s_at","2633_at","2586_s_at","2626_at","2621_s_at","2585_s_at","2623_s_at","8041_at","8105_at","2625_at","2588_at","8118_i_at","8073_f_at","2636_at","8156_g_at","8158_g_at","8154_at","8155_at","8159_at","2576_s_at","8067_i_at","8160_at","8124_at","8130_at","8131_at","2630_s_at","8065_at","2584_s_at","8134_at","8068_at","8070_at","8132_at","8106_at","2622_s_at","8046_at","8040_at","8039_at","8117_i_at","8133_at","8043_at","8113_at","8063_at","8052_r_at","8066_at","8064_at","8051_i_at","2587_at","8047_at","8050_at","8048_at","8095_at","8096_at","8092_i_at","8094_f_at","8098_at","8102_at","8103_at","8099_at","8100_at","8083_at","8084_at","8082_at","8157_at","8108_at","8087_at","8088_i_at","8121_at","8080_at","8074_s_at","8120_at","8075_s_at","8119_f_at","8072_i_at","8127_at","8071_f_at","8123_at","8126_at","8076_at","8110_at","8077_at","8078_at","8111_g_at","8115_f_at","8116_f_at","8112_at","8114_i_at","8137_at","8049_at","8089_at","8128_at","2619_s_at","2698_s_at","8109_at","2652_s_at","3579_f_at","2643_s_at","2592_s_at","8091_at","3620_f_at","8069_at","2700_at","2702_s_at","8093_r_at","8135_at","8136_at","3636_f_at","8122_at","8085_at","2646_at","6990_at","7017_at","6988_at","2425_at","6991_i_at","2484_at","6973_at","6983_at","7056_at","7053_at","6999_at","2428_at","2530_at","2531_at","2460_at","7000_i_at","6994_at","2518_at","7024_at","6981_at","6998_at","6995_at","6997_at","6975_at","2471_g_at","6971_at","6963_at","6946_at","6947_g_at","6976_at","2524_at","6968_at","2456_at","7009_g_at","6996_at","6970_at","6964_s_at","6966_r_at","2480_at","6984_at","6982_at","6938_at","6939_g_at","6987_at","6986_i_at","7045_i_at","6945_g_at","6944_at","2519_at","6978_at","7005_at","6980_at","6979_at","6940_s_at","6942_at","2529_at","7050_at","7048_i_at","2421_at","7006_at","7047_at","7042_at","7032_at","7046_s_at","7044_at","2430_at","2429_at","2446_at","2431_at","2427_at","2422_at","2469_s_at","2426_at","2423_at","7031_at","7020_at","7018_at","2468_s_at","7010_at","2465_s_at","7015_at","7014_at","7012_at","7016_at","7027_at","2516_at","7021_at","7028_at","6965_i_at","7022_at","6992_r_at","2520_at","7008_at","7003_at","7052_at","7055_f_at","7054_i_at","2487_at","7051_at","2481_at","2486_at","2485_at","2525_at","7002_at","2527_at","2526_at","6972_at","2521_f_at","2517_at","2523_at","2522_at","7004_at","2458_g_at","2457_at","2461_at","2459_at","2455_at","2449_s_at","2447_g_at","2454_at","2453_at","2474_s_at","2473_s_at","2478_at","2475_s_at","6949_f_at","2466_s_at","2462_g_at","2470_at","2467_s_at","2477_s_at","2451_s_at","2483_at","6993_f_at","6985_at","6941_s_at","6969_at","7029_g_at","2476_s_at","7011_g_at","7013_at","6948_i_at","7023_at","6943_g_at","3502_f_at","2464_s_at","7025_at","6967_at","7019_at","7026_at","7043_at","6962_at","2450_s_at","2482_at","6989_at","2452_at","2463_s_at","2472_s_at","7030_at","2479_at","2528_at","7001_r_at","2448_s_at","2424_at","7007_at","6974_at","6977_at","2488_at","7049_s_at","3030_at","3071_s_at","3063_at","3072_s_at","3076_at","3027_at","3033_s_at","3075_at","3064_at","3028_at","3055_g_at","3054_at","3889_s_at","3046_at","3058_s_at","3066_at","3059_at","3067_g_at","3031_at","3125_at","3070_s_at","3051_at","3048_at","3068_s_at","3062_at","10815_at","3893_s_at","3061_at","10806_at","3013_at","3131_g_at","3081_at","3892_s_at","3045_s_at","10836_at","10811_at","10814_s_at","10813_s_at","10809_g_at","10807_at","10810_i_at","10848_at","3019_at","3020_at","3016_at","3018_s_at","3024_g_at","3119_at","3022_at","3023_at","3006_at","3007_at","3003_s_at","3004_s_at","3011_s_at","3014_at","3008_at","3010_s_at","10840_at","3128_at","10843_at","3032_at","3026_at","3015_at","3047_at","3123_at","3052_at","3110_s_at","3114_s_at","3017_g_at","3890_s_at","3065_g_at","10872_at","3025_s_at","3895_s_at","3894_s_at","3888_s_at","3117_at","3116_at","3118_at","10812_s_at","3084_s_at","3115_at","3111_s_at","3122_at","10824_at","3057_s_at","3050_at","10850_at","3113_s_at","3112_s_at","3109_at","3126_at","3124_at","3121_at","3120_at","3083_g_at","3080_f_at","3079_s_at","3078_g_at","3108_at","3060_at","3087_s_at","3086_s_at","3053_at","10808_at","3085_s_at","3127_at","10837_at","10868_at","3891_s_at","10844_at","10816_at","3835_s_at","3130_at","3129_at","3073_s_at","3009_g_at","10828_at","10825_at","10817_at","10841_at","10874_at","3005_at","3029_at","10842_at","3074_at","3021_at","10835_at","10839_at","10838_at","3077_at","10873_at","10846_at","10832_s_at","3056_s_at","10820_at","10845_at","3012_s_at","10849_at","3049_at","10847_at","10827_s_at","10788_at","10823_at","3082_at","10826_at","10819_at","10818_at","10822_at","10821_g_at","3880_f_at","10870_i_at","10869_at","10830_at","10834_at","10871_s_at","10833_at","10829_at","3069_s_at","10831_s_at","2573_at","3587_f_at","7489_at","2508_s_at","7509_at","2496_g_at","2552_at","2613_s_at","2547_at","7490_at","2540_at","2571_s_at","3557_s_at","7505_at","2565_s_at","2567_at","2563_s_at","2570_at","2569_at","7491_at","7492_at","7557_at","3556_s_at","3555_s_at","7495_at","2574_at","7521_at","7494_at","2532_g_at","2608_at","2512_s_at","2492_f_at","7466_at","2614_s_at","7467_at","2617_at","2615_s_at","2514_s_at","2596_at","2548_at","7471_at","2566_s_at","2556_at","2561_at","7529_at","2500_at","7497_at","2601_at","2603_s_at","2602_g_at","7558_at","2594_at","7472_at","2599_s_at","2595_at","2609_at","7468_at","2611_at","2610_at","2607_s_at","2605_s_at","7470_at","7533_at","2606_s_at","7511_at","2544_at","7514_at","7512_at","2495_at","2491_s_at","7515_f_at","7516_at","2490_s_at","2489_at","2554_at","2505_s_at","2503_s_at","2507_s_at","2506_s_at","2502_s_at","2499_s_at","2497_s_at","2501_g_at","7510_at","7559_at","7530_s_at","7531_at","3526_f_at","7556_at","2493_at","7534_i_at","7535_f_at","7536_at","7532_at","7518_at","7523_at","7524_at","7519_at","7520_at","7501_at","2604_s_at","7560_at","7526_i_at","7528_f_at","2541_at","2550_at","2553_at","2551_at","2549_at","7496_at","2543_at","2546_at","2545_at","2562_g_at","2558_at","2498_s_at","2559_at","2564_s_at","2560_at","2557_at","2555_at","2539_at","2598_g_at","7503_i_at","7507_at","7508_at","7506_at","7493_at","2515_s_at","2510_at","2509_at","2513_s_at","2511_g_at","2542_at","2538_s_at","7499_at","2534_s_at","7498_at","2535_s_at","7522_at","7502_at","2533_s_at","7500_at","7527_r_at","7537_at","7517_at","2537_s_at","7525_at","2616_at","2494_at","2612_g_at","2504_s_at","7504_r_at","2597_at","2572_s_at","2600_s_at","2536_s_at","7513_f_at","2568_at","7469_at","2781_at","9239_at","9210_at","9230_r_at","2779_s_at","2780_at","9231_s_at","9238_at","9234_at","2785_s_at","2784_s_at","2783_g_at","9243_at","9235_at","9250_f_at","2823_at","9254_at","9242_i_at","9248_at","2773_at","9265_at","9271_at","9251_at","2819_s_at","2772_at","2776_at","9246_at","2777_at","9240_at","2802_at","9247_g_at","2760_at","2775_at","9244_at","9300_at","3703_f_at","9301_at","2815_at","2827_g_at","2804_at","9215_at","9225_at","9211_at","9212_at","9214_at","2758_s_at","2825_at","2822_at","2817_at","2816_at","2808_at","2805_g_at","2812_at","2811_at","2809_at","9252_at","9227_i_at","2803_at","2799_at","9280_at","9228_r_at","9278_at","9279_at","2788_at","9226_at","9241_at","2750_at","9216_at","2826_at","2828_at","9220_r_at","2801_at","9218_at","2829_f_at","9219_i_at","9262_at","9261_at","2705_s_at","2707_s_at","2748_at","2786_s_at","2821_at","9224_at","9299_at","9233_at","9266_at","9267_at","9232_at","9263_at","9264_at","2753_at","9270_at","2703_g_at","2752_at","9268_at","2751_at","2807_at","2818_at","9209_at","9217_at","2766_s_at","9303_at","9275_g_at","9297_at","2813_at","9260_at","9302_at","2706_s_at","9274_at","2814_at","9272_at","2708_s_at","2763_s_at","2704_s_at","9221_f_at","2787_at","9257_at","9237_at","2782_at","2810_at","9249_i_at","9296_at","9213_at","9273_at","2764_s_at","2768_at","2767_at","9245_at","2800_at","2771_at","9222_at","9255_at","9236_at","9256_at","9253_at","2774_at","2806_s_at","9259_at","2757_g_at","2765_s_at","2754_at","2762_at","9269_at","9277_at","9223_at","2824_at","2756_at","2755_at","2759_at","2749_s_at","9229_i_at","2769_at","2761_at","2778_g_at","9298_at","9258_at","2770_at","9276_at","2735_s_at","2740_s_at","8765_at","2744_at","2673_at","2722_g_at","2720_at","2664_at","8769_g_at","2678_at","2724_s_at","2680_at","8742_at","2660_s_at","8749_at","2729_at","8758_g_at","2686_at","8709_at","8791_at","8792_at","8794_i_at","8773_at","2668_s_at","2669_at","8799_at","3657_f_at","3666_f_at","8795_r_at","8796_at","8798_at","2689_s_at","2690_s_at","2745_g_at","2666_s_at","2683_at","2685_at","2713_s_at","2714_s_at","2691_s_at","2710_s_at","2711_s_at","2667_s_at","2679_at","8762_at","8731_at","8730_g_at","2681_g_at","2682_s_at","2671_at","2675_at","2677_at","2742_s_at","2733_g_at","2737_at","2719_at","2730_at","2743_at","2738_at","2741_s_at","2734_s_at","8707_at","8706_at","2721_at","2727_s_at","2715_at","8712_r_at","2718_at","8711_i_at","8710_at","2723_s_at","2725_s_at","2726_s_at","8729_at","8755_at","2728_s_at","8764_at","8763_at","8754_at","8770_i_at","8759_at","8757_at","8756_i_at","8772_at","8768_at","2688_s_at","8775_at","8774_at","8767_at","8766_at","2676_at","8771_r_at","8753_at","8736_at","8735_at","2661_s_at","2674_at","8738_s_at","8741_at","8732_at","2663_s_at","8734_at","2732_at","2687_g_at","8746_at","8740_f_at","8752_f_at","8751_at","8750_at","8797_f_at","8739_at","2672_at","8744_at","8743_at","8760_at","8793_at","2716_at","8747_at","2731_at","8737_i_at","8708_at","2684_at","2717_at","8745_at","2709_s_at","2739_g_at","2670_at","2736_at","2665_at","8733_at","2662_s_at","8748_at","8761_at","8705_at","2712_s_at","2924_g_at","10436_at","2976_at","2975_at","2921_at","2926_s_at","10396_at","2978_at","2979_at","2997_s_at","2980_at","2996_s_at","2998_at","2965_g_at","2995_s_at","2993_s_at","2973_at","10398_at","2999_at","3000_at","2986_at","2929_at","2982_at","2983_at","2987_at","10404_at","2991_at","2988_at","2990_g_at","10437_at","10424_at","2981_at","2985_at","2992_g_at","3038_at","2917_s_at","10402_at","2930_at","2920_at","2919_s_at","2923_at","2922_at","3040_at","10400_at","2928_at","2927_s_at","2918_s_at","3041_at","2966_s_at","2967_s_at","2963_at","2964_at","2968_s_at","10452_at","2974_at","2970_s_at","2971_at","10460_at","2984_at","3034_at","10428_at","2969_s_at","2960_at","2962_at","10397_at","2925_s_at","10420_at","10441_at","10439_at","10456_at","2977_at","2994_s_at","10435_at","10438_at","2931_at","10459_at","10454_at","10453_at","10458_at","10457_at","10450_at","10449_at","3037_at","10425_at","10421_at","10432_at","10423_at","10422_at","3043_at","3044_at","10419_at","3042_at","10451_at","2972_at","10430_at","3035_at","10427_at","10426_at","10433_at","3036_at","10429_at","3002_g_at","10434_at","10440_at","2961_at","10403_at","10401_at","3001_at","10431_at","3039_s_at","10455_at","2989_at","10462_at","10406_at","10399_at","10405_at","10461_at","10463_at","5479_r_at","5450_g_at","2223_at","5517_at","2274_at","5454_at","5461_at","5455_at","2301_at","5496_g_at","5516_at","5456_at","5452_at","2283_s_at","5515_at","5510_at","5437_s_at","2307_at","5511_at","5508_at","2275_g_at","5453_at","5513_at","5443_g_at","5485_at","5514_at","5447_at","5446_r_at","2284_at","5444_at","5512_at","2296_at","5474_at","2227_at","5495_at","5459_at","5484_at","5441_at","2291_g_at","2295_at","5482_at","5473_at","5483_at","5491_at","5462_at","5488_at","5472_at","5487_at","2226_at","5458_at","5457_at","5475_at","5471_at","5470_at","5493_at","5518_at","5468_at","5464_i_at","5463_r_at","5467_f_at","5486_at","5465_f_at","2279_g_at","5480_f_at","5494_at","5477_at","5449_at","5478_i_at","2287_at","5460_at","2286_at","2285_at","2303_f_at","2289_at","2288_at","5507_at","2280_s_at","2228_at","2278_at","2282_s_at","2281_s_at","2272_at","2302_at","5519_at","2300_at","2306_at","5509_at","5445_i_at","5451_at","2225_at","2290_at","2299_at","2298_at","5476_at","5439_at","2273_at","2294_f_at","5442_at","2308_at","5440_at","2271_at","5436_i_at","5469_at","5481_at","2224_at","5466_i_at","2270_at","5490_at","2277_at","2276_at","5438_at","2268_at","5489_at","2297_at","2269_at","5492_at","2108_at","11406_f_at","11399_s_at","11398_s_at","2131_at","2103_s_at","11402_at","11401_at","2110_s_at","2112_s_at","2104_s_at","2109_g_at","2114_s_at","2116_at","2117_at","2127_s_at","4261_s_at","11407_f_at","11410_at","2119_g_at","4295_at","11409_f_at","11405_at","4276_at","2101_s_at","2115_at","4270_f_at","4294_at","2107_at","2130_at","4292_at","4273_at","4290_at","4267_at","4275_at","4288_at","4298_at","4300_at","4306_i_at","2134_at","4308_at","4307_f_at","4304_f_at","4299_at","4296_at","4303_at","4302_at","4293_at","4269_f_at","2100_g_at","11400_s_at","2111_s_at","4297_at","11395_at","11397_f_at","2136_at","11394_at","4274_at","4271_at","4301_at","4272_at","2106_at","4266_at","4262_i_at","11408_f_at","4264_at","4309_i_at","2105_s_at","4268_at","11403_at","2113_s_at","2137_at","2129_s_at","2126_s_at","2133_at","2132_at","2102_s_at","4265_s_at","4305_at","11396_g_at","2128_s_at","11404_at","4289_at","2135_at","2123_s_at","2125_s_at","2120_s_at","2124_s_at","2118_at","4263_at","2179_at","2122_s_at","2121_s_at","4291_i_at","4030_at","2435_at","2437_s_at","4028_at","6740_at","2433_at","11426_s_at","2434_at","6772_at","4027_at","4010_at","3497_f_at","6742_at","6743_at","2397_at","4029_at","6736_r_at","6776_at","6765_at","6738_at","2395_at","6739_at","6779_r_at","11432_at","6734_at","4049_at","11424_g_at","6735_i_at","4052_i_at","2404_s_at","4015_at","4014_at","4016_at","2400_s_at","4012_at","4011_at","6766_at","2444_s_at","6747_at","4022_at","11416_at","6748_at","4018_at","2440_s_at","4023_s_at","4019_at","6777_at","4021_at","2443_s_at","4020_at","2441_s_at","6745_at","6744_at","2442_s_at","4026_at","2445_s_at","2396_at","4024_at","6746_at","6769_at","4053_s_at","6767_at","11418_at","11417_at","11414_s_at","11413_s_at","11433_at","11421_at","2401_s_at","11419_at","11436_s_at","6775_at","4009_at","2432_at","11411_at","4013_i_at","6741_at","4017_at","2402_s_at","11431_at","2403_s_at","2436_g_at","6774_at","11435_s_at","11434_g_at","11425_s_at","6737_at","11423_at","11422_at","11430_at","11429_at","11427_at","6773_at","4025_i_at","4050_at","6771_s_at","11420_at","11415_f_at","4051_at","4055_at","6733_at","3136_s_at","4054_at","6731_at","11412_at","2438_at","6732_at","6770_i_at","4047_at","4048_at","11428_at","4046_at","6768_at","2398_g_at","2439_g_at","6749_at","6778_i_at","2399_s_at","3091_at","3152_at","3102_s_at","3090_s_at","3151_g_at","3105_g_at","3149_at","3103_at","11280_at","3106_s_at","3158_at","3157_at","3150_at","3093_f_at","3156_at","3088_at","3925_f_at","3097_at","3096_f_at","3155_at","3101_at","3159_at","3092_f_at","3099_at","11279_s_at","3098_at","3089_g_at","3100_s_at","11271_at","11238_at","11277_at","11273_at","11275_at","11272_at","3921_s_at","3107_s_at","3154_at","11278_f_at","11243_s_at","11284_f_at","11241_at","11242_f_at","3104_at","11239_at","11269_at","11270_at","11274_at","11276_at","11283_r_at","11285_at","11281_at","11282_i_at","11286_at","11244_s_at","3920_f_at","3919_f_at","3153_at","11240_s_at","3974_at","3960_at","3957_r_at","3981_at","3991_r_at","4008_at","3977_i_at","4002_at","3997_at","3965_i_at","4000_at","4007_at","4004_at","4005_at","3959_at","3971_at","3972_s_at","3975_at","3967_r_at","3968_s_at","3970_s_at","3980_r_at","3979_i_at","3978_r_at","3986_f_at","3976_at","3961_i_at","3956_i_at","3958_r_at","3994_at","3999_at","3998_at","3995_i_at","3990_i_at","3987_at","3966_i_at","3992_f_at","3962_f_at","3963_at","4001_at","4003_s_at","3964_at","3973_at","3984_r_at","3996_s_at","4006_at","3985_i_at","3969_at","2236_at","5283_at","5293_g_at","5281_f_at","5286_at","2235_at","2243_s_at","5276_r_at","5277_at","3283_f_at","5282_at","5274_at","2239_at","5278_at","5279_at","5289_at","5321_at","2229_at","5280_i_at","5320_at","5319_at","2233_at","2240_at","5296_i_at","5295_f_at","2237_at","2238_at","5292_at","2241_s_at","5294_at","2245_s_at","2242_s_at","2244_s_at","2231_at","2246_s_at","2234_at","5275_i_at","5285_at","5291_at","5287_at","5288_at","2232_at","5284_at","2230_at","5290_at","3310_s_at","3355_s_at","3311_f_at","3354_s_at","3307_s_at","3809_s_at","3309_s_at","3764_s_at","3806_s_at","3308_s_at","3807_s_at","3810_s_at","3808_s_at","3811_s_at","3913_s_at","3916_s_at","3917_f_at","3914_s_at","3915_s_at","3918_f_at","3896_s_at","3485_at","3487_g_at","3899_s_at","3898_s_at","3900_f_at","3489_f_at","3486_at","3488_at","3897_s_at","3625_at","10139_i_at","3628_f_at","3627_r_at","3626_i_at","3790_s_at","10137_at","3791_s_at","11206_f_at","3942_at","6179_at","6180_i_at","11205_i_at","3789_s_at","3943_i_at","6181_r_at","3944_f_at","6182_f_at","5318_s_at","11204_s_at","11203_i_at","3834_s_at","10138_g_at","10140_r_at","3251_s_at","11316_r_at","10367_r_at","3723_f_at","8245_r_at","10301_at","3167_r_at","3170_i_at","7961_f_at","3945_at","10368_s_at","3253_f_at","3200_i_at","7380_f_at","3722_s_at","3252_s_at","8878_s_at","3450_r_at","3168_f_at","3172_f_at","10300_f_at","9946_at","7960_i_at","9791_f_at","9792_s_at","3189_i_at","3721_s_at","8877_r_at","3750_f_at","3748_i_at","3749_r_at","3675_r_at","10302_g_at","7962_s_at","3946_at","9790_i_at","3171_r_at","4727_s_at","8876_i_at","3566_i_at","9895_i_at","11315_i_at","3190_f_at","3674_i_at","9896_f_at","3676_f_at","9897_f_at","11022_at","3202_f_at","11317_s_at","11020_i_at","3188_at","3404_f_at","3166_i_at","10366_i_at","10558_s_at","3713_s_at","7381_at","3201_r_at","11021_f_at","7379_i_at","3714_f_at","9947_i_at","3712_s_at","9948_f_at","8246_s_at","10556_i_at","10557_f_at","3449_i_at","3567_r_at","3568_f_at","8244_i_at","3864_i_at","8313_at","10385_i_at","9699_at","10772_at","4515_i_at","4516_f_at","4528_i_at","8152_f_at","7735_at","3425_f_at","3937_g_at","8144_g_at","3522_f_at","4852_s_at","3447_f_at","3909_f_at","6689_at","3535_i_at","3637_f_at","3536_f_at","7130_g_at","7459_s_at","3524_f_at","8143_at","7458_i_at","8151_s_at","7702_g_at","3705_f_at","3872_i_at","7269_g_at","3734_s_at","9700_at","3815_i_at","3875_f_at","7708_f_at","4851_i_at","7718_g_at","9456_at","3874_i_at","7707_i_at","9414_f_at","8921_s_at","3395_f_at","3873_f_at","4724_i_at","3400_i_at","9867_s_at","3380_i_at","8269_f_at","3394_f_at","7600_s_at","8965_at","3846_f_at","3424_f_at","3298_f_at","6935_at","3847_i_at","9866_i_at","10447_s_at","5669_g_at","3416_s_at","3415_i_at","3412_f_at","3344_f_at","5237_at","3865_f_at","7036_s_at","3737_s_at","6953_at","5573_at","3333_f_at","3338_f_at","3337_i_at","7253_g_at","9873_at","8479_at","8468_at","9656_g_at","5574_at","7599_i_at","9658_r_at","3832_s_at","3208_f_at","3370_f_at","10170_g_at","6683_g_at","6951_at","3468_i_at","6079_at","3466_i_at","7161_g_at","3859_i_at","5252_at","7632_i_at","3816_f_at","4780_at","9513_at","3471_f_at","9768_at","10386_s_at","3332_i_at","3470_i_at","7642_at","6954_at","6952_at","7643_at","10161_g_at","4905_g_at","3860_f_at","5527_at","9413_f_at","6936_g_at","3852_f_at","6605_at","3434_f_at","3930_i_at","7619_s_at","9889_i_at","3446_i_at","7548_at","10477_g_at","4604_i_at","3442_f_at","10473_i_at","8441_at","7618_f_at","10474_s_at","3655_f_at","3467_f_at","7369_s_at","7039_at","8058_r_at","3658_f_at","3644_f_at","10196_g_at","10659_at","9498_f_at","8725_g_at","7038_s_at","7034_i_at","3773_f_at","3780_f_at","5422_s_at","7190_i_at","7191_f_at","3941_at","3600_i_at","7035_s_at","7268_at","7271_at","3643_i_at","8790_s_at","6863_at","4211_at","4212_g_at","5076_f_at","5075_i_at","7270_i_at","8018_i_at","7129_at","6762_s_at","4779_f_at","8469_g_at","8368_i_at","3638_f_at","4116_at","3940_at","3939_at","3955_at","8349_f_at","3736_s_at","4433_at","7549_g_at","3951_at","3683_f_at","3745_f_at","3615_i_at","3704_f_at","3735_f_at","5001_f_at","3739_f_at","3738_s_at","3740_f_at","11048_at","7160_at","3744_i_at","3756_i_at","8232_at","3469_f_at","3781_f_at","5415_r_at","5925_at","3947_at","3680_i_at","8270_f_at","5190_i_at","3776_i_at","4032_f_at","9482_g_at","4729_i_at","3766_s_at","6960_at","7301_at","3659_f_at","5191_f_at","3948_s_at","3768_i_at","3772_f_at","3183_f_at","3457_f_at","4904_at","6569_at","5638_g_at","8442_g_at","4416_at","3882_f_at","3903_i_at","3244_i_at","7653_s_at","3765_s_at","4078_i_at","5018_at","11293_at","4983_g_at","3904_f_at","3369_i_at","11320_at","4982_at","7368_i_at","5236_n_at","10195_at","3881_f_at","3550_i_at","9512_at","3441_f_at","3174_f_at","3546_f_at","4460_i_at","7736_at","4434_at","8348_i_at","9407_at","9516_at","6373_g_at","4882_g_at","3551_f_at","4438_at","3343_i_at","7438_at","4260_at","4282_f_at","4605_s_at","4439_at","3381_f_at","10664_at","3592_i_at","8019_s_at","3757_f_at","3610_f_at","7302_at","10326_g_at","3401_f_at","10325_at","3622_f_at","11248_s_at","11152_g_at","3616_f_at","10665_g_at","3938_at","7855_f_at","3583_i_at","7344_i_at","7252_at","3949_i_at","3908_i_at","10214_at","3588_f_at","10704_at","7854_i_at","3931_f_at","3545_i_at","5000_i_at","3936_at","11296_s_at","4117_at","3142_f_at","10658_at","6329_at","3593_f_at","6802_at","9184_at","9917_at","6791_s_at","9655_at","6069_i_at","4417_at","10738_i_at","3682_i_at","5700_at","8057_i_at","3276_i_at","11049_g_at","6801_at","6792_s_at","3848_f_at","8981_at","9183_s_at","9420_i_at","8530_g_at","6760_g_at","6759_at","10999_at","10998_at","7437_at","8233_g_at","11158_i_at","3245_f_at","10063_i_at","5728_i_at","6763_at","10038_i_at","11159_s_at","6764_g_at","10739_f_at","8920_i_at","6070_s_at","3264_f_at","3184_s_at","3176_f_at","3175_i_at","7717_at","9294_at","5670_i_at","6599_at","6453_at","5668_at","3191_i_at","5671_s_at","6600_at","5655_n_at","10963_at","8478_at","3831_s_at","6810_g_at","5255_s_at","11151_at","7633_s_at","3141_i_at","6143_f_at","3164_f_at","3163_i_at","5253_g_at","11265_i_at","8529_at","4529_f_at","11061_g_at","7345_s_at","3769_s_at","6675_at","6606_at","3413_f_at","6674_at","3609_i_at","3584_f_at","7037_s_at","10863_i_at","3741_f_at","11060_at","11336_at","4215_g_at","5926_g_at","6345_at","9481_at","9054_g_at","6682_at","8369_f_at","11319_at","8333_at","9295_g_at","3845_i_at","5414_i_at","10864_r_at","3681_s_at","6688_at","10069_f_at","3525_f_at","4461_r_at","10083_g_at","10082_at","3851_s_at","6454_g_at","11247_s_at","3456_i_at","11266_f_at","10039_s_at","3621_i_at","9053_at","10002_i_at","3601_f_at","9657_i_at","9517_g_at","4730_s_at","10773_at","3321_f_at","5017_at","4281_i_at","5421_i_at","9421_s_at","3236_f_at","9457_g_at","6142_i_at","8724_at","9769_g_at","7701_at","11245_i_at","7040_g_at","11246_r_at","6961_g_at","5254_i_at","10068_i_at","9890_s_at","5810_s_at","5729_f_at","8314_g_at","10064_s_at","6020_r_at","3271_i_at","6323_at","10920_at","3315_f_at","3272_f_at","6809_at","3316_f_at","10476_at","6300_g_at","7697_i_at","10448_s_at","5528_at","3277_f_at","6846_at","5809_i_at","9497_i_at","3263_i_at","6847_g_at","3614_f_at","3258_f_at","8982_i_at","3521_i_at","6324_g_at","3173_i_at","3320_i_at","8983_s_at","5623_at","10705_g_at","3297_i_at","8332_at","6078_at","5624_at","6559_f_at","11323_at","11322_at","6558_i_at","4725_f_at","9408_at","11337_at","3306_i_at","3613_i_at","6564_at","6568_f_at","10003_f_at","4881_at","8964_at","3289_i_at","3290_f_at","6563_at","6864_at","3654_i_at","6372_at","3777_f_at","11294_g_at","10160_at","6330_at","6038_at","5637_at","3589_f_at","3433_i_at","6021_f_at","3192_f_at","8936_at","8811_at","8812_at","3237_f_at","3207_i_at","11295_r_at","6039_g_at"};
+Vector v = new Vector();
+for(int y = 0; y &lt; affy.length; y++)
+{
+  v.add(affy[y]);
+}
+
+StringBuffer sb = new StringBuffer();
+//Add column names
+String colnames = "Affy Id,ORF,Genename,Description,P value\n";
+sb.append(colnames);
+
+//Create rest of CSV file
+//N.B. i = 1 because we want to skip the 1st String
+for(i = 1; i &lt; affyIds.size(); i++)
+{
+  String str = (String)affyIds.get(i);
+  //System.out.println(str);
+
+  String[] tokens = str.split(","); 
+  String genename = (String)genenames.get(i);
+  genename = genename.replaceAll("genename:", "");
+  
+
+  if(v.contains(tokens[0]))
+  {
+    sb.append(tokens[0] + "*,"
+      + (String)orfs.get(i) + ","
+      + genename + ","
+      + "\"" + (String)descriptions.get(i) + "\","
+      + tokens[1]
+      + "\n");
+  }
+
+  else
+  {
+    sb.append(tokens[0] + ","
+      + (String)orfs.get(i) + ","
+      + genename + ","
+      + "\"" + (String)descriptions.get(i) + "\","
+      + tokens[1]
+      + "\n");
+  }
+
+}
+
+sb.append("* ORF/gene with more than probeset in the Affy chip.");
+
+String csv = sb.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">affyIds</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">orfs</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">genenames</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">descriptions</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">csv</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="cleanCSV">
+    <s:description>Removes unneccesary prefix text in the affy identifiers from the CSV file output generated by the R script</s:description>
+    <s:beanshell>
+      <s:scriptvalue>//Output
+ArrayList out = new ArrayList();
+
+//Clean up CSV file
+in = in.replaceAll("\"\",\"x\"\n", "");
+in = in.replaceAll("\"", "");
+in = in.replaceAll("Affy.YG_S98.F.", "");
+
+String line;
+BufferedReader br = new BufferedReader(new StringReader(in));
+while((line = br.readLine()) !=null)
+{
+  String[] tokens = line.split(",");
+  out.add(tokens[0] + "," + tokens[1]); 
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">in</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">out</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="createGeneList">
+    <s:description>Create a list of genes for analysis by the GOTermFinder service. Spurious genes are removed including those which have been annotated as questioable and hypothetical and therefore will not have a GO term asscoiated with them.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>//Checks
+if(listOfGenenames.size() != listOfOrfs.size())
+  System.out.println("Number of genenames does NOT equal number of orfs!");
+
+if(listOfGenenames.size() != listOfDescriptions.size())
+  System.out.println("Number of descriptions does NOT equal number of genenames!");
+
+boolean testDescription(int index)
+{
+  //Get description
+  String description = (String)listOfDescriptions.get(index);
+  if(description.contains("hypothetical") || description.contains("questionable") || description.contains("LTR") || description.contains("SAGE") || description.contains("Full length Ty") || description.contains("chromosome"))
+    return false;
+  else
+    return true;
+}
+
+//To hold bad genes and orfs
+alist = new ArrayList();
+
+sb = new StringBuffer();
+System.out.println("Number of starting orfs: " + listOfOrfs.size());
+
+for(int i = 0; i &lt; listOfGenenames.size(); i++)
+{
+  String genename = (String)listOfGenenames.get(i);
+  //System.out.println("Genename is " + genename);
+  if(genename.equals("---"))
+  {
+    String orf = (String)listOfOrfs.get(i);
+    //System.out.println("Getting orf " + orf);
+    boolean b = testDescription(i);
+
+    if(b)
+      sb.append(orf.toUpperCase() + "\n");
+    else
+      alist.add(orf.toUpperCase() + "," + listOfDescriptions.get(i).replaceAll(",", ""));
+ 
+    continue;
+  }
+  else if(genename.contains("///"))
+  {
+    //System.out.println(genename);
+    String[] names = genename.split(" /// ");
+    for(int x = 0; x &lt; names.length; x++)
+    {
+      //System.out.println(names[x]);
+      if(names[x].endsWith(" //"))
+        sb.append(names[x].replaceAll(" //", "") + "\n");
+      else
+        sb.append(names[x] + "\n");
+    }
+    continue;
+  }
+  else
+  {
+    sb.append(genename + "\n");
+  }
+}
+
+String orfs = sb.toString();
+
+//Create spurious genes output
+sb2 = new StringBuffer();
+sb2.append("Orf,Description\n");
+for(int y = 0; y &lt; alist.size(); y ++)
+{
+  sb2.append(alist.get(y) + "\n");
+}
+String spurious_genes = sb2.toString();
+
+//Check number of spurious genes
+System.out.println("Number of spurious genes: " + alist.size());
+
+String[] orf_tokens = orfs.split("\n");
+System.out.println("Number of orfs for GO analysis: " + orf_tokens.length);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">listOfOrfs</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">listOfGenenames</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">listOfDescriptions</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">orfs</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">spurious_genes</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="selectTestData">
+    <s:description>Uses Java Swing classes to enable the user to select data sets for t-test analysis</s:description>
+    <s:beanshell>
+      <s:scriptvalue>/**
+ * Class representing the selected values of this beanshell processor
+ */
+class SelectedValues
+{
+  ArrayList selectedValues;
+
+  SelectedValues()
+  {
+    selectedValues = new ArrayList();
+  }
+
+  synchronized void addToValues(ArrayList values)
+  {
+    for(int i = 0; i &lt; values.size(); i ++)
+      selectedValues.add(values.get(i));
+
+    notifyAll();
+  }
+
+  synchronized ArrayList getValues()
+  {
+    while (selectedValues.size() == 0)
+    {
+      try
+      {
+        wait();
+      }
+      catch (InterruptedException e)
+      {
+        e.printStackTrace();
+      }
+    }
+
+    return selectedValues;
+  }
+}
+
+/**
+ * Class representing the GUI for selecting the values to be
+ * processed by the remainder of the workflow.
+ */
+MultipleSelectWorkerGUI(ArrayList input, SelectedValues values)
+{
+  JList list;
+  DefaultListModel listModel;
+  final String submitString = "Submit";
+  JButton submitButton;
+  int[] accessions;
+  SelectedValues selectedValues;
+  ArrayList inputdata;
+  
+
+  void init()
+  {
+    super.frame = new JFrame("Select test data");
+    pane = new JPanel(); 
+    super.frame.getContentPane().add(pane); 
+    pane.setLayout(new BorderLayout()); 
+
+    // Set up input data available for selection
+    listModel = new DefaultListModel();
+    for (int i = 0; i &lt; input.size(); i++)
+      listModel.addElement(input.get(i));
+    
+    selectedValues = values;
+
+    //Create the list and put it in a scroll pane
+    list = new JList(listModel);
+    list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+    list.setSelectedIndex(0);
+    list.addListSelectionListener(this);
+    list.setVisibleRowCount(10);
+    list.setSize(800,500);
+    list.setFixedCellHeight(20);
+
+    JScrollPane listScrollPane = new JScrollPane(list);
+
+    submitButton = new JButton(submitString);
+    submitButton.setActionCommand(submitString);
+    submitButton.addActionListener(this);
+
+    //Create a panel
+    JPanel buttonPane = new JPanel();
+    buttonPane.add(submitButton);
+    buttonPane.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+    pane.add(listScrollPane, BorderLayout.CENTER);
+    pane.add(buttonPane, BorderLayout.PAGE_END);
+
+    frame.setVisible(true); 
+    frame.pack(); 
+  }
+
+  //This method is required by ListSelectionListener.
+  void valueChanged(ListSelectionEvent e)
+  {
+    if (!e.getValueIsAdjusting())
+    {
+      if (list.getSelectedIndex() == -1)
+      {
+        //No selection so disable fire button
+        submitButton.setEnabled(false);
+      }
+      else
+      {
+        //Selection made so enable the fire button.
+        submitButton.setEnabled(true);
+      }
+    }
+
+  }
+
+  // This method is called only if there is a valid selection
+  void actionPerformed(ActionEvent e)
+  {
+    ArrayList al = new ArrayList();
+
+    if (list.getSelectedIndices().length == 0)
+    {
+      // Nothing selected so disable firing
+      submitButton.setEnabled(false);
+    }
+    else
+    {
+      accessions = list.getSelectedIndices();
+      System.out.println(accessions);
+      
+      for(int i = 0; i &lt; accessions.length; i++)
+      {
+        String str = listModel.elementAt(accessions[i]);
+        System.out.println(str);
+        //String[] strArray = str.split(": ");
+        al.add(str);
+      }
+      
+      selectedValues.addToValues(al);
+      super.frame.dispose();
+
+    }
+  }
+
+  init(); 
+  return this; 
+}
+
+/**
+ * Wrapper for MultipleSelectWorkerGUI
+ */ 
+class WorkerWrapper extends Thread
+{
+  SelectedValues selectedValues;
+  ArrayList inputdata;
+
+  WorkerWrapper(ArrayList input, SelectedValues v)
+  {
+    inputdata = input;
+    selectedValues = v;
+  }
+
+  void run()
+  {
+    msw = MultipleSelectWorkerGUI(inputdata, selectedValues);
+  }
+}
+
+
+sv = new SelectedValues();
+wrapper = new WorkerWrapper(input, sv);
+wrapper.start();
+output = sv.getValues();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="getAffyIds">
+    <s:description>Parses the affy identifiers from the CSV file</s:description>
+    <s:beanshell>
+      <s:scriptvalue>//Output
+ArrayList outList = new ArrayList();
+
+for(int i = 0; i &lt; inList.size(); i++)
+{
+  String affyId = (String)inList.get(i);
+  String[] tokens = affyId.split(","); 
+  outList.add(tokens[0]);
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">inList</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">outList</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="mergeOutput2">
+    <s:description>Combines the selected data sets into a single data set</s:description>
+    <s:beanshell>
+      <s:scriptvalue>/*
+ * Merge transposed measurements output from MaxdBrowse
+ */
+
+String out = "Some output data"; //The output of this beanshell
+
+String colName = "";
+ArrayList features = new ArrayList(); 
+ArrayList measurementNames = new ArrayList(); 
+ArrayList listOfData = new ArrayList(); //To hold gene expn data
+
+for(int i = 0; i &lt; in.size(); i++)
+{
+  String inStr = in.get(i);
+  String[] lines = inStr.split("\n");
+  String measurementName = lines[1];
+  measurementName = measurementName.replaceAll("_Measurement", "");
+
+  //Replace 'Normalised data' column name with proper measurement name
+  inStr = inStr.replace("RMA Normalised Expression", measurementName);
+  inStr = inStr.replace("Normalised data", measurementName);
+  lines = inStr.split("\n");
+
+  measurementNames.add(measurementName);
+
+  //Get probe set identifiers from 1st dataset
+  if(i == 0)
+  {    
+    String featureLine = lines[3];
+    String[] featureItems = featureLine.split("\t");
+    for(int x = 0; x &lt; featureItems.length; x++)
+    {
+      features.add(featureItems[x]);
+    }     
+  }
+
+  String data = lines[6];  //gene exp values
+  listOfData.add(data);
+
+}
+
+String str = listOfData.get(0);
+String[] items = str.split("\t");
+ArrayList joinedData = new ArrayList();
+//Add first load of exp values into arraylist
+for(int s = 0; s &lt; items.length; s ++)
+{
+  joinedData.add((String) items[s]);
+}
+
+//Concat exp values
+for(int e = 1; e &lt; listOfData.size(); e++)
+{
+  String str = listOfData.get(e);
+  String[] moreItems = str.split("\t");
+  
+  for(int u = 0; u &lt; moreItems.length; u++)
+  {
+    String joinedStr = joinedData.get(u) + "," + moreItems[u];
+    joinedData.remove(u);
+    joinedData.add(u, joinedStr);
+  }
+}
+
+System.out.println("Size of features: " + features.size());
+System.out.println("Size of joinedData: " + joinedData.size());
+
+//Create csv
+StringBuffer csvSb = new StringBuffer();
+for(int y = 0; y &lt; features.size(); y ++)
+{
+  //Not specifying row names so create header line with one less entry than the number of columns,
+  //the first column will be taken to be the row names when csv file is read in by R
+  if(y == 0)  
+  {
+    csvSb = csvSb.append(joinedData.get(y) + "\n");
+    continue;
+  }
+
+  csvSb = csvSb.append(features.get(y) + "," + joinedData.get(y) + "\n");
+}
+
+out = csvSb.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">in</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">out</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="selectControlData">
+    <s:description>Uses Java Swing classes to enable the user to select data sets for t-test analysis</s:description>
+    <s:beanshell>
+      <s:scriptvalue>/**
+ * Class representing the selected values of this beanshell processor
+ */
+class SelectedValues
+{
+  ArrayList selectedValues;
+
+  SelectedValues()
+  {
+    selectedValues = new ArrayList();
+  }
+
+  synchronized void addToValues(ArrayList values)
+  {
+    for(int i = 0; i &lt; values.size(); i ++)
+      selectedValues.add(values.get(i));
+
+    notifyAll();
+  }
+
+  synchronized ArrayList getValues()
+  {
+    while (selectedValues.size() == 0)
+    {
+      try
+      {
+        wait();
+      }
+      catch (InterruptedException e)
+      {
+        e.printStackTrace();
+      }
+    }
+
+    return selectedValues;
+  }
+}
+
+/**
+ * Class representing the GUI for selecting the values to be
+ * processed by the remainder of the workflow.
+ */
+MultipleSelectWorkerGUI(ArrayList input, SelectedValues values)
+{
+  JList list;
+  DefaultListModel listModel;
+  final String submitString = "Submit";
+  JButton submitButton;
+  int[] accessions;
+  SelectedValues selectedValues;
+  ArrayList inputdata;
+  
+
+  void init()
+  {
+    super.frame = new JFrame("Select control data");
+    pane = new JPanel(); 
+    super.frame.getContentPane().add(pane); 
+    pane.setLayout(new BorderLayout()); 
+
+    // Set up input data available for selection
+    listModel = new DefaultListModel();
+    for (int i = 0; i &lt; input.size(); i++)
+      listModel.addElement(input.get(i));
+    
+    selectedValues = values;
+
+    //Create the list and put it in a scroll pane
+    list = new JList(listModel);
+    list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+    list.setSelectedIndex(0);
+    list.addListSelectionListener(this);
+    list.setVisibleRowCount(10);
+    list.setSize(800,500);
+    list.setFixedCellHeight(20);
+
+    JScrollPane listScrollPane = new JScrollPane(list);
+
+    submitButton = new JButton(submitString);
+    submitButton.setActionCommand(submitString);
+    submitButton.addActionListener(this);
+
+    //Create a panel
+    JPanel buttonPane = new JPanel();
+    buttonPane.add(submitButton);
+    buttonPane.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+    pane.add(listScrollPane, BorderLayout.CENTER);
+    pane.add(buttonPane, BorderLayout.PAGE_END);
+
+    frame.setVisible(true); 
+    frame.pack(); 
+  }
+
+  //This method is required by ListSelectionListener.
+  void valueChanged(ListSelectionEvent e)
+  {
+    if (!e.getValueIsAdjusting())
+    {
+      if (list.getSelectedIndex() == -1)
+      {
+        //No selection so disable fire button
+        submitButton.setEnabled(false);
+      }
+      else
+      {
+        //Selection made so enable the fire button.
+        submitButton.setEnabled(true);
+      }
+    }
+
+  }
+
+  // This method is called only if there is a valid selection
+  void actionPerformed(ActionEvent e)
+  {
+    ArrayList al = new ArrayList();
+
+    if (list.getSelectedIndices().length == 0)
+    {
+      // Nothing selected so disable firing
+      submitButton.setEnabled(false);
+    }
+    else
+    {
+      accessions = list.getSelectedIndices();
+      System.out.println(accessions);
+      
+      for(int i = 0; i &lt; accessions.length; i++)
+      {
+        String str = listModel.elementAt(accessions[i]);
+        System.out.println(str);
+        //String[] strArray = str.split(": ");
+        al.add(str);
+      }
+      
+      selectedValues.addToValues(al);
+      super.frame.dispose();
+
+    }
+  }
+
+  init(); 
+  return this; 
+}
+
+/**
+ * Wrapper for MultipleSelectWorkerGUI
+ */ 
+class WorkerWrapper extends Thread
+{
+  SelectedValues selectedValues;
+  ArrayList inputdata;
+
+  WorkerWrapper(ArrayList input, SelectedValues v)
+  {
+    inputdata = input;
+    selectedValues = v;
+  }
+
+  void run()
+  {
+    msw = MultipleSelectWorkerGUI(inputdata, selectedValues);
+  }
+}
+
+
+sv = new SelectedValues();
+wrapper = new WorkerWrapper(input, sv);
+wrapper.start();
+output = sv.getValues();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="getMeasurementNames">
+    <s:description>Querys the maxdload database using maxdBrowse to obtain a list of measurement names from the big experiment data stored there</s:description>
+    <s:defaults>
+      <s:default name="MeasurementNames">*</s:default>
+      <s:default name="listSplitter">,</s:default>
+      <s:default name="profileANDppass">BigEx:9dj2n5g7l</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://dbkgroup.org/software/maxd/maxdBrowse/sequences/GetAllMeasurementNames/wsdl.xml</s:wsdl>
+      <s:operation>query</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="queryMaxd1">
+    <s:description>Will take a list of Gene names, a list of Measurement names and a list of Column Types and produce a table. All values are coloured in relation to the a reference. In the list of Measurement names, the first Measurement listed is taken to be the reference. Formatted as text.</s:description>
+    <s:defaults>
+      <s:default name="ColumnTypes">*</s:default>
+      <s:default name="listSplitter">,</s:default>
+      <s:default name="profileANDppass">BigExN:9dj2n5g7l</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://dbkgroup.org/software/maxd/maxdBrowse/sequences/MeasurementDataTabTextFASTTransposed/wsdl.xml</s:wsdl>
+      <s:operation>query</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getGeneName">
+    <s:description>Gets the gene name for a given yeast open reading frame number</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://dbk-ed.mib.man.ac.uk:8080/YeastAffymapper/services/YeastAffymapper?wsdl</s:wsdl>
+      <s:operation>getGeneSymbol</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="analyseGenesPDFOutput">
+    <s:description>Analyses a list of genenames using the GOTermFinder service</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://dbk-ed.mib.man.ac.uk:8080/GoTermFinder/services/GoTermFinder?wsdl</s:wsdl>
+      <s:operation>analyseGenesPDFOutput</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getTargetDescription">
+    <s:description>Gets a description of a given affy identifer using the YeastAffymapper service</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://dbk-ed.mib.man.ac.uk:8080/YeastAffymapper/services/YeastAffymapper?wsdl</s:wsdl>
+      <s:operation>getTargetDescription</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getTranscriptId">
+    <s:description>Gets the open reading frame number for a given affy identifier</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://dbk-ed.mib.man.ac.uk:8080/YeastAffymapper/services/YeastAffymapper?wsdl</s:wsdl>
+      <s:operation>getTranscriptId</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="queryMaxd2">
+    <s:description>Will take a list of Gene names, a list of Measurement names and a list of Column Types and produce a table. All values are coloured in relation to the a reference. In the list of Measurement names, the first Measurement listed is taken to be the reference. Formatted as text.</s:description>
+    <s:defaults>
+      <s:default name="ColumnTypes">*</s:default>
+      <s:default name="listSplitter">,</s:default>
+      <s:default name="profileANDppass">BigExN:9dj2n5g7l</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://dbkgroup.org/software/maxd/maxdBrowse/sequences/MeasurementDataTabTextFASTTransposed/wsdl.xml</s:wsdl>
+      <s:operation>query</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="GoTermFinder_pvalue:value" sink="analyseGenesPDFOutput:pvalue" />
+  <s:link source="Ttest_pvalue:value" sink="performT_tests:pvalue" />
+  <s:link source="cleanCSV:out" sink="flatten:inputlist" />
+  <s:link source="createGeneList:orfs" sink="analyseGenesPDFOutput:genes" />
+  <s:link source="createGeneList:spurious_genes" sink="spurious_genes" />
+  <s:link source="flatten:outputlist" sink="createFinalCSV:affyIds" />
+  <s:link source="flatten:outputlist" sink="getAffyIds:inList" />
+  <s:link source="getAffyIds:outList" sink="getGeneName:affyId" />
+  <s:link source="getAffyIds:outList" sink="getTargetDescription:affyId" />
+  <s:link source="getAffyIds:outList" sink="getTranscriptId:affyId" />
+  <s:link source="getGeneName:getGeneSymbolReturn" sink="createFinalCSV:genenames" />
+  <s:link source="getGeneName:getGeneSymbolReturn" sink="createGeneList:listOfGenenames" />
+  <s:link source="getMeasurementNames:return" sink="getNamesUsingXPath:xml-text" />
+  <s:link source="getNamesUsingXPath:nodelist" sink="selectControlData:input" />
+  <s:link source="getNamesUsingXPath:nodelist" sink="selectTestData:input" />
+  <s:link source="getTargetDescription:getTargetDescriptionReturn" sink="createFinalCSV:descriptions" />
+  <s:link source="getTargetDescription:getTargetDescriptionReturn" sink="createGeneList:listOfDescriptions" />
+  <s:link source="getTranscriptId:getTranscriptIdReturn" sink="createFinalCSV:orfs" />
+  <s:link source="getTranscriptId:getTranscriptIdReturn" sink="createGeneList:listOfOrfs" />
+  <s:link source="mergeOutput1:out" sink="performT_tests:control_csv" />
+  <s:link source="mergeOutput2:out" sink="performT_tests:test_csv" />
+  <s:link source="performT_tests:file" sink="cleanCSV:in" />
+  <s:link source="queryMaxd1:return" sink="mergeOutput1:in" />
+  <s:link source="queryMaxd2:return" sink="mergeOutput2:in" />
+  <s:link source="selectControlData:output" sink="queryMaxd1:MeasurementNames" />
+  <s:link source="selectTestData:output" sink="queryMaxd2:MeasurementNames" />
+  <s:link source="analyseGenesPDFOutput:analyseGenesPDFOutputReturn" sink="pdf" />
+  <s:link source="createFinalCSV:csv" sink="csv" />
+  <s:sink name="pdf">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>application/pdf</s:mimeType>
+      </s:mimeTypes>
+      <s:description>A PDF document generated by the GoTermFinder service</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="csv">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/csv</s:mimeType>
+      </s:mimeTypes>
+      <s:description>A text file in CSV format showing a list of differentially expressed genes and their annotations</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="spurious_genes">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/csv</s:mimeType>
+      </s:mimeTypes>
+      <s:description>A text file in CSV format shoing a list of genes annotated as hypothetical, questionable, genomic sequences, etc. These genes do not have a GO term associated with them and so are removed from the list sent to the GoTermFinder service.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:coordination name="selectTestMeasurements_BLOCKON_mergeMaxdOutput1">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>mergeOutput1</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>selectTestData</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

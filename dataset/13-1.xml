@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:fc665a37-4096-4cb2-9215-a415eea297b2" author="Paul Fisher" title="KEGG pathways common to both QTL and microarray based investigations">This workflow takes in two lists of KEGG pathway ids. These are designed to come from pathways found from genes in a QTL (Quantitative Trait Loci) region, and from pathways found from genes differentially expressed in a microarray study. By identifying the intersecting pathways from both studies, a more informative picture is obtained of the candidate processes involved in the expression of a phenotype</s:workflowdescription>
+  <s:processor name="kegg_pathways">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://soap.genome.jp/KEGG.wsdl</s:wsdl>
+      <s:operation>btit</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="common_pathways">
+    <s:description>Two lists of KEGG pathways are compared and common pathways extracted - for use with QTL and microarray derived pathways</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/qtl_analysis.common_pathways</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="microarray_pathways" sink="common_pathways:microarray_pathways_direct_data" />
+  <s:link source="qtl_pathways" sink="common_pathways:qtl_pathways_direct_data" />
+  <s:link source="common_pathways:output" sink="kegg_pathways:string" />
+  <s:link source="kegg_pathways:return" sink="intersecting_pathways" />
+  <s:source name="qtl_pathways" />
+  <s:source name="microarray_pathways" />
+  <s:sink name="intersecting_pathways" />
+</s:scufl>
+

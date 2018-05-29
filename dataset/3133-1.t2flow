@@ -1,0 +1,184 @@
+<workflow xmlns="http://taverna.sf.net/2008/xml/t2flow" version="1" producedBy="taverna-2.4.0"><dataflow id="5a6660e6-ab68-4b54-ae77-5fd3a067be22" role="top"><name>Get_completion_funct</name><inputPorts><port><name>mapbTable</name><depth>0</depth><granularDepth>0</granularDepth><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.ExampleValue">
+        <text> mapb
+  12
+  13
+  9 </text>
+      </annotationBean>
+      <date>2012-09-03 09:36:01.138 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain></annotations></port></inputPorts><outputPorts><port><name>resultdata</name><annotations /></port><port><name>Tool_STDOUT</name><annotations /></port><port><name>Tool_STDERR</name><annotations /></port></outputPorts><processors><processor><name>Tool</name><inputPorts><port><name>mapb</name><depth>0</depth></port></inputPorts><outputPorts><port><name>resultdata</name><depth>0</depth><granularDepth>0</granularDepth></port><port><name>STDOUT</name><depth>0</depth><granularDepth>0</granularDepth></port><port><name>STDERR</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>external-tool-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.externaltool.ExternalToolActivity</class><inputMap><map from="mapb" to="mapb" /></inputMap><outputMap><map from="STDERR" to="STDERR" /><map from="resultdata" to="resultdata" /><map from="STDOUT" to="STDOUT" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean xmlns="">
+  <mechanismType>789663B8-DA91-428A-9F7D-B3F3DA185FD4</mechanismType>
+  <mechanismName>default local</mechanismName>
+  <mechanismXML>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&#xD;
+&lt;localInvocation&gt;&lt;shellPrefix&gt;/bin/sh -c&lt;/shellPrefix&gt;&lt;linkCommand&gt;/bin/ln -s %%PATH_TO_ORIGINAL%% %%TARGET_NAME%%&lt;/linkCommand&gt;&lt;/localInvocation&gt;&#xD;
+</mechanismXML>
+  <externaltoolid>80bac17f-5a38-4998-8eb9-91240b7d3f47</externaltoolid>
+  <useCaseDescription>
+    <usecaseid />
+    <description />
+    <command>python script mapb
+pwd
+ls</command>
+    <preparingTimeoutInSeconds>1200</preparingTimeoutInSeconds>
+    <executionTimeoutInSeconds>1800</executionTimeoutInSeconds>
+    <tags />
+    <REs />
+    <queue__preferred />
+    <queue__deny />
+    <static__inputs>
+      <de.uni__luebeck.inb.knowarc.usecases.ScriptInputStatic>
+        <tag>script</tag>
+        <file>true</file>
+        <tempFile>false</tempFile>
+        <binary>false</binary>
+        <charsetName>UTF-8</charsetName>
+        <forceCopy>false</forceCopy>
+        <content class="string">import sys
+import numpy as num
+#from numpy import array, arange, sin,  cos,  zeros,  recarray,  fromarrays
+from numpy import array,  where,  arange,  sqrt,  sin,  cos, zeros,  recarray
+from numpy.core.records import fromarrays
+from matplotlib.mlab import csv2rec, rec2txt
+
+filename=sys.argv[1]
+#galaxies=int(sys.argv[2])
+#filename='/home/julian/Documents/AMIGA/scriptMag/data.csv'
+data= csv2rec(filename)
+
+
+mapb = data['mapb'] # [14.069, 13.5804, 15.5186]
+mapb = array(mapb)
+galaxies = len(mapb)
+
+mag = num.arange(12.6,15.75,0.100000000000,dtype='Float64')
+mag_v = num.zeros(len(mag),dtype='Float64')
+mag_v2 = num.zeros(len(mag),dtype='Float64')
+mag_e = num.zeros(len(mag),dtype='Float64')
+mag_ev = num.zeros(len(mag),dtype='Float64')
+mag_n = num.zeros(len(mag),dtype='Float64')
+
+g_vm = num.zeros(galaxies,dtype='Float64')
+
+for j in range(len(mag)):
+    for i in range(galaxies):
+        if ((mapb[i]&gt;11.0)and(mapb[i]&lt;=mag[j])):
+            g_vm[i]=10.**(0.6*(mapb[i]-mag[j]))
+        else:
+            g_vm[i]=-10.
+    indice = num.where((g_vm&gt;=0.)&amp;(g_vm&lt;=1.))
+    mag_n[j] = len(g_vm[indice])
+    mag_v[j] = num.mean(g_vm[indice])
+    mag_v2[j] = num.mean(g_vm[indice]*g_vm[indice])
+    mag_ev[j] = num.std(g_vm[indice])
+    mag_e[j] = num.sqrt((num.sum(g_vm[indice]*g_vm[indice])-mag_v[j]*num.sum(g_vm[indice]))/(mag_n[j]-1.))/num.sqrt(mag_n[j])
+
+result_data=fromarrays([mag_n, mag_v,  mag_v2,  mag_ev,  mag_e],names='mag_n, mag_v,  mag_v2,  mag_ev,  mag_e')
+result = rec2txt(result_data)
+f = open('resultdata', 'w')
+f.write(result)
+f.close()</content>
+      </de.uni__luebeck.inb.knowarc.usecases.ScriptInputStatic>
+    </static__inputs>
+    <inputs>
+      <entry>
+        <string>mapb</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>mapb</tag>
+          <file>true</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+    </inputs>
+    <outputs>
+      <entry>
+        <string>resultdata</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptOutput>
+          <path>resultdata</path>
+          <binary>false</binary>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptOutput>
+      </entry>
+    </outputs>
+    <includeStdIn>false</includeStdIn>
+    <includeStdOut>true</includeStdOut>
+    <includeStdErr>true</includeStdErr>
+    <validReturnCodes>
+      <int>0</int>
+    </validReturnCodes>
+  </useCaseDescription>
+  <edited>false</edited>
+</net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="mapb" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor></processors><conditions /><datalinks><datalink><sink type="processor"><processor>Tool</processor><port>mapb</port></sink><source type="dataflow"><port>mapbTable</port></source></datalink><datalink><sink type="dataflow"><port>resultdata</port></sink><source type="processor"><processor>Tool</processor><port>resultdata</port></source></datalink><datalink><sink type="dataflow"><port>Tool_STDOUT</port></sink><source type="processor"><processor>Tool</processor><port>STDOUT</port></source></datalink><datalink><sink type="dataflow"><port>Tool_STDERR</port></sink><source type="processor"><processor>Tool</processor><port>STDERR</port></source></datalink></datalinks><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.Author">
+        <text>Julian Garrido</text>
+      </annotationBean>
+      <date>2012-09-03 09:48:45.784 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.DescriptiveTitle">
+        <text>Get completion function V / Vm using the apparent magnitude list</text>
+      </annotationBean>
+      <date>2012-09-03 09:49:40.263 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>5a6660e6-ab68-4b54-ae77-5fd3a067be22</identification>
+      </annotationBean>
+      <date>2012-09-03 09:50:24.64 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>Get completion function V / Vm using the apparent magnitude list of a set of galaxies</text>
+      </annotationBean>
+      <date>2012-09-03 09:50:23.662 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>a8b25817-dfbf-4de5-a25b-b5ff54f84ada</identification>
+      </annotationBean>
+      <date>2012-09-03 09:38:35.314 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2></annotations></dataflow></workflow>

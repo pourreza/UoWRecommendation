@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:BB74LM87OX0" author="Pieter B.T. Neerincx &amp; Philip de Groot" title="AffyArrayNormalization">The AffyArrayNormalization web services normalise raw Affymetrix GeneChip data. They are wrappers around Philip de Groot's normalization R script to provide remote programmatic access. This example workflow demonstrates the use of the AffyArrayNormalization services.
+
+The flow is as follows:
+
+* A client executes the AffyArrayNormalization_submit service with two inputs: a User object and a collection of URLs to CEL files.
+* The User object contains a user ID, a password and an e-mail address. Currently the user ID and password can be any characters [a-zA-Z0-9]. Just pick something, there's no need to register them first. They are only used to make sure that the one who tries to download the results is the same person as the one who submitted the job.
+* Your job will be submitted to the SUN Grid Engine on the NuGO R-server. The e-mail address is used by the Sun Grid Engine to notify you when your job is done. We might also use it to send you feedback in case something goes wrong with your job, but it won't be used for anything else and will only be stored for a maximum of 7 days (together with your job's results).
+* The URLs to the CEL files must use either the http or https protocol. You can restrict access to these URLs using basic authentication and putting the username and password in the URL. For example if the user is pieter and the password is test you could have a URL like this: https://pieter:test@lab5.bioinformatics.nl/phenolink/home/TisMix_mix5a_01_v1_U133plus2.CEL. Hence you have to put the CEL files somewhere on a web server, so the AffyArrayNormalization_submit service can download them.
+* The AffyArrayNormalization_submit service returns a job ID and a link to the results. Once the job is done this link can be used to download the results. Results will be available for 7 days after which they will be deleted automatically. 
+* The job ID is used to execute the AffyArrayNormalization_poll service inside a nested workflow. AffyArrayNormalization_poll returns the job status and unless the status is "finished" the entire nested workflow will fail. If the nested CheckStatus workflow fails, Taverna will automatically retry until it succeeds and hence the job has finished (or until the maximum number of retries is reached).
+* The nested DownloadFile workflow depends on successful completion of the nested CheckStatus workflow. The name says it all: It downloads the result, which is a single ZIP file. This workflow does not take care of unzipping the archive. You have to do that yourself.
+
+AffyArrayNormalization services use a secure connection over HTTPS. To make this work you *must* import our SSL certificates in your local Java keystores. You can do this either manually as described at https://www.bioinformatics.nl/phenolink/home/JavaAndHTTPS.html or use a Java tool to do the job as described at http://www.myexperiment.org/files/148</s:workflowdescription>
+  <s:processor name="DownloadFile">
+    <s:description>Please make sure you end the path, where the download should be saved, with a slash. (Slash backward for Windows or a slash forward for Linux and Mac OS X.)</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:e68be16d-dce2-474b-9d45-c6ed1a25f4cd" author="" title="DownloadFile" />
+        <s:processor name="Download">
+          <s:beanshell>
+            <s:scriptvalue>//
+// Import modules;
+//
+import java.io.*;
+import java.net.*;
+import java.util.regex.*;
+//
+// Main script.
+//
+String vError = "";
+Downloaded = "false";
+try {
+	// Get filename for the download from the URL.
+	String vFile = "download";	
+	String vPattern = ".*?([^/]+)$";
+	Pattern oPattern = Pattern.compile(vPattern);
+	Matcher oMatcher = oPattern.matcher(URL);
+	Boolean vHit = oMatcher.matches();
+	if (vHit) {
+		vFile = oMatcher.group(1);
+	} else {
+		vError = vError + "Error no filename found in URL.";				
+	}
+	// Connect to URL.
+	URL oURL = new URL(URL);
+	URLConnection oURLConnection = oURL.openConnection();
+	// Check if we are are dealing with a site 
+	// that uses basic http(s) authentication.
+	vPattern = "(\\w+://)??([^:]+):([^:@]+)@.*";
+	oPattern = Pattern.compile(vPattern);
+	oMatcher = oPattern.matcher(URL);
+	vHit = oMatcher.matches();
+	if (vHit) {
+		//String vProtocol = oMatcher.group(1);
+		String vUser = oMatcher.group(2);
+		String vPass = oMatcher.group(3);
+		String vAuth = vUser + ":" + vPass;
+		String vEncodedUserPassword = new sun.misc.BASE64Encoder().encode(vAuth.getBytes());
+		oURLConnection.setRequestProperty ("Authorization", "Basic " + vEncodedUserPassword);	
+	}
+	// Pump data to disk.	
+	InputStream oIS = oURLConnection.getInputStream();
+	String vFilePath = Path + vFile;
+	OutputStream oOS = new FileOutputStream(vFilePath);
+	synchronized (oIS) {
+		synchronized (oOS) {
+			byte[] oBuffer = new byte[256];
+			while (true) {
+				int vBytesRead = oIS.read(oBuffer);
+				if (vBytesRead == -1) break;
+				oOS.write(oBuffer, 0, vBytesRead);
+			}
+		}
+	}
+	oIS.close();
+	oOS.close();
+	Downloaded = "true";
+} catch (MalformedURLException oError) {
+	vError = vError + oError.getMessage();
+} catch (FileNotFoundException oError) {
+	vError = vError + "File not found.";
+} catch (PatternSyntaxException oError) {
+	vError = vError + "RegExp Error: ";
+	vError = vError + oError.getMessage();
+} catch (IOException oError) {
+	vError = vError + "IO Error: ";
+	vError = vError + oError.getMessage();
+}
+Message = vError;</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">URL</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">Path</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">Downloaded</s:beanshelloutput>
+              <s:beanshelloutput s:syntactictype="'text/plain'">Message</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:link source="path" sink="Download:Path" />
+        <s:link source="url" sink="Download:URL" />
+        <s:link source="Download:Downloaded" sink="downloaded" />
+        <s:link source="Download:Message" sink="log_message" />
+        <s:source name="url">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>text/x-taverna-web-url</s:mimeType>
+            </s:mimeTypes>
+          </s:metadata>
+        </s:source>
+        <s:source name="path" />
+        <s:sink name="downloaded" />
+        <s:sink name="log_message" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_URL">
+    <s:description>Processor to parse the datatype URL</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>URL</s:datatype>
+      <s:articleName>result</s:articleName>
+      <s:description>Processor to parse the datatype URL</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="Password">
+    <s:description>A generic password object.</s:description>
+    <s:defaults>
+      <s:default name="namespace">nugo-r.bioinformatics.nl</s:default>
+      <s:default name="article name">password</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Password</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="User">
+    <s:description>A generic user object.</s:description>
+    <s:defaults>
+      <s:default name="namespace">nugo-r.bioinformatics.nl</s:default>
+      <s:default name="article name">user</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>User</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="URL3">
+    <s:description>An Universal Resource Locater (URL).</s:description>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>URL</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="URL2">
+    <s:description>An Universal Resource Locater (URL).</s:description>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>URL</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_Object_job_id">
+    <s:description>Processor to parse the datatype Object</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>Object</s:datatype>
+      <s:articleName>job_id</s:articleName>
+      <s:description>Processor to parse the datatype Object</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="Email">
+    <s:description>An e-mail address object.</s:description>
+    <s:defaults>
+      <s:default name="namespace">nugo-r.bioinformatics.nl</s:default>
+      <s:default name="article name">email</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Email</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="URL1">
+    <s:description>An Universal Resource Locater (URL).</s:description>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>URL</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="AffyArrayNormalization_submit">
+    <s:description>Asynchronous BioMOBY webservice for quality assessment of raw Affymetrix GeneChip data. This services requires as input a collection of 3 or more URLs to CEL files from the same experiment. URLs must be using the HTTP or HTTPS protocol. You will recieve a Job IDUse this Job ID with the AffyArrayNormalization_poll service from the same service provider to check the status of your job.Use the URL in the output of this service to fetch the results.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>AffyArrayNormalization_submit</s:serviceName>
+      <s:authorityName>nugo-r.bioinformatics.nl</s:authorityName>
+      <s:Parameter s:name="normalization_method">gcRMA(slow)</s:Parameter>
+      <s:Parameter s:name="custom_cdf">true</s:Parameter>
+    </s:biomobywsdl>
+    <s:mergemode input="URL(Collection - 'cel_files')" mode="merge" />
+  </s:processor>
+  <s:processor name="CheckStatus">
+    <s:description># Explanation of status types.
+# SGE qstat status types:
+p=&gt;job is pending
+r=&gt;job is running
+R=&gt;job is restarting
+s=&gt;job is suspended
+S=&gt;queue is suspended and therefore job is suspended as well
+t=&gt;transferring job to cluster node
+T=&gt;job is suspended because suspension threshold of queue was exceeded
+z=&gt;zombie
+h=&gt;job was put on hold
+    u=&gt;... by user
+    o=&gt;... by operator
+    s=&gt;... by system
+    j=&gt;... because it depends on the results of other jobs which have not yet finished
+    a=&gt;... because it was scheduled for execution at some time in the future
+d=&gt;deleting job
+q=&gt;job is queued
+w=&gt;job is waiting
+E=&gt;job is in error state
+# Our own status types:
+m=&gt;job status is missing or unkown
+f=&gt;job has finished</s:description>
+    <s:workflow maxretries="200" retrydelay="60000" retrybackoff="1.5">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:66901cf5-e28e-43d6-89bb-748923cfe9cd" author="" title="AffyArrayNormalization_status" />
+        <s:processor name="Fail_if_false">
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+          <s:mergemode input="test" mode="merge" />
+        </s:processor>
+        <s:processor name="Beanshell_scripting_host">
+          <s:beanshell>
+            <s:scriptvalue>String job_finished = "false";
+if (status.equals("f") || status.equals("m")) {
+	job_finished = "true";
+} else {
+	job_finished = "false";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">status</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">job_finished</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="AffyArrayNormalization_poll">
+          <s:description>Checks the status of an asynchronous AffyArrayNormalization_submit job.</s:description>
+          <s:biomobywsdl>
+            <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+            <s:serviceName>AffyArrayNormalization_poll</s:serviceName>
+            <s:authorityName>nugo-r.bioinformatics.nl</s:authorityName>
+          </s:biomobywsdl>
+        </s:processor>
+        <s:processor name="Parse_Moby_Data_Object_status">
+          <s:description>Processor to parse the datatype Object</s:description>
+          <s:biomobyparser>
+            <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+            <s:datatype>Object</s:datatype>
+            <s:articleName>status</s:articleName>
+            <s:description>Processor to parse the datatype Object</s:description>
+          </s:biomobyparser>
+        </s:processor>
+        <s:link source="AffyArrayNormalization_poll:Object(status)" sink="Parse_Moby_Data_Object_status:mobyData('Object')" />
+        <s:link source="Beanshell_scripting_host:job_finished" sink="Fail_if_false:test" />
+        <s:link source="Object_job_id" sink="AffyArrayNormalization_poll:Object(job_id)" />
+        <s:link source="Parse_Moby_Data_Object_status:id" sink="Beanshell_scripting_host:status" />
+        <s:link source="Parse_Moby_Data_Object_status:id" sink="status" />
+        <s:source name="Object_job_id">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>text/plain</s:mimeType>
+            </s:mimeTypes>
+          </s:metadata>
+        </s:source>
+        <s:sink name="status" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="AffyArrayNormalization_submit:Object(job_id)" sink="CheckStatus:Object_job_id" />
+  <s:link source="AffyArrayNormalization_submit:URL(result)" sink="Parse_Moby_Data_URL:mobyData('URL')" />
+  <s:link source="Email:mobyData" sink="User:Email(email)" />
+  <s:link source="Email_id" sink="Email:id" />
+  <s:link source="Parse_Moby_Data_URL:id" sink="DownloadFile:url" />
+  <s:link source="Password:mobyData" sink="User:Password(password)" />
+  <s:link source="Password_id" sink="Password:id" />
+  <s:link source="ResultDir" sink="DownloadFile:path" />
+  <s:link source="URL1_id" sink="URL1:id" />
+  <s:link source="URL2_id" sink="URL2:id" />
+  <s:link source="URL3_id" sink="URL3:id" />
+  <s:link source="AffyArrayNormalization_submit:Object(job_id)" sink="Parse_Moby_Data_Object_job_id:mobyData('Object')" />
+  <s:link source="URL1:mobyData" sink="AffyArrayNormalization_submit:URL(Collection - 'cel_files')" />
+  <s:link source="URL2:mobyData" sink="AffyArrayNormalization_submit:URL(Collection - 'cel_files')" />
+  <s:link source="URL3:mobyData" sink="AffyArrayNormalization_submit:URL(Collection - 'cel_files')" />
+  <s:link source="User:mobyData" sink="AffyArrayNormalization_submit:User(user)" />
+  <s:link source="User_id" sink="User:id" />
+  <s:link source="CheckStatus:status" sink="status" />
+  <s:link source="DownloadFile:downloaded" sink="downloaded" />
+  <s:link source="DownloadFile:log_message" sink="log" />
+  <s:link source="Parse_Moby_Data_Object_job_id:id" sink="job_id" />
+  <s:link source="Parse_Moby_Data_URL:id" sink="url" />
+  <s:source name="User_id">
+    <s:metadata>
+      <s:description>Just pick something. There is no need to register first. User and password are only used to make sure whoever tries to downlead the results is the same as the one who submitted the job in the first place.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Email_id">
+    <s:metadata>
+      <s:description>The e-mail address is used by the Sun Grid Engine to notify you when your job is done. We might also use it to send you feedback in case something goes wrong with your job, but it won't be used for anything else and will only be stored for a maximum of 7 days (together with your job's results).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Password_id">
+    <s:metadata>
+      <s:description>Just pick something. There is no need to register first. User and password are only used to make sure whoever tries to downlead the results is the same as the one who submitted the job in the first place.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="URL1_id">
+    <s:metadata>
+      <s:description>An URL to an Affy CEL file. For debugging or as example you can use: https://lab5.bioinformatics.nl/phenolink/home/TisMix_mix5a_01_v1_U133plus2.CEL</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="URL2_id">
+    <s:metadata>
+      <s:description>An URL to an Affy CEL file. For debugging or as example you can use: https://lab5.bioinformatics.nl/phenolink/home/TisMix_mix5a_02_v1_U133plus2.CEL</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="URL3_id">
+    <s:metadata>
+      <s:description>An URL to an Affy CEL file. For debugging or as example you can use: https://lab5.bioinformatics.nl/phenolink/home/TisMix_mix5a_03_v1_U133plus2.CEL</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="ResultDir">
+    <s:metadata>
+      <s:description>Provide an absolute path to the directory where you want to store the downloaded results. Make sure the path ends with the path seperator for your operating system. (Slash forward  for Linux, Unix and Mac OS X or a backslash for Windows. For example /home/user/downloads/ or D:\My Documents\downloads\)</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="url" />
+  <s:sink name="status">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="job_id" />
+  <s:sink name="downloaded" />
+  <s:sink name="log" />
+  <s:coordination name="DownloadFile_BLOCKON_CheckStatus">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>CheckStatus</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>DownloadFile</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

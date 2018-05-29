@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:GTD7HTDVUX48" author="" title="" />
+  <s:processor name="database" boring="true">
+    <s:stringconstant>mus_musculus_core_37_34e</s:stringconstant>
+  </s:processor>
+  <s:processor name="end" boring="true">
+    <s:stringconstant>44592504</s:stringconstant>
+  </s:processor>
+  <s:processor name="array_name" boring="true">
+    <s:stringconstant>Mouse430_2</s:stringconstant>
+  </s:processor>
+  <s:processor name="split_by_regex1">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Merge_string_list1">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="start" boring="true">
+    <s:stringconstant>19592504</s:stringconstant>
+  </s:processor>
+  <s:processor name="chromosome" boring="true">
+    <s:stringconstant>17</s:stringconstant>
+  </s:processor>
+  <s:processor name="comma1" boring="true">
+    <s:stringconstant>,</s:stringconstant>
+  </s:processor>
+  <s:processor name="regex1" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="getgenesbyspecies">
+    <s:description>Retrieves a list of Ensembl genes for a given species, chromosome and position</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/qtl_analysis.getgenesbyspecies</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="probeset_in_qtl">
+    <s:description>Gets the probesets that are in a region of a chromosome e.g. in a QTL or based on 2 marker names</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/qtl_analysis.probeset_in_qtl</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="probeset_to_gene">
+    <s:description>Gets ENSEMBL gene IDS that are based on the probeset names passed to it</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/qtl_analysis.probeset_to_gene</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="Concatenate_two_strings">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="Remove_duplicate_strings">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringStripDuplicates</s:local>
+  </s:processor>
+  <s:link source="Concatenate_two_strings:output" sink="Remove_duplicate_strings:stringlist" />
+  <s:link source="Merge_string_list1:concatenated" sink="probeset_to_gene:probeset_list" />
+  <s:link source="array_name:value" sink="probeset_in_qtl:array_name" />
+  <s:link source="chromosome:value" sink="getgenesbyspecies:chromo" />
+  <s:link source="chromosome:value" sink="probeset_in_qtl:chromosome" />
+  <s:link source="chromosome:value" sink="probeset_to_gene:chromosome" />
+  <s:link source="comma1:value" sink="Merge_string_list1:seperator" />
+  <s:link source="database:value" sink="getgenesbyspecies:database" />
+  <s:link source="database:value" sink="probeset_in_qtl:database" />
+  <s:link source="database:value" sink="probeset_to_gene:database" />
+  <s:link source="end:value" sink="getgenesbyspecies:end" />
+  <s:link source="end:value" sink="probeset_in_qtl:end" />
+  <s:link source="end:value" sink="probeset_to_gene:end" />
+  <s:link source="getgenesbyspecies:output" sink="Concatenate_two_strings:string2" />
+  <s:link source="probeset_in_qtl:output" sink="split_by_regex1:string" />
+  <s:link source="probeset_to_gene:output" sink="Concatenate_two_strings:string1" />
+  <s:link source="Remove_duplicate_strings:strippedlist" sink="unique_list" />
+  <s:link source="regex1:value" sink="split_by_regex1:regex" />
+  <s:link source="split_by_regex1:split" sink="Merge_string_list1:stringlist" />
+  <s:link source="start:value" sink="getgenesbyspecies:start" />
+  <s:link source="probeset_in_qtl:output" sink="probesets_in_qtl" />
+  <s:link source="probeset_to_gene:output" sink="genes_from_probeset" />
+  <s:link source="start:value" sink="probeset_in_qtl:start" />
+  <s:link source="start:value" sink="probeset_to_gene:start" />
+  <s:link source="getgenesbyspecies:output" sink="genes_in_qtl" />
+  <s:sink name="probesets_in_qtl" />
+  <s:sink name="genes_from_probeset" />
+  <s:sink name="genes_in_qtl" />
+  <s:sink name="unique_list" />
+</s:scufl>
+
+

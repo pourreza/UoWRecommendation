@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f3d2fd16-ad75-46ad-8613-dc92ba26357b" author="" title="getCountryInfo" />
+  <s:processor name="Get_web_page_from_URL">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="composeURL">
+    <s:beanshell>
+      <s:scriptvalue>List vars = new ArrayList(Arrays.asList(this.variables));
+
+// vars.remove("variables");
+vars.remove("bsh");
+
+
+String url = "http://ws.geonames.org/countryInfo?";
+
+for (String variable : vars) {
+   url = url + variable + "=" + eval(variable);
+}
+
+
+// Chop of last &amp;
+url = url.substring(0, url.length());</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">country</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="Get_web_page_from_URL:contents" sink="countryInfo" />
+  <s:link source="composeURL:url" sink="Get_web_page_from_URL:url" />
+  <s:link source="countryCode" sink="composeURL:country" />
+  <s:link source="composeURL:url" sink="url" />
+  <s:source name="countryCode" />
+  <s:sink name="countryInfo" />
+  <s:sink name="url" />
+</s:scufl>
+

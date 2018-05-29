@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:fee1c4a6-f501-4d1e-b829-16c0a34faa3b" author="" title="ebi_ncbi" />
+  <s:processor name="contentXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:arraytype optional="false" unbounded="false" wrapped="false" typename="WSArrayofData" name="content" qname="{http://www.ebi.ac.uk/WSNCBIBlast}WSArrayofData">
+          <s:elementtype>
+            <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSNCBIBlast}data">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+              </s:elements>
+            </s:complextype>
+          </s:elementtype>
+        </s:arraytype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="paramsXML">
+    <s:defaults>
+      <s:default name="program">blastp</s:default>
+      <s:default name="database">swissprot</s:default>
+      <s:default name="email">hongiiv@gmail.com</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="inputParams" name="params" qname="{http://www.ebi.ac.uk/WSNCBIBlast}inputParams">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="program" qname="inputParams&gt;program" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="database" qname="inputParams&gt;database" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="matrix" qname="inputParams&gt;matrix" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="exp" qname="inputParams&gt;exp" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="filter" qname="inputParams&gt;filter" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="numal" qname="inputParams&gt;numal" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="scores" qname="inputParams&gt;scores" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="align" qname="inputParams&gt;align" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="gapalign" qname="inputParams&gt;gapalign" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="extendgap" qname="inputParams&gt;extendgap" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="opengap" qname="inputParams&gt;opengap" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="dropoff" qname="inputParams&gt;dropoff" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="async" qname="inputParams&gt;async" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="inputParams&gt;email" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+    <s:mergemode input="email" mode="merge" />
+  </s:processor>
+  <s:processor name="WSArrayofDataXML">
+    <s:defaults>
+      <s:default name="type">sequence</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSNCBIBlast}data">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="runNCBIBlast">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSNCBIBlast.wsdl</s:wsdl>
+      <s:operation>runNCBIBlast</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="poll">
+    <s:defaults>
+      <s:default name="type">tooloutput</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSNCBIBlast.wsdl</s:wsdl>
+      <s:operation>poll</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Nested_Workflow1">
+    <s:workflow maxretries="10" retrydelay="30000">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:871b403b-42c2-49b9-9696-2a79e92daf53" author="" title="ebi_ncbi_2" />
+        <s:processor name="checkStatus">
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSNCBIBlast.wsdl</s:wsdl>
+            <s:operation>checkStatus</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:link source="job" sink="checkStatus:jobid" />
+        <s:link source="checkStatus:status" sink="status" />
+        <s:source name="job" />
+        <s:sink name="status" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Byte___to_String">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+  </s:processor>
+  <s:link source="WSArrayofDataXML:output" sink="contentXML:WSArrayofData" />
+  <s:link source="contentXML:output" sink="runNCBIBlast:content" />
+  <s:link source="paramsXML:output" sink="runNCBIBlast:params" />
+  <s:link source="sequence" sink="WSArrayofDataXML:content" />
+  <s:link source="Byte___to_String:string" sink="result" />
+  <s:link source="poll:output" sink="Byte___to_String:bytes" />
+  <s:link source="runNCBIBlast:jobid" sink="Nested_Workflow1:job" />
+  <s:link source="runNCBIBlast:jobid" sink="poll:jobid" />
+  <s:link source="runNCBIBlast:jobid" sink="jobid" />
+  <s:source name="sequence" />
+  <s:sink name="result">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>application/octet-stream</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="jobid" />
+  <s:coordination name="poll_BLOCKON_Nested_Workflow1">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Nested_Workflow1</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>poll</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

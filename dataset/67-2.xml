@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:BD8CRS09KB0" author="Tom Oinn" title="Example of an alternate processor">Trivial workflow which will initially fail, retry twice then fall over to the alternative specified for the FailingThing process.</s:workflowdescription>
+  <s:processor name="FooString">
+    <s:stringconstant>foo</s:stringconstant>
+  </s:processor>
+  <s:processor name="BarString">
+    <s:stringconstant>bar</s:stringconstant>
+  </s:processor>
+  <s:processor name="FailingProcessor">
+    <s:local maxretries="2" retrydelay="1000" retrybackoff="2.0">org.embl.ebi.escience.scuflworkers.java.TestAlwaysFailingProcessor</s:local>
+    <s:alternate>
+      <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+      <s:outputmap key="urgle" value="output" />
+      <s:inputmap key="foo" value="string1" />
+      <s:inputmap key="bar" value="string2" />
+    </s:alternate>
+  </s:processor>
+  <s:link source="FooString:value" sink="FailingProcessor:foo" />
+  <s:link source="BarString:value" sink="FailingProcessor:bar" />
+  <s:link source="FailingProcessor:urgle" sink="out" />
+  <s:sink name="out" />
+</s:scufl>
+
+

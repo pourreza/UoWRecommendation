@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:3daf607d-d5b7-44b5-94f9-4dc16ca777bb" author="" title="analyseWFS" />
+  <s:processor name="Generate_IDs">
+    <s:beanshell>
+      <s:scriptvalue>workflowIDs = new ArrayList();
+
+int firstIndex = Integer.parseInt(firstID);
+int lastIndex = Integer.parseInt(lastID);
+
+for(int i = firstIndex; i&lt;=lastIndex; i++){
+  workflowIDs.add(i);
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">firstID</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">lastID</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">workflowIDs</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Generate_URL">
+    <s:beanshell>
+      <s:scriptvalue>url = "http://sandbox.myexperiment.org/workflows/" + id + "/download";</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">id</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="FirstID" sink="Generate_IDs:firstID" />
+  <s:link source="LastID" sink="Generate_IDs:lastID" />
+  <s:link source="Generate_IDs:workflowIDs" sink="Generate_URL:id" />
+  <s:link source="Generate_IDs:workflowIDs" sink="WorkflowIDs" />
+  <s:link source="Generate_URL:url" sink="WorkflowURLs" />
+  <s:source name="FirstID" />
+  <s:source name="LastID" />
+  <s:sink name="WorkflowURLs" />
+  <s:sink name="WorkflowIDs" />
+</s:scufl>
+

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:9340622a-d065-43fc-a43e-e798a61f5982" author="Stian Soiland-Reyes" title="tavernaHome">Find Taverna's home directory (and open it for Windows/OSX/Linux)</s:workflowdescription>
+  <s:processor name="open_folder_osx">
+    <s:defaults>
+      <s:default name="command">open</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.LocalCommand</s:local>
+  </s:processor>
+  <s:processor name="open_folder_windows">
+    <s:defaults>
+      <s:default name="command">explorer</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.LocalCommand</s:local>
+  </s:processor>
+  <s:processor name="open_folder_linux_gnome">
+    <s:defaults>
+      <s:default name="command">gnome-open</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.LocalCommand</s:local>
+  </s:processor>
+  <s:processor name="find_taverna_home">
+    <s:beanshell>
+      <s:scriptvalue>try { 
+  // Call ApplicationRuntime.getInstance().getApplicationHomeDir() by introspection
+  // so this does not fail the beanshell script in Taverna 1
+  emptyClass = new Class[]{};
+  emptyArgs = new Object[]{};
+
+  AppRuntime = Class.forName("net.sf.taverna.raven.appconfig.ApplicationRuntime");
+  getInstance = AppRuntime.getMethod("getInstance", emptyClass);
+  appRuntime = getInstance.invoke(null, emptyArgs);
+  tavernaHome = appRuntime.getApplicationHomeDir().toString();
+} catch (Throwable t) {
+ // t.printStackTrace();
+  tavernaHome = System.getProperty("taverna.home");
+}</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">tavernaHome</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="find_taverna_home:tavernaHome" sink="open_folder_linux_gnome:args" />
+  <s:link source="find_taverna_home:tavernaHome" sink="open_folder_osx:args" />
+  <s:link source="find_taverna_home:tavernaHome" sink="open_folder_windows:args" />
+  <s:link source="find_taverna_home:tavernaHome" sink="tavernaHome" />
+  <s:sink name="tavernaHome" />
+</s:scufl>
+

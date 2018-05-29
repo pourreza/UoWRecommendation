@@ -1,0 +1,1518 @@
+<workflow xmlns="http://taverna.sf.net/2008/xml/t2flow" version="1" producedBy="taverna-2.4.0"><dataflow id="68ffdd68-5cc5-4642-802e-8a38030c2af4" role="top"><name>Environment</name><inputPorts><port><name>dbuser</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port><port><name>dbpasswd</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port><port><name>dbhost</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port><port><name>dbport</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port><port><name>candidatescube_pickle</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port><port><name>csv_out_filename</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port><port><name>csv_refined_filename</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port><port><name>working_directory</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port><port><name>bsz_low</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port><port><name>bsz_high</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port></inputPorts><outputPorts><port><name>csv_filepath</name><annotations /></port></outputPorts><processors><processor><name>aux_dens.py</name><inputPorts><port><name>STDIN</name><depth>0</depth></port></inputPorts><outputPorts><port><name>STDOUT</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>aux_dens.py is imported by environment.py; because it uses candidatescube_pickle, indirectly, it has been also linked to it.</text>
+      </annotationBean>
+      <date>2012-09-28 17:13:07.237 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain></annotations><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>external-tool-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.externaltool.ExternalToolActivity</class><inputMap><map from="STDIN" to="STDIN" /></inputMap><outputMap><map from="STDOUT" to="STDOUT" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean xmlns="">
+  <mechanismType>789663B8-DA91-428A-9F7D-B3F3DA185FD4</mechanismType>
+  <mechanismName>default local</mechanismName>
+  <mechanismXML>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&#xD;
+&lt;localInvocation&gt;&lt;shellPrefix&gt;/bin/sh -c&lt;/shellPrefix&gt;&lt;linkCommand&gt;/bin/ln -s %%PATH_TO_ORIGINAL%% %%TARGET_NAME%%&lt;/linkCommand&gt;&lt;/localInvocation&gt;&#xD;
+</mechanismXML>
+  <externaltoolid>7e4e2724-f089-4fa7-b3b3-5d8129c857a1</externaltoolid>
+  <useCaseDescription>
+    <usecaseid />
+    <description />
+    <command>echo "Creating aux_dens.py"</command>
+    <preparingTimeoutInSeconds>1200</preparingTimeoutInSeconds>
+    <executionTimeoutInSeconds>1800</executionTimeoutInSeconds>
+    <tags />
+    <REs />
+    <queue__preferred />
+    <queue__deny />
+    <static__inputs>
+      <de.uni__luebeck.inb.knowarc.usecases.ScriptInputStatic>
+        <tag>aux_dens.py</tag>
+        <file>true</file>
+        <tempFile>false</tempFile>
+        <binary>false</binary>
+        <charsetName>MacRoman</charsetName>
+        <forceCopy>false</forceCopy>
+        <content class="string">#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import math
+import numpy
+from scipy import stats
+import pickle
+
+par = None
+rp  = None
+N   = None
+z   = None
+lrp = None
+lN  = None
+lz  = None
+
+def init(pickle_filename='par_low.pckl'):
+    paramsDict = pickle.load(open(pickle_filename,"rb"))
+
+    par = paramsDict['par']
+    rp  = paramsDict['rp']
+    N   = paramsDict['N']
+    z   = paramsDict['z']
+    lrp = len(rp)
+    lN  = len(N)
+    lz  = len(z)
+
+def prob(z,pz,e_pz,lim=0.01):
+  """
+  Probability for a photometric galaxy of
+  being near to the target.
+  """
+  x = stats.norm(pz,e_pz)
+  prob_raw = x.cdf(z+lim)-x.cdf(z-lim)
+  if prob_raw &gt; 1.0: 
+    prob_raw = 1.0
+    #print prob_raw,
+  return prob_raw
+
+def pgal(r,pz,e_pz,sz,rad):
+  """
+  Probability for a galaxy with a magnitude r at a
+  photometric redshift of pz and error e_pz to be associated
+  by chance with a galaxy at redshift sz and radius rad (degrees).
+  """
+  return nsol(r,numpy.absolute(pz-sz)/e_pz,sz)/2.30*2.*numpy.pi*(1.-numpy.cos(numpy.radians(rad)))
+
+def determine_z(bsz,r,pz2,pz,e_pz2,e_pz,e_bsz):
+  """
+  Auxiliary function to compute the redshift its error and 
+  a code
+  
+  """
+  if ((bsz != -1.)and(bsz != 0.)):
+    pzfinal = bsz
+    e_pzfinal = e_bsz
+    cod_pz = 1
+  elif (r &gt;= 17.77)and(pz2 != -1.):
+    pzfinal = pz2
+    e_pzfinal = e_pz2
+    cod_pz = 2
+  elif (r &gt;= 17.77)and(pz2 == -1.)and(pz!= -1.):
+    pzfinal = pz
+    e_pzfinal = e_pz
+    cod_pz = 3
+  elif (r &gt;= 17.77)and(pz2 == -1.)and(pz == -1.):
+    pzfinal = -1.
+    e_pzfinal = -1.
+    cod_pz = 0
+  elif (r &lt; 17.77)and(pz != -1.):
+    pzfinal = pz
+    e_pzfinal = e_pz
+    cod_pz = 4
+  elif (r &lt; 17.77)and(pz == -1.)and(pz2!= -1.):
+    pzfinal = pz2
+    e_pzfinal = e_pz2
+    cod_pz = 5
+  elif (r &lt; 17.77)and(pz == -1.)and(pz2 == -1.):
+    pzfinal = -1.
+    e_pzfinal = -1.
+    cod_pz = 0
+  return pzfinal,e_pzfinal,cod_pz
+
+def obf(cadena):
+  """
+  Return -1. for the NULL values (None in Python)
+  """
+  if cadena == None:
+    a = -1.
+  else:
+    a = float(cadena)
+  return a
+
+def sol(r0,N0,z0):
+  """
+  Interpolation into the matrix of parameters
+  """
+  # Sanity check
+  rd = rp.searchsorted(r0)
+  if (rd != 0)and(rd != lrp):
+    ru = rd
+    rd = rd -1
+  elif (rd == 0):
+    rd = 0
+    ru = 0
+  elif (rd == lrp):
+    rd = lrp-1
+    ru = lrp-1
+  else:
+    print "otro rd",rd
+  Nd = N.searchsorted(N0)
+  if (Nd != 0)and(Nd != lN):
+    Nu = Nd
+    Nd = Nd -1
+  elif (Nd == 0):
+    Nd = 0
+    Nu = 0
+  elif (Nd == lN):
+    Nd = lN-1
+    Nu = lN-1
+  else:
+    print "otro Nd",Nd
+  zd = z.searchsorted(z0)
+  if (zd != 0)and(zd != lz):
+    zu = zd
+    zd = zd -1
+  elif (zd == 0):
+    zd = 0
+    zu = 0
+  elif (zd == lz):
+    zd = lz-1
+    zu = lz-1
+  else:
+    print "otro zd",zd
+  #print rd,lrp,Nd,lN,zd,lz
+  #print par[rd,Nd,zd],par[ru,Nd,zd],"-",par[rd,Nd,zu],par[ru,Nd,zu],"--",par[rd,Nu,zd],par[ru,Nu,zd],"-",par[rd,Nu,zu],par[ru,Nu,zu]
+  #print r0,[rp[rd],rp[ru]]
+  if (type(par) == type(None)):
+      init()
+  p_dd = numpy.interp(r0,[rp[rd],rp[ru]],[par[rd,Nd,zd],par[ru,Nd,zd]])
+  p_du = numpy.interp(r0,[rp[rd],rp[ru]],[par[rd,Nd,zu],par[ru,Nd,zu]])
+  p_ud = numpy.interp(r0,[rp[rd],rp[ru]],[par[rd,Nu,zd],par[ru,Nu,zd]])
+  p_uu = numpy.interp(r0,[rp[rd],rp[ru]],[par[rd,Nu,zu],par[ru,Nu,zu]])
+  #print p_dd,"-",p_du,"--",p_ud,"-",p_uu
+  p_d = numpy.interp(N0,[N[Nd],N[Nu]],[p_dd,p_du])
+  p_u = numpy.interp(N0,[N[Nd],N[Nu]],[p_ud,p_uu])
+  #print p_d,"--",p_u
+  p = numpy.interp(z0,[z[zd],z[zu]],[p_d,p_u])
+  #print numpy.median([par[rd,Nd,zd],par[rd,Nu,zd],par[ru,Nd,zd],par[ru,Nu,zd],par[rd,Nd,zu],par[rd,Nu,zu],par[ru,Nd,zu],par[ru,Nu,zu]])
+  return p
+
+# This is equivalent to def nsol(r0,N0,z0): return numpy.vectorize(sol(r0,N0,z0))
+nsol = numpy.vectorize(sol)
+
+def kcor_r(z,g_r):
+  """
+  k correction applied to r
+  Input:
+    * z - redshift
+    * g_r - g magnitude - r magnitude
+  """
+  z2 = z**2
+  z3 = z**3
+  z4 = z**4
+  z5 = z**5
+  g_r2 = g_r**2
+  g_r3 = g_r**3
+  return (-0.351251*z+1.93312*z2-69.9339*z3+253.373*z4-235.32*z5
+          +2.61848*z*g_r+16.0682*z2*g_r-49.337*z3*g_r+12.0421*z4*g_r
+          -2.99032*z*g_r2-2.16736*z2*g_r2+22.9267*z3*g_r2
+          +1.59058*z*g_r3-4.24709*z2*g_r3)
+
+def l_r(z,r):
+  """
+  Luminosity in r band
+  """
+  return (1057340345.9831631*(z**2)
+          *(numpy.exp(-0.92103403719761834*r+22.843529373146502)
+          -numpy.exp(0.92103403719761834*r-22.843529373146502)))
+
+def e_l_r(z,r,e_z,e_r):
+  """
+  Error in the luminosity in r band
+  """
+  return (numpy.sqrt((2114680691.9663262*z*
+          (numpy.exp(-0.92103403719761834*r+22.843529373146502)
+          -numpy.exp(0.92103403719761834*r-22.843529373146502))*e_z)**2+
+          (-973846447.55279934*(z**2)*
+          (numpy.exp(-0.92103403719761834*r+22.843529373146502)
+          +numpy.exp(0.92103403719761834*r-22.843529373146502))*e_r)**2))
+          
+
+</content>
+      </de.uni__luebeck.inb.knowarc.usecases.ScriptInputStatic>
+    </static__inputs>
+    <inputs />
+    <outputs />
+    <includeStdIn>true</includeStdIn>
+    <includeStdOut>true</includeStdOut>
+    <includeStdErr>false</includeStdErr>
+    <validReturnCodes>
+      <int>0</int>
+    </validReturnCodes>
+  </useCaseDescription>
+  <edited>false</edited>
+</net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="STDIN" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>sample_total.py</name><inputPorts><port><name>STDIN</name><depth>0</depth></port></inputPorts><outputPorts><port><name>STDOUT</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>This box is used to create the sample_total.py in the local execution environment of the workflow, so that following Python boxes can use it.</text>
+      </annotationBean>
+      <date>2013-01-08 11:02:05.187 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain></annotations><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>external-tool-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.externaltool.ExternalToolActivity</class><inputMap><map from="STDIN" to="STDIN" /></inputMap><outputMap><map from="STDOUT" to="STDOUT" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean xmlns="">
+  <mechanismType>789663B8-DA91-428A-9F7D-B3F3DA185FD4</mechanismType>
+  <mechanismName>default local</mechanismName>
+  <mechanismXML>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&#xD;
+&lt;localInvocation&gt;&lt;shellPrefix&gt;/bin/sh -c&lt;/shellPrefix&gt;&lt;linkCommand&gt;/bin/ln -s %%PATH_TO_ORIGINAL%% %%TARGET_NAME%%&lt;/linkCommand&gt;&lt;/localInvocation&gt;&#xD;
+</mechanismXML>
+  <externaltoolid>44f632c3-319d-4cbf-bf89-f6a3ff4a9346</externaltoolid>
+  <useCaseDescription>
+    <usecaseid />
+    <description />
+    <command>echo "Creating sample_total.py"</command>
+    <preparingTimeoutInSeconds>1200</preparingTimeoutInSeconds>
+    <executionTimeoutInSeconds>1800</executionTimeoutInSeconds>
+    <tags />
+    <REs />
+    <queue__preferred />
+    <queue__deny />
+    <static__inputs>
+      <de.uni__luebeck.inb.knowarc.usecases.ScriptInputStatic>
+        <tag>sample_total.py</tag>
+        <file>true</file>
+        <tempFile>false</tempFile>
+        <binary>false</binary>
+        <charsetName>MacRoman</charsetName>
+        <forceCopy>false</forceCopy>
+        <content class="string">#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+Function to retrieve the data for the total sample.
+"""
+
+import psycopg2 as pg
+import numpy
+
+min_bsz=0.03
+max_bsz=0.1
+
+def sample(
+        schema='sdss_dr7',
+        dbhost=None,
+        dbuser=None,
+        dbpasswd=None,
+        bsz_low=min_bsz,
+        bsz_high=max_bsz):
+  db = pg.connect(database="sdss_dr7",host=dbhost,user=dbuser,password=dbpasswd)
+  c = db.cursor()
+  
+  sqlQueryTemplate = """
+        SELECT g.mjd, g.plate, g.fiberid
+        FROM gal g
+        WHERE g.bsz IS NOT NULL
+        AND g.bsz &gt;= %(bsz_low)s
+        AND g.bsz &lt;= %(bsz_high)s
+  """ 
+
+  c.execute( sqlQueryTemplate % vars() )
+  db.commit()
+  
+  n1 = c.rowcount
+  mjd = numpy.zeros(n1,dtype='Int32')
+  plate = numpy.zeros(n1,dtype='Int32')
+  fiberid = numpy.zeros(n1,dtype='Int32')
+  
+  d = []
+  
+  for i in range(n1):
+    record = c.fetchone()
+    mjd[i] = int(record[0])
+    plate[i] = int(record[1])
+    fiberid[i] = int(record[2])
+    d.append({'mjd' : int(mjd[i]), 'plate' : int(plate[i]), 'fiberid' : int(fiberid[i])})
+  return d,mjd,plate,fiberid,n1</content>
+      </de.uni__luebeck.inb.knowarc.usecases.ScriptInputStatic>
+    </static__inputs>
+    <inputs />
+    <outputs />
+    <includeStdIn>true</includeStdIn>
+    <includeStdOut>true</includeStdOut>
+    <includeStdErr>false</includeStdErr>
+    <validReturnCodes>
+      <int>0</int>
+    </validReturnCodes>
+  </useCaseDescription>
+  <edited>false</edited>
+</net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="STDIN" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>environment.py</name><inputPorts><port><name>STDIN</name><depth>0</depth></port></inputPorts><outputPorts><port><name>STDOUT</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>This box is used to create the sample_total.py in the local execution environment of the workflow, so that the 8run1.py and 9run2.py boxes can use it. The dependencies do not show information flow, but execution dependency.</text>
+      </annotationBean>
+      <date>2013-01-08 11:03:33.838 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain></annotations><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>external-tool-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.externaltool.ExternalToolActivity</class><inputMap><map from="STDIN" to="STDIN" /></inputMap><outputMap><map from="STDOUT" to="STDOUT" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean xmlns="">
+  <mechanismType>789663B8-DA91-428A-9F7D-B3F3DA185FD4</mechanismType>
+  <mechanismName>default local</mechanismName>
+  <mechanismXML>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&#xD;
+&lt;localInvocation&gt;&lt;shellPrefix&gt;/bin/sh -c&lt;/shellPrefix&gt;&lt;linkCommand&gt;/bin/ln -s %%PATH_TO_ORIGINAL%% %%TARGET_NAME%%&lt;/linkCommand&gt;&lt;/localInvocation&gt;&#xD;
+</mechanismXML>
+  <externaltoolid>969e565e-630b-4d00-89e8-edacbc3dd608</externaltoolid>
+  <useCaseDescription>
+    <usecaseid />
+    <description />
+    <command>echo "Creating environment.py"</command>
+    <preparingTimeoutInSeconds>1200</preparingTimeoutInSeconds>
+    <executionTimeoutInSeconds>1800</executionTimeoutInSeconds>
+    <tags />
+    <REs />
+    <queue__preferred />
+    <queue__deny />
+    <static__inputs>
+      <de.uni__luebeck.inb.knowarc.usecases.ScriptInputStatic>
+        <tag>environment.py</tag>
+        <file>true</file>
+        <tempFile>false</tempFile>
+        <binary>false</binary>
+        <charsetName>MacRoman</charsetName>
+        <forceCopy>false</forceCopy>
+        <content class="string"># -*- coding: utf-8 -*-
+
+import psycopg2 as pg
+import numpy
+import aux_dens
+
+default_schema="sdss_dr7" 
+
+class Environment(object):
+  """
+  This class obtains all the relevant data for the companion galaxies of the 
+  target (defined by a plate, mjd and fiberid) within a specified radius.
+  """
+  lim_spec = 0.01
+  lim_p_tid = 0.05
+  
+  upper_lum = 10.**13.0
+  lower_lum = 10.**9.84
+  
+  # db = pg.connect(database="sdss_dr7",host="amiga.iaa.csic.es",user="sdss",password="sdss")
+  # cursor = db.cursor()
+  db = None
+  cursor = None
+  
+  def __init__(self, plate=None, mjd=None, fiberid=None, radius=None, 
+                     d=None, h1Mpc=False, k_cor=False, pickle_filename=None, db_dict=None):
+    self.db = pg.connect(
+                    database = db_dict.dbschema,
+                    host     = db_dict.dbhost,
+                    user     = db_dict.dbuser,
+                    password = db_dict.dbpasswd,
+                    port     = db_dict.dbport
+    )
+    self.cursor = self.db.cursor()
+    
+    aux_dens.init(pickle_filename=pickle_filename)
+    self.dict_gal = {}
+    if d:
+      self.dict_gal.update(d)
+    else:
+      self.dict_gal = {'plate':plate,'mjd':mjd,'fiberid':fiberid,'radius':radius}
+    self.h1Mpc = h1Mpc
+    if h1Mpc:  # Transforms h^-1 Mpc to our system (h^-1 = 0.75)
+      self.dict_gal.update({'radius':self.dict_gal['radius']/0.75})
+    sqlParamQuery = "SELECT * FROM d_props2_Mpc(%(plate)s,%(mjd)s,%(fiberid)s,%(radius)s);"
+    self.cursor.execute(sqlParamQuery,self.dict_gal)
+    self.data = numpy.array([tuple(row) for row in self.cursor])
+    self._get_data()
+    self.flags = {'dens':False, 'tidal':False, 'tidal_kar':False}
+    self.p_tid_limit = 0.05
+    self.tid_limit = 10**-6
+    self.kar_limit = 4.
+    self.k_cor = k_cor
+  
+  def __repr__(self):
+    return ("&lt;Environment(plate=%04i, mjd=%05i, fiberid=%04i, radius=%f)&gt;"
+            %(self.dict_gal['plate'],
+              self.dict_gal['mjd'],
+              self.dict_gal['fiberid'],
+              self.dict_gal['radius']))
+  
+  def tidal(self):
+    """
+    Returns the value of the tidal estimator
+    """
+    self._comp_tidal()
+    self.code_tid = (self.tid &gt;= self.tid_limit)&amp;(self.p_tid &lt;= self.p_tid_limit)&amp;(self.dist != 0)
+    self.out[self.code_tid] += 4
+    self.ntidal = len(self.out[self.code_tid])
+    if self.ntidal &gt; 0:
+      self.ttidal = numpy.log10(numpy.sum(self.tid[self.code_tid]))
+      self.ltidal = 0
+    else:
+      self.ttidal = numpy.log10(self.tid_limit)
+      self.ltidal = 1
+    self.flags['tidal'] = True
+    # Output: ntidal, ttidal, ltidal
+  
+  def tidal_kar(self):
+    """
+    Returns the value of the tidal estimator
+    """
+    self._comp_tidal()
+    self.code_tid_kar = ((self.tid &gt;= self.tid_limit)&amp;(self.p_tid &lt;= self.p_tid_limit)&amp;(self.dist != 0)
+                    &amp;(self.r90_kar &gt;= 1./self.kar_limit)&amp;(self.r90_kar &lt;= self.kar_limit)
+                    &amp;(self.c_e_r90_r != -1000)&amp;(self.c_e_r90_r != -9999))
+    self.out[self.code_tid_kar] += 8
+    self.ntidal_kar = len(self.out[self.code_tid_kar])
+    if self.ntidal_kar &gt; 0:
+      self.ttidal_kar = numpy.log10(numpy.sum(self.tid[self.code_tid_kar]))
+      self.ltidal_kar = 0
+    else:
+      self.ttidal_kar = numpy.log10(self.tid_limit)
+      self.ltidal_kar = 1
+    self.flags['tidal_kar'] = True
+    # Output: ntidal_kar, ttidal_kar, ltidal_kar
+  
+  def dens(self):
+    """
+    Returns the density
+    """
+    self._comp_dens()
+    #dens_flag = ((self.c_lr &lt;= upper_lum)&amp;
+                      #(self.c_lr &gt;= lower_lum)&amp;
+                      #(((self.c_code == 1)&amp;(numpy.absolute(self.c_z-self.t_z) &lt;= lim_spec))
+                       #|(self.c_code == 2)
+                       #|(self.c_code == 4)
+                       #|(self.c_code == 5)
+                      #)
+                     #)
+    self.n_dens = numpy.zeros_like(self.c_code)
+    self.count_n_dens = 0
+    self.np_dens = numpy.zeros_like(self.c_z)
+    self.count_np_dens = 0.
+    flag_less10 = True
+    flag_lessp10 = True
+    n_companions = len(self.c_code)
+    self.dens_dist = None
+    self.dens_pdist = None
+    for i,c in enumerate(self.c_code):
+      #print i,self.dens_dist,self.dens_pdist,self.count_n_dens,self.count_np_dens,flag_less10,flag_lessp10
+      #print i,self.dens_dist,self.count_n_dens,flag_less10
+      if (i == (n_companions - 1)):
+        if self.count_n_dens == 0:
+          self.dens_dist = self.dist[i]
+        if self.count_np_dens == 0:
+          self.dens_pdist = self.dist[i]
+      if ((i == 0)or(self.c_lr[i] &gt; self.upper_lum)or(self.c_lr[i] &lt; self.lower_lum)
+          or(c == 0)or(c == 3)):
+        continue
+      if (c == 1)and(self.difz[i] &lt;= self.lim_spec):
+        self.n_dens[i] = 1
+        self.count_n_dens += 1
+        self.dens_dist = self.dist[i]
+        if flag_lessp10:
+          self.np_dens[i] = 1.
+          self.count_np_dens += 1.
+          self.dens_pdist = self.dist[i]
+        self.out[i] += 1
+      elif ((c == 2) or (c == 4) or (c == 5)) and flag_lessp10:
+        p = aux_dens.prob(self.t_z[i],self.c_z[i],self.c_e_z[i],lim=self.lim_spec)
+        self.np_dens[i] = p
+        self.count_np_dens += p
+        self.dens_pdist = self.dist[i]
+        self.out[i] += 2
+      if self.count_n_dens &gt;= 10:
+        flag_less10 = False
+      if (self.count_np_dens &gt;= 10) and flag_lessp10:
+        flag_lessp10 = False
+      if (not flag_less10) and (not flag_lessp10):
+        break
+    if self.h1Mpc:
+      factor = 3000
+    else:
+      factor = 4000
+    self.dens_dist_pc = factor*self.t_z[0]*numpy.radians(self.dens_dist)
+    self.dens_pdist_pc = factor*self.t_z[0]*numpy.radians(self.dens_pdist)
+    if self.count_n_dens != 0:
+      self.dens = numpy.log10((self.count_n_dens)*0.238732414637843/self.dens_dist_pc**3)
+      self.ldens = 0
+    else:
+      self.dens = numpy.log10(0.238732414637843/self.dens_dist_pc**3)
+      self.ldens = 1
+    if self.count_np_dens != 0:
+      self.p_dens = numpy.log10((self.count_np_dens)*0.238732414637843/self.dens_pdist_pc**3)
+      self.lp_dens = 0
+    else:
+      self.p_dens = numpy.log10(0.238732414637843/self.dens_pdist_pc**3)
+      self.lp_dens = 1
+    self.flags['dens'] = True
+    # Output: count_p_dens, dens, ldens
+    # Output: count_np_dens, p_dens, lp_dens
+    
+  # Output functions
+  def output_KML(self):
+    types = {0:"T",13:"stk",5:"st",1:"s",14:"ctk",6:"ct",2:"c",4:"t",12:"tk"}
+    code = [0,9,5,1,10,6,2,4,8]
+    output = '''&lt;kml xmlns="http://www.opengis.net/kml/2.2" hint="target=sky"&gt;
+    &lt;Document&gt;'''
+    ind = self.out != 0
+    for cod in numpy.unique(self.out):
+      output += '''
+  &lt;Style id="%(typ)s"&gt;
+    &lt;IconStyle&gt;
+      &lt;Icon&gt;
+        &lt;href&gt;http://chart.apis.google.com/chart?chst=d_map_pin_letter&amp;chld=%(typ)s|52B552|FFFFFF&lt;/href&gt;
+      &lt;/Icon&gt;
+    &lt;/IconStyle&gt;
+    &lt;BalloonStyle&gt;
+      &lt;text&gt;&lt;center&gt;&lt;b&gt;$[name]&lt;/b&gt;&lt;/center&gt;&lt;br/&gt;$[description]&lt;/text&gt;
+    &lt;/BalloonStyle&gt;
+  &lt;/Style&gt;
+'''%{"typ":types[cod]}
+    ncomp = len(self.out[ind])
+    for i in range(ncomp+1):
+    # Target
+      if i != ncomp:
+        dkml = {"name":"Comp. "+types[self.out[ind][i]],
+        "description":"",
+        "long":self.c_ra[ind][i]-180,
+        "lat":self.c_dec[ind][i],
+        "type":types[self.out[ind][i]]
+        }
+      else:
+        dkml = {"name":"Target",
+        "description":"",
+        "long":self.t_ra[0]-180,
+        "lat":self.t_dec[0],
+        "type":types[0]
+        }
+      output += '''
+  &lt;Placemark&gt;
+    &lt;name&gt;%(name)s&lt;/name&gt;
+    &lt;description&gt;
+      &lt;![CDATA[
+        %(description)s
+      ]]&gt;
+    &lt;/description&gt;
+    &lt;styleUrl&gt;#%(type)s&lt;/styleUrl&gt;
+    &lt;Point&gt;
+      &lt;coordinates&gt;%(long)f,%(lat)f,0&lt;/coordinates&gt;
+    &lt;/Point&gt;
+  &lt;/Placemark&gt;'''%dkml
+    output +='''
+&lt;/Document&gt;
+&lt;/kml&gt;
+'''
+    return output
+  
+  def save_output_KML(self,name):
+    filename = open(name,"w")
+    filename.write(self.output_KML())
+    filename.close()
+  
+  # Auxiliary functions
+  def _comp_tidal(self):
+    """
+    Computes the auxiliary parameters needed for the tidal estimators
+    """
+    if (not self.flags['tidal']) and (not self.flags['tidal_kar']):    
+      self.p_tid = aux_dens.pgal(self.c_r,self.c_z,self.c_e_z,self.t_z,self.dist)
+      self.tid = 10.**(0.4*(self.t_r - self.c_r))*(2*1.46*self.t_r90_r/3600./self.dist)**3
+    # Flag bad values
+    
+  def _comp_dens(self):
+    """
+    Computes the auxiliary parameters needed for the density estimators
+    """
+    self._comp_lum()
+    # Flag bad values
+    
+  def _comp_lum(self):
+    """
+    Computes the luminosity and its error
+    """
+    if self.k_cor:
+      self._comp_kcor()
+      self.c_lr = aux_dens.l_r(self.t_z,self.c_rcor)
+    else:
+      self.c_lr = aux_dens.l_r(self.t_z,self.c_r)
+    
+  def _comp_kcor(self):
+    """
+    Computes the rcor
+    """
+    self.c_rcor = self.c_r+aux_dens.kcor_r(self.c_z,self.c_g-self.c_r)
+    #self.t_rcor = self.t_r+aux_dens.kcor_r(self.t_z,self.t_g-self.t_r)
+  
+  def _get_data(self):
+    self.t_ra = numpy.array(self.data[:,0],dtype="Float64")
+    self.t_dec = numpy.array(self.data[:,1],dtype="Float64")
+    self.t_plate = numpy.array(self.data[:,2],dtype="Int32")
+    self.t_mjd = numpy.array(self.data[:,3],dtype="Int32")
+    self.t_fiberid = numpy.array(self.data[:,4],dtype="Int32")
+    self.t_z  = numpy.array(self.data[:,5],dtype="Float64")
+    self.t_e_z  = numpy.array(self.data[:,6],dtype="Float64")
+    self.t_r  = numpy.array(self.data[:,7],dtype="Float64")
+    self.t_e_r  = numpy.array(self.data[:,8],dtype="Float64")
+    self.t_g  = numpy.array(self.data[:,9],dtype="Float64")
+    self.t_e_g  = numpy.array(self.data[:,10],dtype="Float64")
+    self.t_r_r  = numpy.array(self.data[:,11],dtype="Float64")
+    self.t_e_r_r  = numpy.array(self.data[:,12],dtype="Float64")
+    self.t_r90_r  = numpy.array(self.data[:,13],dtype="Float64")
+    self.t_e_r90_r  = numpy.array(self.data[:,14],dtype="Float64")
+    self.c_ra  = numpy.array(self.data[:,15],dtype="Float64")
+    self.c_dec  = numpy.array(self.data[:,16],dtype="Float64")
+    self.c_objid = numpy.array(self.data[:,17],dtype="Int64")
+    self.c_z  = numpy.array(self.data[:,18],dtype="Float64")
+    self.c_code  = numpy.array(self.data[:,19],dtype="Int32")
+    self.c_e_z  = numpy.array(self.data[:,20],dtype="Float64")
+    self.c_r  = numpy.array(self.data[:,21],dtype="Float64")
+    self.c_e_r  = numpy.array(self.data[:,22],dtype="Float64")
+    self.c_g  = numpy.array(self.data[:,23],dtype="Float64")
+    self.c_e_g  = numpy.array(self.data[:,24],dtype="Float64")
+    self.c_r_r  = numpy.array(self.data[:,25],dtype="Float64")
+    self.c_e_r_r  = numpy.array(self.data[:,26],dtype="Float64")
+    self.c_r90_r  = numpy.array(self.data[:,27],dtype="Float64")
+    self.c_e_r90_r  = numpy.array(self.data[:,28],dtype="Float64")
+    self.dist  = numpy.array(self.data[:,29],dtype="Float64")
+    self.r_kar  = numpy.array(self.data[:,30],dtype="Float64")
+    self.r90_kar = numpy.array(self.data[:,31],dtype="Float64")
+    self.difz = numpy.absolute(self.t_z-self.c_z)
+    self.out = numpy.zeros_like(self.c_code)
+</content>
+      </de.uni__luebeck.inb.knowarc.usecases.ScriptInputStatic>
+    </static__inputs>
+    <inputs />
+    <outputs />
+    <includeStdIn>true</includeStdIn>
+    <includeStdOut>true</includeStdOut>
+    <includeStdErr>false</includeStdErr>
+    <validReturnCodes>
+      <int>0</int>
+    </validReturnCodes>
+  </useCaseDescription>
+  <edited>false</edited>
+</net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="STDIN" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>8run1.py</name><inputPorts><port><name>dbuser</name><depth>0</depth></port><port><name>dbpasswd</name><depth>0</depth></port><port><name>host</name><depth>0</depth></port><port><name>pickle</name><depth>0</depth></port><port><name>first_run_csv</name><depth>0</depth></port><port><name>working_directory</name><depth>0</depth></port><port><name>STDIN</name><depth>0</depth></port><port><name>bsz_low</name><depth>0</depth></port><port><name>bsz_high</name><depth>0</depth></port><port><name>tcpport</name><depth>0</depth></port></inputPorts><outputPorts><port><name>STDOUT</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>external-tool-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.externaltool.ExternalToolActivity</class><inputMap><map from="bsz_low" to="bsz_low" /><map from="host" to="host" /><map from="working_directory" to="working_directory" /><map from="first_run_csv" to="first_run_csv" /><map from="dbpasswd" to="dbpasswd" /><map from="pickle" to="pickle" /><map from="tcpport" to="tcpport" /><map from="dbuser" to="dbuser" /><map from="bsz_high" to="bsz_high" /><map from="STDIN" to="STDIN" /></inputMap><outputMap><map from="STDOUT" to="STDOUT" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean xmlns="">
+  <mechanismType>789663B8-DA91-428A-9F7D-B3F3DA185FD4</mechanismType>
+  <mechanismName>default local</mechanismName>
+  <mechanismXML>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&#xD;
+&lt;localInvocation&gt;&lt;shellPrefix&gt;/bin/sh -c&lt;/shellPrefix&gt;&lt;linkCommand&gt;/bin/ln -s %%PATH_TO_ORIGINAL%% %%TARGET_NAME%%&lt;/linkCommand&gt;&lt;/localInvocation&gt;&#xD;
+</mechanismXML>
+  <externaltoolid>5fee5060-c691-4638-8d9c-b2d0be0b93be</externaltoolid>
+  <useCaseDescription>
+    <usecaseid />
+    <description />
+    <command>python 8run1.py \
+		--host 		 %%host%% \
+		--user 		 %%dbuser%% \
+		--pass 		 %%dbpasswd%% \
+		--port 	          %%tcpport%% \
+		--bsz-low	 %%bsz_low%% \
+		--bsz-high	 %%bsz_high%% \
+		--in-file	 %%pickle%% \
+		--out-file	 %%first_run_csv%% \
+		--work-directory	 %%working_directory%%
+
+</command>
+    <preparingTimeoutInSeconds>1200</preparingTimeoutInSeconds>
+    <executionTimeoutInSeconds>1800</executionTimeoutInSeconds>
+    <tags>
+      <string>bsz_high</string>
+      <string>bsz_low</string>
+      <string>dbpasswd</string>
+      <string>dbuser</string>
+      <string>first_run_csv</string>
+      <string>host</string>
+      <string>pickle</string>
+      <string>tcpport</string>
+      <string>working_directory</string>
+    </tags>
+    <REs />
+    <queue__preferred />
+    <queue__deny />
+    <static__inputs>
+      <de.uni__luebeck.inb.knowarc.usecases.ScriptInputStatic>
+        <tag>8run1.py</tag>
+        <file>true</file>
+        <tempFile>false</tempFile>
+        <binary>false</binary>
+        <charsetName>UTF-8</charsetName>
+        <forceCopy>false</forceCopy>
+        <content class="string">#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from sample_total import sample
+from environment import Environment
+import pylab
+import time
+import os
+
+default_schema="sdss_dr7"
+default_bsz_low  = 0.03
+default_bsz_high = 0.1
+default_out_filename = 'run1-4.csv'
+default_in_filename = 'par_low.pckl'
+
+from optparse import OptionParser
+parser = OptionParser()
+parser.add_option("-F", "--out-file",
+                  dest="out_filename",
+                  help="write environment data to FILE", 
+                  default=default_out_filename,
+                  metavar="FILE")
+parser.add_option("-f", "--in-file",
+                  dest="in_filename",
+                  help="FILE representing a Python dictionary of sample data", 
+                  default=default_in_filename,
+                  metavar="FILE")
+parser.add_option("-U", "--user",
+                  dest="dbuser", 
+                  help="username in gal database",
+                  metavar='USER')
+parser.add_option("-P", "--pass",
+                  dest="dbpasswd", 
+                  help="password for user in gal database",
+                  metavar="PASS")
+parser.add_option("-H", "--host",
+                  dest="dbhost", 
+                  help="hostname of the database server",
+                  metavar="HOST")
+parser.add_option("-p", "--port",
+                  dest="dbport", 
+                  help="TCP port of the database server",
+                  default=5432,
+                  metavar="PORT")              
+parser.add_option("-S", "--schema",
+                  dest="dbschema", 
+                  help="database SCHEMA (defaults to %s)" % default_schema,
+                  default=default_schema,
+                  metavar="SCHEMA")  
+parser.add_option("-w", "--work-directory",
+                  dest="wd",
+                  help="use WD as working directory", 
+                  default=os.getcwd(),
+                  metavar="WD")
+parser.add_option("-b", "--bsz-low",
+                  dest="bsz_low",
+                  help="set the lower limit in gal.bsz to BSZ_LOW. Defaults to %s" % default_bsz_low, 
+                  default=default_bsz_low,
+                  metavar="BSZ_LOW")
+parser.add_option("-B", "--bsz-high",
+                  dest="bsz_high",
+                  help="set the upper limit in gal.bsz to BSZ_HIGH. Defaults to %s" % default_bsz_high, 
+                  default=default_bsz_high,
+                  metavar="BSZ_HIGH")
+
+(options, args) = parser.parse_args()
+
+if options.dbport != None:
+    options.dbport = int(options.dbport)
+if options.bsz_low != None:
+    options.bsz_low = float(options.bsz_low)
+if options.bsz_high != None:
+    options.bsz_high = float(options.bsz_high)
+
+optionsAreNotValid = (
+                    options.dbuser       == None or
+                    options.dbpasswd     == None or
+                    options.dbschema     == None or options.dbschema == "" or
+                    options.dbhost       == None or options.dbhost == "" or
+                    options.dbport       == None or type(options.dbport) != type(5432) or
+                    options.in_filename  == None or options.out_filename == "" or
+                    options.out_filename == None or options.out_filename == "" or
+                    options.wd           == None or options.wd == "" or
+                    options.bsz_low      == None or options.bsz_low == "" or
+                    options.bsz_high     == None or options.bsz_high == ""
+)
+
+if optionsAreNotValid:
+    raise ValueError("Options not valid")
+
+
+
+dtot,mjd,plate,fiberid,n1 = sample(
+                                schema=options.dbschema,
+                                dbhost=options.dbhost,
+                                dbuser=options.dbuser,
+                                dbpasswd=options.dbpasswd,
+                                bsz_low=options.bsz_low,
+                                bsz_high=options.bsz_high
+)
+
+db_dict = {
+  'dbschema':   options.dbschema,
+  'dbuser':     options.dbuser,
+  'dbpasswd':   options.dbpasswd,
+  'dbhost':     options.dbhost,
+  'dbport':     options.dbport
+}
+
+print n1
+#do = dtot[0:10]
+ptime = 0.
+pcomp = 0.
+
+cwd = os.getcwd()
+os.chdir(options.wd)
+nwcd = os.getcwd() # This way we get the full path to the wd
+out = open(options.out_filename,"w")
+#d={'plate':650,'mjd':52143,'fiberid':380,'radius':4.0}
+#SELECT * FROM d_props2_Mpc(650,52143,380,3.0)
+#&lt;Environment(plate=0377, mjd=52145, fiberid=0353, radius=4.000000)&gt;
+for i,d in enumerate(dtot):
+  rad = 3.
+  t0 = time.time()
+  d.update({'radius':rad})
+  e = Environment(d = d, h1Mpc=True, k_cor=True, pickle_filename=options.in_filename, db_dict=db_dict)
+  e.dens()
+  e.tidal()
+  e.tidal_kar()
+  print e,"%7i "%(i+1)
+  print "  Density       : ",e.count_n_dens,e.dens,e.ldens
+  print "  Density with p: ",e.count_np_dens,e.p_dens,e.lp_dens
+  print "  Tidal         : ",e.ntidal, e.ttidal, e.ltidal
+  print "  Tidal Kar.    : ",e.ntidal_kar, e.ttidal_kar, e.ltidal_kar
+  ncomp = len(e.out[e.out != 0])
+  pcomp -= (pcomp-(ncomp))/float(i+1)
+  print "  Companions    - ",ncomp,pcomp
+  ntime = time.time()-t0
+  ptime -= (ptime-(ntime))/float(i+1)
+  print "  Time          - ",ntime,ptime
+  #e.save_output_KML("kml/%04i_%05i_%04i.kml"%(d['plate'],d['mjd'],d['fiberid']))
+  #ind = (e.out != 0)
+  out.write("%4i,%5i,%4i,%15.12f,%2i,%15.12f,%1i,%15.12f,%15.12f,%15.12f,%15.12f,%1i,%15.12f,%15.12f,%4i,%15.12f,%1i,%4i,%15.12f,%1i,%4i,%8.3f,%8.3f,%8.3f\n"
+  %(d['plate'],d['mjd'],d['fiberid'],e.t_z[0],
+  e.count_n_dens,e.dens,e.ldens,e.dens_dist,e.dens_dist_pc,
+  e.count_np_dens,e.p_dens,e.lp_dens,e.dens_pdist,e.dens_pdist_pc,
+  e.ntidal, e.ttidal, e.ltidal,
+  e.ntidal_kar, e.ttidal_kar, e.ltidal_kar,
+  ncomp,pcomp,ntime,ptime))
+out.close()
+
+print "Outfile written to:"
+print nwcd+"/"+options.out_filenamex</content>
+      </de.uni__luebeck.inb.knowarc.usecases.ScriptInputStatic>
+    </static__inputs>
+    <inputs>
+      <entry>
+        <string>bsz_low</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>bsz_low</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>host</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>host</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>working_directory</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>working_directory</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>first_run_csv</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>first_run_csv</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>pickle</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>pickle</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>dbpasswd</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>dbpasswd</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>tcpport</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>tcpport</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>dbuser</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>dbuser</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>bsz_high</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>bsz_high</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+    </inputs>
+    <outputs />
+    <includeStdIn>true</includeStdIn>
+    <includeStdOut>true</includeStdOut>
+    <includeStdErr>true</includeStdErr>
+    <validReturnCodes>
+      <int>0</int>
+    </validReturnCodes>
+  </useCaseDescription>
+  <edited>false</edited>
+</net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="dbpasswd" depth="0" /><port name="STDIN" depth="0" /><port name="dbuser" depth="0" /><port name="host" depth="0" /><port name="pickle" depth="0" /><port name="first_run_csv" depth="0" /><port name="working_directory" depth="0" /><port name="bsz_low" depth="0" /><port name="bsz_high" depth="0" /><port name="tcpport" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>9run2.py</name><inputPorts><port><name>dbuser</name><depth>0</depth></port><port><name>dbpasswd</name><depth>0</depth></port><port><name>host</name><depth>0</depth></port><port><name>tcpport</name><depth>0</depth></port><port><name>first_run_csv</name><depth>0</depth></port><port><name>second_run_csv</name><depth>0</depth></port><port><name>working_directory</name><depth>0</depth></port><port><name>STDIN</name><depth>0</depth></port></inputPorts><outputPorts><port><name>STDOUT</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>external-tool-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.externaltool.ExternalToolActivity</class><inputMap><map from="second_run_csv" to="second_run_csv" /><map from="host" to="host" /><map from="working_directory" to="working_directory" /><map from="first_run_csv" to="first_run_csv" /><map from="dbpasswd" to="dbpasswd" /><map from="tcpport" to="tcpport" /><map from="dbuser" to="dbuser" /><map from="STDIN" to="STDIN" /></inputMap><outputMap><map from="STDOUT" to="STDOUT" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean xmlns="">
+  <mechanismType>789663B8-DA91-428A-9F7D-B3F3DA185FD4</mechanismType>
+  <mechanismName>default local</mechanismName>
+  <mechanismXML>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&#xD;
+&lt;localInvocation&gt;&lt;shellPrefix&gt;/bin/sh -c&lt;/shellPrefix&gt;&lt;linkCommand&gt;/bin/ln -s %%PATH_TO_ORIGINAL%% %%TARGET_NAME%%&lt;/linkCommand&gt;&lt;/localInvocation&gt;&#xD;
+</mechanismXML>
+  <externaltoolid>87d2c02e-10fc-415f-a525-6b0ffa3a0d76</externaltoolid>
+  <useCaseDescription>
+    <usecaseid />
+    <description />
+    <command>python 9run2.py \
+        --host              %%host%% \
+        --user              %%dbuser%% \
+        --pass              %%dbpasswd%% \
+        --port              %%tcpport%% \
+        --in-file           %%first_run_csv%% \
+        --out-file          %%second_run_csv%% \
+        --work-directory    %%working_directory%%</command>
+    <preparingTimeoutInSeconds>1200</preparingTimeoutInSeconds>
+    <executionTimeoutInSeconds>1800</executionTimeoutInSeconds>
+    <tags>
+      <string>dbpasswd</string>
+      <string>dbuser</string>
+      <string>first_run_csv</string>
+      <string>host</string>
+      <string>second_run_csv</string>
+      <string>tcpport</string>
+      <string>working_directory</string>
+    </tags>
+    <REs />
+    <queue__preferred />
+    <queue__deny />
+    <static__inputs>
+      <de.uni__luebeck.inb.knowarc.usecases.ScriptInputStatic>
+        <tag>9run2.py</tag>
+        <file>true</file>
+        <tempFile>false</tempFile>
+        <binary>false</binary>
+        <charsetName>UTF-8</charsetName>
+        <forceCopy>false</forceCopy>
+        <content class="string">#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from environment import Environment
+#import pylab
+import time
+import csv
+import os
+
+default_schema="sdss_dr7"
+default_in_filename  = 'run1-4.csv'
+default_out_filename = 'run2-4.csv'
+
+from optparse import OptionParser
+parser = OptionParser()
+parser.add_option("-F", "--out-file",
+                  dest="out_filename",
+                  help="write corrected environment data to FILE", 
+                  default=default_out_filename,
+                  metavar="FILE")
+parser.add_option("-f", "--in-file",
+                  dest="in_filename",
+                  help="relative filename (with respect to working directory) with non-corrected environment data, as generated y 9run2.py", 
+                  default=default_in_filename,
+                  metavar="FILE")
+parser.add_option("-U", "--user",
+                  dest="dbuser", 
+                  help="username in gal database")
+parser.add_option("-P", "--pass",
+                  dest="dbpasswd", 
+                  help="password PASS for user in gal database",
+                  metavar="PASS")
+parser.add_option("-H", "--host",
+                  dest="dbhost", 
+                  help="hostname of the database server")
+parser.add_option("-p", "--port",
+                  dest="dbport", 
+                  help="TCP port of the database server",
+                  default=5432,
+                  metavar="port")              
+parser.add_option("-S", "--schema",
+                  dest="dbschema", 
+                  help="database SCHEMA (defaults to %s)" % default_schema,
+                  default=default_schema,
+                  metavar="SCHEMA")  
+parser.add_option("-w", "--work-directory",
+                  dest="wd",
+                  help="use WD as working directory; defaults to the current directory", 
+                  default=os.getcwd(),
+                  metavar="WD")
+
+(options, args) = parser.parse_args()
+
+if options.dbport != None:
+    options.dbport = int(options.dbport)
+
+optionsAreNotValid = (
+                    options.dbschema     == None or options.dbschema == "" or
+                    options.dbuser       == None or
+                    options.dbpasswd     == None or
+                    options.dbhost       == None or options.dbhost == "" or
+                    options.dbport       == None or type(options.dbport) != type(5432) or
+                    options.in_filename  == None or options.out_filename == "" or
+                    options.out_filename == None or options.out_filename == "" or
+                    options.wd           == None or options.wd == "" 
+)
+
+if optionsAreNotValid:
+    raise ValueError("Options not valid")
+
+
+
+
+#do = dtot[0:10]
+ptime = 0.
+pcomp = 0.
+
+k_cor = True
+
+cwd = os.getcwd()
+os.chdir(options.wd)
+ncwd = os.getcwd()
+
+out    = open(options.out_filename,"w")
+reader = csv.reader(open(options.in_filename,"r"))
+
+db_dict = {
+    'dbschema': options.dbschema,
+    'dbuser':   options.dbuser,
+    'dbpasswd': options.dbpasswd,
+    'dbhost':   options.dbhost,
+    'dbport':   options.dbport
+}
+
+for i,di in enumerate(reader):
+  rad = 3.
+  t0 = time.time()
+  d = {
+       'plate':     int(di[0]),
+       'mjd':       int(di[1]),
+       'fiberid':   int(di[2]),
+       'radius':    rad
+  }
+  print "Galaxy %04i %05i %04i / %s - %7i"%(d['plate'],d['mjd'],d['fiberid'],di[4],i+1)
+  if int(di[4]) != 10:
+    if int(di[4]) != 0:
+      rad = int((10./float(di[4]))**(1./3.)*3.*1.25)+1
+    if (rad &gt; 9)or(int(di[4]) == 0):
+      rad = 9
+    print " Radius - %i"%(rad)
+    d.update({'radius':float(rad)})
+    e = Environment(d = d,h1Mpc=True,k_cor=k_cor, db_dict=db_dict)
+    e.dens()
+    #if e.dens &gt; -1.0534523734614212:
+      #print "############# Error ##################"
+      #print "  Radius ",rad," prev. data ",di[4],di[5],di[6],di[7]
+      #print "  Density       : ",e.count_n_dens,e.dens,e.ldens,e.dens_dist_pc
+      #print "  Density with p: ",e.count_np_dens,e.p_dens,e.lp_dens,e.dens_pdist_pc
+      #print "######################################"
+      #break
+    # Juande: If the number of neighbours for local density is not ten, we try 
+    # to increase the radius up to 10 Mpc
+    if e.count_n_dens != 10:
+      for j,r in enumerate(range(rad+1,11)):
+        rad = r
+        print " Radius - %i (%i try) *"%(rad,j)
+        d.update({'radius':float(rad)})
+        e = Environment(d = d,h1Mpc=True,k_cor=k_cor, db_dict=db_dict)
+        e.dens()
+        if e.count_n_dens == 10:
+         break  
+    print "  Density       : ",e.count_n_dens,e.dens,e.ldens,e.dens_dist_pc
+    print "  Density with p: ",e.count_np_dens,e.p_dens,e.lp_dens,e.dens_pdist_pc
+    ncomp = len(e.out[e.out != 0])
+    pcomp -= (pcomp-(ncomp))/float(i+1)
+    print "  Companions    - ",ncomp,pcomp
+    ntime = time.time()-t0
+    ptime -= (ptime-(ntime))/float(i+1)
+    print "  Time          - ",ntime,ptime
+    out.write("%4i,%5i,%4i,%s,%4.1f,%2i,%15.12f,%1i,%15.12f,%15.12f,%15.12f,%15.12f,%1i,%15.12f,%15.12f,%4i,%8.3f,%8.3f,%8.3f\n"
+  %(d['plate'],d['mjd'],d['fiberid'],di[3],d['radius'],
+  e.count_n_dens,e.dens,e.ldens,e.dens_dist,e.dens_dist_pc,
+  e.count_np_dens,e.p_dens,e.lp_dens,e.dens_pdist,e.dens_pdist_pc,
+  ncomp,pcomp,ntime,ptime))
+  else:
+    print "No update needed"
+    out.write("%4i,%5i,%4i,%s,%4.1f,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n"
+  %(d['plate'],d['mjd'],d['fiberid'],di[3],3.0,
+  di[4],di[5],di[6],di[7],di[8],
+  di[9],di[10],di[11],di[12],di[13],
+  di[20],di[21],di[22],di[23]))
+out.close()
+</content>
+      </de.uni__luebeck.inb.knowarc.usecases.ScriptInputStatic>
+    </static__inputs>
+    <inputs>
+      <entry>
+        <string>second_run_csv</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>second_run_csv</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>host</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>host</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>working_directory</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>working_directory</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>first_run_csv</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>first_run_csv</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>dbpasswd</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>dbpasswd</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>tcpport</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>tcpport</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+      <entry>
+        <string>dbuser</string>
+        <de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+          <tag>dbuser</tag>
+          <file>false</file>
+          <tempFile>false</tempFile>
+          <binary>false</binary>
+          <charsetName>UTF-8</charsetName>
+          <forceCopy>false</forceCopy>
+          <list>false</list>
+          <concatenate>false</concatenate>
+          <mime />
+        </de.uni__luebeck.inb.knowarc.usecases.ScriptInputUser>
+      </entry>
+    </inputs>
+    <outputs />
+    <includeStdIn>true</includeStdIn>
+    <includeStdOut>true</includeStdOut>
+    <includeStdErr>true</includeStdErr>
+    <validReturnCodes>
+      <int>0</int>
+    </validReturnCodes>
+  </useCaseDescription>
+  <edited>false</edited>
+</net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="STDIN" depth="0" /><port name="dbpasswd" depth="0" /><port name="dbuser" depth="0" /><port name="first_run_csv" depth="0" /><port name="host" depth="0" /><port name="second_run_csv" depth="0" /><port name="tcpport" depth="0" /><port name="working_directory" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>get_last_line_of_STDIN</name><inputPorts><port><name>STDIN</name><depth>0</depth></port></inputPorts><outputPorts><port><name>STDOUT</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>external-tool-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.externaltool.ExternalToolActivity</class><inputMap><map from="STDIN" to="STDIN" /></inputMap><outputMap><map from="STDOUT" to="STDOUT" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean xmlns="">
+  <mechanismType>789663B8-DA91-428A-9F7D-B3F3DA185FD4</mechanismType>
+  <mechanismName>default local</mechanismName>
+  <mechanismXML>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&#xD;
+&lt;localInvocation&gt;&lt;shellPrefix&gt;/bin/sh -c&lt;/shellPrefix&gt;&lt;linkCommand&gt;/bin/ln -s %%PATH_TO_ORIGINAL%% %%TARGET_NAME%%&lt;/linkCommand&gt;&lt;/localInvocation&gt;&#xD;
+</mechanismXML>
+  <externaltoolid>d68f3b3a-3531-491e-8d73-3dd142498488</externaltoolid>
+  <useCaseDescription>
+    <usecaseid />
+    <description />
+    <command>tail -n 1</command>
+    <preparingTimeoutInSeconds>1200</preparingTimeoutInSeconds>
+    <executionTimeoutInSeconds>1800</executionTimeoutInSeconds>
+    <tags />
+    <REs />
+    <queue__preferred />
+    <queue__deny />
+    <static__inputs />
+    <inputs />
+    <outputs />
+    <includeStdIn>true</includeStdIn>
+    <includeStdOut>true</includeStdOut>
+    <includeStdErr>false</includeStdErr>
+    <validReturnCodes>
+      <int>0</int>
+    </validReturnCodes>
+  </useCaseDescription>
+  <edited>false</edited>
+</net.sf.taverna.t2.activities.externaltool.ExternalToolActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="STDIN" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor></processors><conditions /><datalinks><datalink><sink type="processor"><processor>aux_dens.py</processor><port>STDIN</port></sink><source type="processor"><processor>sample_total.py</processor><port>STDOUT</port></source></datalink><datalink><sink type="processor"><processor>sample_total.py</processor><port>STDIN</port></sink><source type="dataflow"><port>working_directory</port></source></datalink><datalink><sink type="processor"><processor>environment.py</processor><port>STDIN</port></sink><source type="processor"><processor>aux_dens.py</processor><port>STDOUT</port></source></datalink><datalink><sink type="processor"><processor>8run1.py</processor><port>dbuser</port></sink><source type="dataflow"><port>dbuser</port></source></datalink><datalink><sink type="processor"><processor>8run1.py</processor><port>dbpasswd</port></sink><source type="dataflow"><port>dbpasswd</port></source></datalink><datalink><sink type="processor"><processor>8run1.py</processor><port>host</port></sink><source type="dataflow"><port>dbhost</port></source></datalink><datalink><sink type="processor"><processor>8run1.py</processor><port>pickle</port></sink><source type="dataflow"><port>candidatescube_pickle</port></source></datalink><datalink><sink type="processor"><processor>8run1.py</processor><port>first_run_csv</port></sink><source type="dataflow"><port>csv_out_filename</port></source></datalink><datalink><sink type="processor"><processor>8run1.py</processor><port>working_directory</port></sink><source type="dataflow"><port>working_directory</port></source></datalink><datalink><sink type="processor"><processor>8run1.py</processor><port>STDIN</port></sink><source type="processor"><processor>environment.py</processor><port>STDOUT</port></source></datalink><datalink><sink type="processor"><processor>8run1.py</processor><port>bsz_low</port></sink><source type="dataflow"><port>bsz_low</port></source></datalink><datalink><sink type="processor"><processor>8run1.py</processor><port>bsz_high</port></sink><source type="dataflow"><port>bsz_high</port></source></datalink><datalink><sink type="processor"><processor>8run1.py</processor><port>tcpport</port></sink><source type="dataflow"><port>dbport</port></source></datalink><datalink><sink type="processor"><processor>9run2.py</processor><port>dbuser</port></sink><source type="dataflow"><port>dbuser</port></source></datalink><datalink><sink type="processor"><processor>9run2.py</processor><port>dbpasswd</port></sink><source type="dataflow"><port>dbpasswd</port></source></datalink><datalink><sink type="processor"><processor>9run2.py</processor><port>host</port></sink><source type="dataflow"><port>dbhost</port></source></datalink><datalink><sink type="processor"><processor>9run2.py</processor><port>tcpport</port></sink><source type="dataflow"><port>dbport</port></source></datalink><datalink><sink type="processor"><processor>9run2.py</processor><port>first_run_csv</port></sink><source type="dataflow"><port>csv_out_filename</port></source></datalink><datalink><sink type="processor"><processor>9run2.py</processor><port>second_run_csv</port></sink><source type="dataflow"><port>csv_refined_filename</port></source></datalink><datalink><sink type="processor"><processor>9run2.py</processor><port>working_directory</port></sink><source type="dataflow"><port>working_directory</port></source></datalink><datalink><sink type="processor"><processor>9run2.py</processor><port>STDIN</port></sink><source type="processor"><processor>8run1.py</processor><port>STDOUT</port></source></datalink><datalink><sink type="processor"><processor>get_last_line_of_STDIN</processor><port>STDIN</port></sink><source type="processor"><processor>9run2.py</processor><port>STDOUT</port></source></datalink><datalink><sink type="dataflow"><port>csv_filepath</port></sink><source type="processor"><processor>get_last_line_of_STDIN</processor><port>STDOUT</port></source></datalink></datalinks><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>From a previously selected cube of galaxies residing in a remote database, we provide extragalactic environment parameters for all galaxies sample.
+
+This workflow takes as input the path of the tabular *.pckl Python pickle dataset created in the previous workflow, as well as the database connection settings and several criteria on how to filter the potential companions of the target galaxies. It provides a file with the SDSS identifiers of each target galaxy of the sample, environmental estimators and radius where the 10th companion has been found. The workflow looks for potential companions in radius ranging from 3Mpc to 11Mpc, with a step of 1Mpc. The user may modify these numbers at the input stage, as well as several limits and ranges needed in the filtering process. As in the previous workflow other provided input values are the Working Path of the digital experiment and the database connection settings: hostname, login and password.
+
+Execution environment The first requirement to run the workflows provided by both ROs is Taverna Workbench2 2.4 or higher. AstroTaverna (Taverna plugin) is also needed in order to get functionalities related with Virtual Observatory web services queries and management of standard VOTable data formats. In general, the execution environment is a Linux distribution including Python4 2.x and a bash shell, with psycopg and numpy Python packages. Access to a PostgreSQL database storing the physical parameters provided by SDSS is also needed; a dump file of database may be downloaded from the AMIGA web server and in order to be deployed and accessible from a local execution environment.</text>
+      </annotationBean>
+      <date>2013-01-14 09:37:22.165 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>68ffdd68-5cc5-4642-802e-8a38030c2af4</identification>
+      </annotationBean>
+      <date>2013-01-14 09:37:32.590 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>32d296b5-64fc-4db2-a486-5f9c022d1af0</identification>
+      </annotationBean>
+      <date>2012-09-28 17:25:54.101 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.DescriptiveTitle">
+        <text>Environment</text>
+      </annotationBean>
+      <date>2013-01-14 09:37:32.366 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>7d4fdde8-a852-4081-9d72-8bdae2a6ff4d</identification>
+      </annotationBean>
+      <date>2013-01-09 10:42:21.66 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>ad53a1c7-ab26-45e8-b0a2-09a12c673d5e</identification>
+      </annotationBean>
+      <date>2013-01-08 11:03:17.618 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>9d13a728-4e75-49eb-84be-b9c6b4cdf84e</identification>
+      </annotationBean>
+      <date>2012-09-28 17:26:47.918 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>7efca434-7940-4574-ba7d-fd25ad98fe0f</identification>
+      </annotationBean>
+      <date>2012-09-28 17:35:11.45 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.Author">
+        <text>José Sabater Montes
+Juan de Dios Santander Vela
+</text>
+      </annotationBean>
+      <date>2013-01-08 10:59:21.328 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>a4f2a98c-5e3e-490e-aaae-54814b89a952</identification>
+      </annotationBean>
+      <date>2012-09-29 19:15:04.676 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2></annotations></dataflow></workflow>

@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:71493043-d58e-47f8-ae31-5ea403d16a3f" author="Fong Chun Chan" title="DataBiNS with KEGG Pathways">DataBiNS (Data Mining Workflow for Biological Pathways and Non-Synonymous SNPs) is a workflow that takes an identifier (list of gene ids, or list of KEGG pathway ids) and proceeds to mine for Single Nucleotide Polymorphism (SNP) data that is associated with the identifiers.
+
+This particular version of DataBiNS can take in a KEGG pathway.  An example KEGG pathway is hsa00030.  The version of DataBiNS that works with single unqiue identifiers can be found as a separate version of the DataBiNS workflow under myExperiment.</s:workflowdescription>
+  <s:processor name="KEGG_NS" boring="true">
+    <s:stringconstant>KEGG_PATHWAY</s:stringconstant>
+  </s:processor>
+  <s:processor name="Entrez_NS" boring="true">
+    <s:stringconstant>EntrezGene_EntrezGeneID</s:stringconstant>
+  </s:processor>
+  <s:processor name="entrez_gene_id_list_flatter">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Remove_duplicate_strings">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringStripDuplicates</s:local>
+  </s:processor>
+  <s:processor name="entrez_gene_list_flatter2">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Remove_duplicate_strings2">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringStripDuplicates</s:local>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_nsSNP">
+    <s:description>Processor to parse the datatype nsSNP</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>nsSNP</s:datatype>
+      <s:articleName>snps</s:articleName>
+      <s:description>Processor to parse the datatype nsSNP</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_GO_Term">
+    <s:description>Processor to parse the datatype GO_Term</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>GO_Term</s:datatype>
+      <s:articleName>terms</s:articleName>
+      <s:description>Processor to parse the datatype GO_Term</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="getGeneInformationByEntrezGeneID" workers="3">
+    <s:description>This service consumes an identifier under the EntrezGene_ID / EntrezGene_EntrezGeneID namespaces. 
+
+Using the input identifier, any relevant gene information is returned regarding that particular gene id.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>getGeneInformationByEntrezGeneID</s:serviceName>
+      <s:authorityName>bioinfo.icapture.ubc.ca</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Gene2Ontology" workers="3">
+    <s:description>This service consumes an identifier under the EntrezGene_EntrezGeneID / EntrezGene_ID namespaces. This identifier is then used to query for any associated GO_Terms.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Gene2Ontology</s:serviceName>
+      <s:authorityName>icapture.ubc.ca</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_Frequencies">
+    <s:description>Processor to parse the datatype Frequencies</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>Frequencies</s:datatype>
+      <s:articleName>Frequencies</s:articleName>
+      <s:description>Processor to parse the datatype Frequencies</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_entrez_gene">
+    <s:description>Processor to parse the datatype Object</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>Object</s:datatype>
+      <s:articleName>geneid</s:articleName>
+      <s:description>Processor to parse the datatype Object</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="getSnpsBySwissProtId" workers="10">
+    <s:description>This service consumes an identifier under the Swiss-Prot / UniProt namespace. 
+
+Using the input identifier, relevant snp data is returned.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>getSnpsBySwissProtId</s:serviceName>
+      <s:authorityName>bioinfo.icapture.ubc.ca</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="convertKeggGeneId2PDBId" workers="10">
+    <s:description>This service consumes an identifier under the KEGG namespace. 
+
+This identifier is then queried against the KEGG DB and all PDB records are returned.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>convertKeggGeneId2PDBId</s:serviceName>
+      <s:authorityName>bioinfo.icapture.ubc.ca</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="getBase64SnpFrequencyImage" workers="5">
+    <s:description>This service returns the hapmap SNP frequency image in  a base64 format.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>getBase64SnpFrequencyImage</s:serviceName>
+      <s:authorityName>bioinfo.icapture.ubc.ca</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_Publication">
+    <s:description>Processor to parse the datatype Publication</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>Publication</s:datatype>
+      <s:articleName>publications</s:articleName>
+      <s:description>Processor to parse the datatype Publication</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_Swiss_Prot">
+    <s:description>Processor to parse the datatype Object</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>Object</s:datatype>
+      <s:articleName>prot_id</s:articleName>
+      <s:description>Processor to parse the datatype Object</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="getEntryFromPDB" workers="10">
+    <s:description>Retrieves an entry from PDB database.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>getEntryFromPDB</s:serviceName>
+      <s:authorityName>inb.bsc.es</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="convertSnp2EntrezGeneID" workers="10">
+    <s:description>This service consumes an identifier under the NCBI_dbSNP namespace. 
+
+The identifier is then converted into an EntrezGene_ID</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>convertSnp2EntrezGeneID</s:serviceName>
+      <s:authorityName>bioinfo.icapture.ubc.ca</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_pdb_id">
+    <s:description>Processor to parse the datatype Object</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>Object</s:datatype>
+      <s:articleName>pdb_ids</s:articleName>
+      <s:description>Processor to parse the datatype Object</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="snp2Frequencies" workers="10">
+    <s:description>Retrieves a list of genotype and allele frequencies for non-synonymous SNPs genotyped by HapMap (www.hapmap.org) from the snp input identifier.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>snp2Frequencies</s:serviceName>
+      <s:authorityName>bioinfo.icapture.ubc.ca</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="getKeggIdsByKeggPathway" workers="10">
+    <s:description>This service, given a KEGG pathway, searches for all known genes on that pathway.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>getKeggIdsByKeggPathway</s:serviceName>
+      <s:authorityName>bioinfo.icapture.ubc.ca</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Gene2PubMed" workers="3">
+    <s:description>Enter the EntrezGene ID (ie. 5211 for gene pfkl - phosphofructokinase, liver) to  lretrieve list of references and abstracts of publications related to the gene of your interest.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Gene2PubMed</s:serviceName>
+      <s:authorityName>icapture.ubc.ca</s:authorityName>
+      <s:Parameter s:name="maxResults">20</s:Parameter>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="convertKeggGeneId2ProtId" workers="10">
+    <s:description>This service consumes an identifier under the KEGG namespace. 
+
+This identifier is then 'transformed' into a corresponding swissprot/uniprot identifier.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>convertKeggGeneId2ProtId</s:serviceName>
+      <s:authorityName>bioinfo.icapture.ubc.ca</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_kegg_gene">
+    <s:description>Processor to parse the datatype Object</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>Object</s:datatype>
+      <s:articleName>keggIds</s:articleName>
+      <s:description>Processor to parse the datatype Object</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_rasmol">
+    <s:description>Processor to parse the datatype text-formatted</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>text-formatted</s:datatype>
+      <s:articleName>rasmol_text</s:articleName>
+      <s:description>Processor to parse the datatype text-formatted</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="CreateEntrezGeneDataType">
+    <s:description>an object</s:description>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Object</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_gene_ref">
+    <s:description>Processor to parse the datatype gene_ref</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>gene_ref</s:datatype>
+      <s:articleName>gene_info</s:articleName>
+      <s:description>Processor to parse the datatype gene_ref</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_b64_Encoded_PNG">
+    <s:description>Processor to parse the datatype b64_Encoded_PNG</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>b64_Encoded_PNG</s:datatype>
+      <s:articleName>image</s:articleName>
+      <s:description>Processor to parse the datatype b64_Encoded_PNG</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="CreateKeggPathwayDataType">
+    <s:description>an object</s:description>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Object</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_PDB_Text">
+    <s:description>Processor to parse the datatype PDB-Text</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>PDB-Text</s:datatype>
+      <s:articleName>entry</s:articleName>
+      <s:description>Processor to parse the datatype PDB-Text</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="PDB_id2RasMolScript">
+    <s:description>Given a pdb_id, it returns a RasMol script that can be used in conjunction to the PDB file of the protein to produce SNP sites labelled on the 3D representation.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>PDB_id2RasMolScript</s:serviceName>
+      <s:authorityName>bioinfo.icapture.ubc.ca</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:link source="CreateEntrezGeneDataType:mobyData" sink="Gene2Ontology:Object(gene)" />
+  <s:link source="CreateEntrezGeneDataType:mobyData" sink="Gene2PubMed:Object(geneid)" />
+  <s:link source="CreateEntrezGeneDataType:mobyData" sink="getGeneInformationByEntrezGeneID:Object(geneid)" />
+  <s:link source="CreateKeggPathwayDataType:mobyData" sink="getKeggIdsByKeggPathway:Object(pathway)" />
+  <s:link source="Entrez_NS:value" sink="CreateEntrezGeneDataType:namespace" />
+  <s:link source="Gene2Ontology:GO_Term(Collection - 'terms' As Simples)" sink="Parse_Moby_Data_GO_Term:mobyData('GO_Term')" />
+  <s:link source="Gene2PubMed:Publication(Collection - 'publications' As Simples)" sink="Parse_Moby_Data_Publication:mobyData('Publication')" />
+  <s:link source="KEGG_NS:value" sink="CreateKeggPathwayDataType:namespace" />
+  <s:link source="PDB_id2RasMolScript:text-formatted(rasmol_text)" sink="Parse_Moby_Data_rasmol:mobyData('text-formatted')" />
+  <s:link source="PDB_id2RasMolScript:text-formatted(rasmol_text)" sink="getEntryFromPDB:Object(id)" />
+  <s:link source="Parse_Moby_Data_entrez_gene:id" sink="entrez_gene_id_list_flatter:inputlist" />
+  <s:link source="Parse_Moby_Data_entrez_gene:id" sink="entrez_gene_list_flatter2:inputlist" />
+  <s:link source="Remove_duplicate_strings:strippedlist" sink="CreateEntrezGeneDataType:id" />
+  <s:link source="convertKeggGeneId2PDBId:Object(Collection - 'pdb_ids' As Simples)" sink="PDB_id2RasMolScript:Object(pdb_id)" />
+  <s:link source="convertKeggGeneId2PDBId:Object(Collection - 'pdb_ids' As Simples)" sink="Parse_Moby_Data_pdb_id:mobyData('Object')" />
+  <s:link source="convertKeggGeneId2ProtId:Object(prot_id)" sink="Parse_Moby_Data_Swiss_Prot:mobyData('Object')" />
+  <s:link source="convertKeggGeneId2ProtId:Object(prot_id)" sink="getSnpsBySwissProtId:Object(id)" />
+  <s:link source="convertSnp2EntrezGeneID:Object(geneid)" sink="Parse_Moby_Data_entrez_gene:mobyData('Object')" />
+  <s:link source="entrez_gene_id_list_flatter:outputlist" sink="Remove_duplicate_strings2:stringlist" />
+  <s:link source="entrez_gene_list_flatter2:outputlist" sink="Remove_duplicate_strings:stringlist" />
+  <s:link source="getBase64SnpFrequencyImage:b64_Encoded_PNG(image)" sink="Parse_Moby_Data_b64_Encoded_PNG:mobyData('b64_Encoded_PNG')" />
+  <s:link source="getEntryFromPDB:PDB-Text(entry)" sink="Parse_Moby_Data_PDB_Text:mobyData('PDB-Text')" />
+  <s:link source="getGeneInformationByEntrezGeneID:gene_ref(gene_info)" sink="Parse_Moby_Data_gene_ref:mobyData('gene_ref')" />
+  <s:link source="getKeggIdsByKeggPathway:Object(Collection - 'keggIds' As Simples)" sink="Parse_Moby_Data_kegg_gene:mobyData('Object')" />
+  <s:link source="getKeggIdsByKeggPathway:Object(Collection - 'keggIds' As Simples)" sink="convertKeggGeneId2PDBId:Object(kegg_gene)" />
+  <s:link source="getKeggIdsByKeggPathway:Object(Collection - 'keggIds' As Simples)" sink="convertKeggGeneId2ProtId:Object(kegg_gene)" />
+  <s:link source="getSnpsBySwissProtId:nsSNP(Collection - 'snps' As Simples)" sink="Parse_Moby_Data_nsSNP:mobyData('nsSNP')" />
+  <s:link source="getSnpsBySwissProtId:nsSNP(Collection - 'snps' As Simples)" sink="convertSnp2EntrezGeneID:Object(snp)" />
+  <s:link source="getSnpsBySwissProtId:nsSNP(Collection - 'snps' As Simples)" sink="snp2Frequencies:Object(snpid)" />
+  <s:link source="id" sink="CreateKeggPathwayDataType:id" />
+  <s:link source="Parse_Moby_Data_Frequencies:Frequencies_'Frequency'" sink="frequency" />
+  <s:link source="Parse_Moby_Data_Frequencies:Frequencies_'Frequency'_id" sink="frequency_id" />
+  <s:link source="Parse_Moby_Data_GO_Term:id" sink="go_term_accession" />
+  <s:link source="Parse_Moby_Data_GO_Term:terms_'Definition'" sink="go_term_definition" />
+  <s:link source="Parse_Moby_Data_GO_Term:terms_'Term'" sink="go_term" />
+  <s:link source="Parse_Moby_Data_PDB_Text:entry_'content'" sink="pdb_file" />
+  <s:link source="Parse_Moby_Data_Publication:id" sink="publication_pubmed_id" />
+  <s:link source="Parse_Moby_Data_Publication:publications_'Abstract'" sink="publication_abstract" />
+  <s:link source="Parse_Moby_Data_Publication:publications_'Author'" sink="publication_author" />
+  <s:link source="Parse_Moby_Data_Publication:publications_'Journal'" sink="publication_journal_name" />
+  <s:link source="Parse_Moby_Data_Publication:publications_'Title'" sink="publication_title" />
+  <s:link source="Parse_Moby_Data_Swiss_Prot:id" sink="swiss_prot_id" />
+  <s:link source="Parse_Moby_Data_b64_Encoded_PNG:image_'content'" sink="base64_PNG" />
+  <s:link source="Parse_Moby_Data_gene_ref:gene_info_'description'" sink="gene_description" />
+  <s:link source="Parse_Moby_Data_gene_ref:gene_info_'name'" sink="gene_name" />
+  <s:link source="Parse_Moby_Data_gene_ref:gene_info_'summary'" sink="gene_summary" />
+  <s:link source="Parse_Moby_Data_gene_ref:gene_info_'synonyms'" sink="gene_synonyms" />
+  <s:link source="Parse_Moby_Data_gene_ref:id" sink="gene_id" />
+  <s:link source="Parse_Moby_Data_kegg_gene:id" sink="kegg_gene_id" />
+  <s:link source="Parse_Moby_Data_nsSNP:id" sink="nsSNP_id" />
+  <s:link source="Parse_Moby_Data_nsSNP:snps_'aa_pos'" sink="nsSNP_amino_acid_position" />
+  <s:link source="Parse_Moby_Data_nsSNP:snps_'aa_var'" sink="nsSNP_amino_acid_variant" />
+  <s:link source="Parse_Moby_Data_nsSNP:snps_'allele'" sink="nsSNP_allele" />
+  <s:link source="Parse_Moby_Data_nsSNP:snps_'codon_pos'" sink="nsSNP_codon_position" />
+  <s:link source="Parse_Moby_Data_nsSNP:snps_'strand'" sink="nsSNP_strand" />
+  <s:link source="Parse_Moby_Data_pdb_id:id" sink="pdb_id" />
+  <s:link source="Parse_Moby_Data_rasmol:rasmol_text_'content'" sink="pdb_rasmol" />
+  <s:link source="Remove_duplicate_strings2:strippedlist" sink="entrez_gene_id" />
+  <s:link source="snp2Frequencies:Frequencies(Frequencies)" sink="Parse_Moby_Data_Frequencies:mobyData('Frequencies')" />
+  <s:link source="snp2Frequencies:Frequencies(Frequencies)" sink="getBase64SnpFrequencyImage:Object(snpId)" />
+  <s:source name="id" />
+  <s:sink name="nsSNP_id" />
+  <s:sink name="nsSNP_codon_position" />
+  <s:sink name="nsSNP_allele" />
+  <s:sink name="nsSNP_strand" />
+  <s:sink name="nsSNP_amino_acid_variant" />
+  <s:sink name="nsSNP_amino_acid_position" />
+  <s:sink name="swiss_prot_id" />
+  <s:sink name="go_term_accession" />
+  <s:sink name="go_term" />
+  <s:sink name="go_term_definition" />
+  <s:sink name="frequency" />
+  <s:sink name="frequency_id" />
+  <s:sink name="gene_id" />
+  <s:sink name="gene_description" />
+  <s:sink name="gene_name" />
+  <s:sink name="gene_summary" />
+  <s:sink name="gene_synonyms" />
+  <s:sink name="entrez_gene_id" />
+  <s:sink name="publication_author" />
+  <s:sink name="publication_pubmed_id" />
+  <s:sink name="publication_abstract" />
+  <s:sink name="publication_title" />
+  <s:sink name="publication_journal_name" />
+  <s:sink name="kegg_gene_id" />
+  <s:sink name="pdb_id" />
+  <s:sink name="pdb_rasmol" />
+  <s:sink name="base64_PNG" />
+  <s:sink name="pdb_file" />
+</s:scufl>
+

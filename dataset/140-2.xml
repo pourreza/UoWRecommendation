@@ -1,0 +1,872 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:a10f09f0-b9e7-41c8-8506-2ff6b099acaa" author="Andrea Wiggins" title="Success-Abandonment-Classification">Retrieves data from FLOSSmole and from the Notre Dame SourceForge repository to compute project statistics based on releases, downloads and project lifespan. Project statistics are then used to classify projects according to the criteria set up in English &amp; Schweik, but comparison criteria are parameterized so that a different set of criterion thresholds can be used to evaluate the project characteristics.</s:workflowdescription>
+  <s:processor name="Class_Analysis">
+    <s:description>Author: Andrea Wiggins
+
+Provides simple proportions for the classes of projects as output from the classification.</s:description>
+    <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+      #A. Wiggins 6/16/08
+		library(Design)
+
+		col.classes&lt;-c("character")
+		colnames&lt;-c("class")
+		classtype &lt;- read.csv(textConnection(classtypes), header=FALSE, row.names=NULL, col.names=colnames, colClasses=col.classes)
+		attach(classtype)
+
+		classes&lt;-sort.list(as.character(classtype))
+
+		classlabels&lt;-unclass(classes)
+
+		analysis&lt;- summary.factor(classtype, labels=classlabels)
+
+		denominator&lt;-sum(analysis)
+		proportion&lt;-analysis/denominator
+
+		analysis_output&lt;- paste(capture.output(proportion), collapse="\n")
+      <s:rshellInputPortList>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">classtypes</s:rshellInputPort>
+      </s:rshellInputPortList>
+      <s:rshellOutputPortList>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">analysis_output</s:rshellOutputPort>
+      </s:rshellOutputPortList>
+    </s:rshell>
+  </s:processor>
+  <s:processor name="delist_classtypes">
+    <s:description>Takes classtype output from RShell and takes them out of list format and into CSV instead.</s:description>
+    <s:defaults>
+      <s:default name="seperator">,</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="release_lag_threshold" boring="true">
+    <s:description>Desired time between releases so that the releases are not made "too fast" for a sustainable rate of growth. Unit: days, integer values only.</s:description>
+    <s:stringconstant>183</s:stringconstant>
+  </s:processor>
+  <s:processor name="release_recency_threshold" boring="true">
+    <s:description>Threshold for recency of last release, or how recently the newest release was made, as a signal of project activity. Unit: days, integer values only.</s:description>
+    <s:stringconstant>365</s:stringconstant>
+  </s:processor>
+  <s:processor name="release_count_threshold" boring="true">
+    <s:description>Minimum number of releases to be considered a success.</s:description>
+    <s:stringconstant>3</s:stringconstant>
+  </s:processor>
+  <s:processor name="Stages_Analysis">
+    <s:description>Author: Andrea Wiggins
+
+Provides simple proportions for the stages of projects as output from the classification.</s:description>
+    <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+      #A. Wiggins 6/16/08
+		library(Design)
+
+		col.classes&lt;-c("character")
+		colnames&lt;-c("stages")
+		stage &lt;- read.csv(textConnection(stages), header=FALSE, row.names=NULL, col.names=colnames, colClasses=col.classes)
+		attach(stage)
+
+		stage2&lt;-sort.list(as.character(stage))
+
+		stagelabels&lt;-unclass(stage2)
+
+		analysis&lt;- summary.factor(stage, labels=stagelabels)
+
+		denominator&lt;-sum(analysis)
+		proportion&lt;-analysis/denominator
+
+		analysis_output&lt;- paste(capture.output(proportion), collapse="\n")
+      <s:rshellInputPortList>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">stages</s:rshellInputPort>
+      </s:rshellInputPortList>
+      <s:rshellOutputPortList>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">analysis_output</s:rshellOutputPort>
+      </s:rshellOutputPortList>
+    </s:rshell>
+  </s:processor>
+  <s:processor name="delist_stages">
+    <s:description>Takes stage output from RShell and takes them out of list format and into CSV instead.</s:description>
+    <s:defaults>
+      <s:default name="seperator">,</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="initiation_age_threshold" boring="true">
+    <s:description>The threshold for how long a project may remain in the "initiation" stage without having produced a release, and still be considered not abandoned. Unit: days, integer values only</s:description>
+    <s:stringconstant>365</s:stringconstant>
+  </s:processor>
+  <s:processor name="release_rate_type" boring="true">
+    <s:description>Allows switching between three versions of deriving the release rate values for comparison to a threshold to determine whether the releases are too frequent for sustainable growth; values should be first_last, average_rate, or recent_density.</s:description>
+    <s:stringconstant>first_last</s:stringconstant>
+  </s:processor>
+  <s:processor name="mortality_threshold" boring="true">
+    <s:description>Length of time for a project to be considered abandoned, if no releases have been made by this time. Unit: days, integer values only.</s:description>
+    <s:stringconstant>365</s:stringconstant>
+  </s:processor>
+  <s:processor name="download_threshold" boring="true">
+    <s:stringconstant>11</s:stringconstant>
+  </s:processor>
+  <s:processor name="Classification">
+    <s:description>Author: Andrea Wiggins
+
+Performs comparisons between variables and threshold inputs, and then classifies the project according to these comparisons. Makes a null value check for each variable and records "null" for the derived data points; in classification, any project with null values that interfere with classification are returned with a classtype of "other".
+
+The classification outputs are data for analysis, and a set of classified data which provide the full detail for each project, including all retrieved data, derived data, and the project classification.</s:description>
+    <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+      # A. Wiggins 6/15/08
+library(Design)
+
+#sf_unixname,downloads,lifespan,release_count,time_between_last_release_and_cutoff,recent_release_density,secs_first_last,has_sf_url
+col.classes&lt;-c("character","integer","integer","integer","integer","integer","integer","logical")
+colnames&lt;-c("project_unixname","downloads","lifespan","num_releases","time_since_last_release","recent_release_density", "first_last_release", "real_url")
+data&lt;- read.csv(textConnection(data_for_classification), header=TRUE, colClasses=col.classes, col.names=colnames)
+attach(data)
+
+#need to add a way to have parameterized switch between recent_release_density vs. first_last_release
+
+#expected input: project_unixname,downloads,lifespan,num_releases, time_since_last_release, recent_release_density
+#need to convert incoming values for lifespan, time_since_last_release, and recent_release_density from seconds to days
+
+#growth stage classification, based on lifespan
+#initiation transformation changes input in days into seconds
+#a null value would be recorded as "initiation"
+initiation&lt;-initiation_threshold
+yes1a &lt;- "growth"
+no1a &lt;- "initiation"
+no1&lt;-ifelse(lifespan &gt;= initiation, yes1a, no1a)
+yes1 &lt;- "null"
+stage &lt;- ifelse(lifespan == -1, yes1, no1)
+
+#downloads classification
+#a null value would be recorded as "not.downloaded"
+yes2a &lt;- "not.downloaded"
+no2a &lt;- "downloaded"
+no2 &lt;- ifelse(downloads&lt;=download_threshold,yes2a,no2a)
+yes2 &lt;- "null"
+usage &lt;- ifelse(downloads == -1,yes2,no2)
+
+#recent_release_density classification
+#release_lag transformation changes input in days into seconds
+average_rate&lt;-(first_last_release/(num_releases-1))
+#final determinations of recent_release_density
+yes3a &lt;- "ok.release.rate"
+no3a &lt;- "fast.release.rate"
+yes3 &lt;- "null"
+
+#tests for criteria
+no3 &lt;- ifelse(recent_release_density &gt;= release_lag_threshold,yes3a,no3a)
+no11&lt;- ifelse(first_last_release &gt;= release_lag_threshold,yes3a,no3a)
+no10&lt;-ifelse(average_rate &gt;=release_lag_threshold,yes3a,no3a) 
+
+#null value tests
+yes9&lt;-ifelse(average_rate&lt;=1,yes3,no10)
+no9&lt;- ifelse(first_last_release == -1,yes3,no11)
+yes8&lt;- ifelse(recent_release_density == -1,yes3,no3)
+
+#tests for release_rate_type - if not average_rate or recent_density, procedure defaults to the original version, first_last
+no8&lt;- ifelse(release_rate_type == "average_rate",yes9,no9) #test for type average_rate
+release_rate &lt;- ifelse(release_rate_type == "recent_density",yes8,no8) #test for type recent_density
+
+#time_since_last_release classification
+#mortality transformation changes input in days into seconds
+#a null value would be recorded as "active" (double-check this one!)
+mortality&lt;-(mortality_threshold*86400)
+yes4a &lt;- "active"
+no4a &lt;- "inactive"
+no4 &lt;- ifelse(time_since_last_release &lt;= mortality,yes4a,no4a)
+yes4 &lt;- "null"
+release_mortality &lt;- ifelse(time_since_last_release == -1,yes4,no4)
+
+#num_releases classification - compound
+#a null value would be recorded as "no.releases"
+yes6 &lt;- "enough.releases"
+no6 &lt;- "not.enough.releases"
+no5a&lt;- ifelse(num_releases &gt;= release_count_threshold,yes6,no6)
+yes5a &lt;- "no.releases"
+no5 &lt;- ifelse(num_releases==0,yes5a,no5a)
+yes5 &lt;- "null"
+releases &lt;- ifelse(num_releases == -1,yes5,no5)
+
+#start phase 2 - actual classification
+
+unclassifiable &lt;- all(releases=="no.releases" &amp;&amp; downloads==0 &amp;&amp; real_url=="true")
+xi &lt;- all(releases=="no.releases" &amp;&amp; stage=="growth")
+nu &lt;- all(releases=="no.releases" &amp;&amp; stage=="initiation")
+mu &lt;- all(releases=="not.enough.releases" &amp;&amp; release_mortality=="active" &amp;&amp; usage=="downloaded")
+lambda &lt;- all(releases=="not.enough.releases" &amp;&amp; release_mortality=="active" &amp;&amp; usage=="not.downloaded")
+kappa &lt;- all(releases=="not.enough.releases" &amp;&amp; release_mortality=="inactive" &amp;&amp; usage=="downloaded")
+iota &lt;- all(releases=="not.enough.releases" &amp;&amp; release_mortality=="inactive" &amp;&amp; usage=="not.downloaded")
+theta &lt;- all(releases=="enough.releases" &amp;&amp; release_mortality=="active" &amp;&amp; release_rate=="ok.release.rate" &amp;&amp; usage=="downloaded")
+eta &lt;- all(releases=="enough.releases" &amp;&amp; release_mortality=="active" &amp;&amp; release_rate=="ok.release.rate" &amp;&amp; usage=="not.downloaded")
+zeta &lt;- all(releases=="enough.releases" &amp;&amp; release_mortality=="active" &amp;&amp; release_rate=="fast.release.rate" &amp;&amp; usage=="downloaded")
+epsilon &lt;- all(releases=="enough.releases" &amp;&amp; release_mortality=="active" &amp;&amp; release_rate=="fast.release.rate" &amp;&amp; usage=="not.downloaded")
+delta &lt;- all(releases=="enough.releases" &amp;&amp; release_mortality=="inactive" &amp;&amp; release_rate=="ok.release.rate" &amp;&amp; usage=="downloaded")
+gamma &lt;- all(releases=="enough.releases" &amp;&amp; release_mortality=="inactive" &amp;&amp; release_rate=="ok.release.rate" &amp;&amp; usage=="not.downloaded")
+beta &lt;- all(releases=="enough.releases" &amp;&amp; release_mortality=="inactive" &amp;&amp; release_rate=="fast.release.rate" &amp;&amp; usage=="downloaded")
+alpha &lt;- all(releases=="enough.releases" &amp;&amp; release_mortality=="inactive" &amp;&amp; release_rate=="fast.release.rate" &amp;&amp; usage=="not.downloaded")
+
+if(isTRUE(unclassifiable)) (classtype&lt;-"unclassifiable") else {
+if (isTRUE(xi)) (classtype&lt;-"TI") else {
+if (isTRUE(nu)) (classtype&lt;-"II") else {
+if (isTRUE(mu)) (classtype&lt;-"IG") else {
+if (isTRUE(lambda)) (classtype&lt;-"TG") else {
+if (isTRUE(kappa)) (classtype&lt;-"TG") else {
+if (isTRUE(iota)) (classtype&lt;-"TG") else {
+if (isTRUE(theta)) (classtype&lt;-"SG") else {
+if (isTRUE(eta)) (classtype&lt;-"TG") else {
+if (isTRUE(zeta)) (classtype&lt;-"IG") else {
+if (isTRUE(epsilon)) (classtype&lt;-"TG") else {
+if (isTRUE(delta)) (classtype&lt;-"SG") else {
+if (isTRUE(gamma)) (classtype&lt;-"TG") else {
+if (isTRUE(beta)) (classtype&lt;-"TG") else {
+if (isTRUE(alpha)) (classtype&lt;-"TG") else {classtype&lt;-"other"}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+
+#prepare the output
+
+#label the new columns from each variable comparison
+label(downloads) &lt;- "Downloads"
+label(lifespan)&lt;-"Lifespan"
+label(num_releases)&lt;-"Release Count"
+label(time_since_last_release)&lt;- "Time Since Last Release"
+label(recent_release_density)&lt;- "Recent Release Lag"
+label(stage) &lt;-"Growth Stage"
+label(usage) &lt;-"Usage"
+label(release_rate) &lt;- "Rate of Releases"
+label(release_mortality) &lt;- "Release Activity"
+label(releases) &lt;- "Releases"
+label(classtype) &lt;- "Class"
+
+#build a row for the classification outputs
+classified_data&lt;-cbind(data,stage,usage,releases,release_mortality,release_rate,classtype)
+
+#also need to pass the classtype and stage for summary stats
+classtypes &lt;- classtype
+stages &lt;- stage
+      <s:rshellInputPortList>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">data_for_classification</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="INTEGER">download_threshold</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="INTEGER">mortality_threshold</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="INTEGER">release_recency_threshold</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="INTEGER">release_lag_threshold</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="INTEGER">initiation_threshold</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="INTEGER">release_count_threshold</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">release_rate_type</s:rshellInputPort>
+      </s:rshellInputPortList>
+      <s:rshellOutputPortList>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">classified_data</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">classtypes</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">stages</s:rshellOutputPort>
+      </s:rshellOutputPortList>
+    </s:rshell>
+    <s:iterationstrategy>
+      <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="release_rate_type" />
+        <i:iterator name="release_count_threshold" />
+        <i:iterator name="initiation_threshold" />
+        <i:iterator name="release_lag_threshold" />
+        <i:iterator name="release_recency_threshold" />
+        <i:iterator name="mortality_threshold" />
+        <i:iterator name="download_threshold" />
+        <i:iterator name="data_for_classification" />
+      </i:cross>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="GetData">
+    <s:description>Author: James Howison
+
+Subworkflow process to take project unixname and fetch the appropriate data for classification from two data sources, FLOSSmole and the Notre Dame SourceForge repository. Returns a CSV line of data for classification.</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:10d72b24-d1bd-4fcc-8b59-1f6c358319b8" author="" title="GetDataForClassification" />
+        <s:processor name="GatherCSV" workers="2">
+          <s:beanshell>
+            <s:scriptvalue>// Test that input lists are all the same
+delim = ",";
+
+firstCount = downloads_list.size();
+
+if (lifespan_list.size() != firstCount || 
+    release_count_list.size() != firstCount ||
+    time_last_and_cutoff_list.size() != firstCount ||
+    release_density_list.size() != firstCount ) {
+  throw new Exception("Input lists must be of same length");
+}
+
+out = "sf_unixname,downloads,lifespan,release_count,time_between_last_release_and_cutoff,recent_release_density,secs_first_last,has_sf_url\n";
+
+for (i = 0; i &lt; firstCount; i++) {
+  out = out + sf_unixname_list.get(i);
+out = out + delim;
+  out = out + downloads_list.get(i);
+out = out + delim;  
+ out = out + lifespan_list.get(i);
+out = out + delim;  
+ out = out + release_count_list.get(i);
+out = out + delim;
+  out = out + time_last_and_cutoff_list.get(i);
+out = out + delim;
+  out = out + release_density_list.get(i);
+out = out + delim;
+  out = out + time_first_and_last_list.get(i);
+out = out + delim;
+  out = out + has_sf_url_list.get(i);
+out = out + "\n";
+}
+
+out_csv = out;</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="l('text/plain')">downloads_list</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="l('text/plain')">lifespan_list</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="l('text/plain')">sf_unixname_list</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="l('text/plain')">release_count_list</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="l('text/plain')">time_last_and_cutoff_list</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="l('text/plain')">release_density_list</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="l('text/plain')">time_first_and_last_list</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="l('text/plain')">has_sf_url_list</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">out_csv</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="GetFLOSSmoleData">
+          <s:description>This workflow takes a sf_unixname and looks up available data for classification from Notre Dame and FLOSSmole.  It returns three items, all from the project_statistics table: data_for_date, which indicates the datetime for which the download aggregate and the lifespan are relevant.</s:description>
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:15d18137-f091-42d7-b699-3be8b3a1295d" author="James Howison" title="GetFLOSSmoleData">This workflow takes a sf_unixname and looks up available data for classification from Notre Dame and FLOSSmole.  It returns three items, all from the project_statistics table: data_for_date, which indicates the datetime for which the download aggregate and the lifespan are relevant.</s:workflowdescription>
+              <s:processor name="GetDataFromFLOSSmoleSQL">
+                <s:defaults>
+                  <s:default name="url">jdbc:mysql://floss.syr.edu:3366/ossmole_merged</s:default>
+                  <s:default name="driver">com.mysql.jdbc.Driver</s:default>
+                  <s:default name="userid">public_access</s:default>
+                  <s:default name="password">digging!</s:default>
+                  <s:default name="sql">SELECT s.downloads, s.lifespan, s.data_for_date FROM ossmole_merged.project_statistics AS s WHERE datasource_id = 4 AND s.is_all_time = 1 AND s.proj_unixname = 'gaim'</s:default>
+                  <s:default name="provideXml">false</s:default>
+                </s:defaults>
+                <s:local>net.sourceforge.taverna.scuflworkers.jdbc.SQLQueryWorker</s:local>
+                <s:mergemode input="password" mode="merge" />
+              </s:processor>
+              <s:processor name="GetURLFromFLOSSmole">
+                <s:defaults>
+                  <s:default name="url">jdbc:mysql://floss.syr.edu:3366/ossmole_merged</s:default>
+                  <s:default name="driver">com.mysql.jdbc.Driver</s:default>
+                  <s:default name="userid">public_access</s:default>
+                  <s:default name="password">digging!</s:default>
+                  <s:default name="provideXml">false</s:default>
+                </s:defaults>
+                <s:local>net.sourceforge.taverna.scuflworkers.jdbc.SQLQueryWorker</s:local>
+              </s:processor>
+              <s:processor name="BuildFLOSSmoleURLQueryString">
+                <s:beanshell>
+                  <s:scriptvalue>url_query_string = "SELECT p.real_url FROM projects AS p WHERE p.datasource_id = 28 AND proj_unixname = '"+sf_unixname+"'";</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">sf_unixname</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">url_query_string</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="MatchSFURL">
+                <s:beanshell>
+                  <s:scriptvalue>import java.util.regex.Pattern;
+
+real_url = result_row.get(0).get(0);
+
+String regex = "http:\\/\\/"+Pattern.quote(sf_unixname)+"\\.sourceforge\\.net\\/?";
+        
+if (Pattern.matches(regex, real_url)) {
+  has_sf_url = "true";
+} else {
+  has_sf_url = "false";
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="l(l('text/plain'))">result_row</s:beanshellinput>
+                    <s:beanshellinput s:syntactictype="'text/plain'">sf_unixname</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">has_sf_url</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+                <s:iterationstrategy>
+                  <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+                    <i:iterator name="result_row" />
+                    <i:iterator name="sf_unixname" />
+                  </i:dot>
+                </s:iterationstrategy>
+              </s:processor>
+              <s:processor name="ConvertSQLDateToXSDDateTime">
+                <s:beanshell>
+                  <s:scriptvalue>import java.text.SimpleDateFormat;
+
+xsd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+sql = new SimpleDateFormat("yyyy-MM-dd");
+
+sqlDate = sql.parse(sql_date);
+
+xsd_datetime = xsd.format(sqlDate);</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">sql_date</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">xsd_datetime</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="split_SQL_results">
+                <s:beanshell>
+                  <s:scriptvalue>aggregate_downloads = result_row.get(0).get(0);
+lifespan_days = result_row.get(0).get(1);
+data_for_date = result_row.get(0).get(2);</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="l(l('text/plain'))">result_row</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">aggregate_downloads</s:beanshelloutput>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">lifespan_days</s:beanshelloutput>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">data_for_date</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="buildFLOSSmoleStatisticsQueryString">
+                <s:beanshell>
+                  <s:scriptvalue>queryString = "SELECT s.downloads, s.lifespan, s.data_for_date FROM ossmole_merged.project_statistics AS s WHERE datasource_id = 4 AND s.is_all_time = 1 AND s.proj_unixname = '"+sf_unixname+"'";</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">sf_unixname</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">queryString</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:link source="ConvertSQLDateToXSDDateTime:xsd_datetime" sink="data_for_date" />
+              <s:link source="GetDataFromFLOSSmoleSQL:resultList" sink="split_SQL_results:result_row" />
+              <s:link source="sf_unixname" sink="BuildFLOSSmoleURLQueryString:sf_unixname" />
+              <s:link source="sf_unixname" sink="buildFLOSSmoleStatisticsQueryString:sf_unixname" />
+              <s:link source="BuildFLOSSmoleURLQueryString:url_query_string" sink="GetURLFromFLOSSmole:sql" />
+              <s:link source="sf_unixname" sink="MatchSFURL:sf_unixname" />
+              <s:link source="GetURLFromFLOSSmole:resultList" sink="MatchSFURL:result_row" />
+              <s:link source="MatchSFURL:has_sf_url" sink="has_sf_url" />
+              <s:link source="buildFLOSSmoleStatisticsQueryString:queryString" sink="GetDataFromFLOSSmoleSQL:sql" />
+              <s:link source="split_SQL_results:aggregate_downloads" sink="aggregate_downloads" />
+              <s:link source="split_SQL_results:data_for_date" sink="ConvertSQLDateToXSDDateTime:sql_date" />
+              <s:link source="split_SQL_results:lifespan_days" sink="lifespan_days" />
+              <s:source name="sf_unixname" />
+              <s:sink name="data_for_date" />
+              <s:sink name="aggregate_downloads" />
+              <s:sink name="lifespan_days" />
+              <s:sink name="has_sf_url" />
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:processor name="SummarizeReleases" workers="2">
+          <s:description>This should be a simple workflow to calculate a few summary stats from a list of releases.  The releases are pulled out of an XML document (string) that describes elements of the project.  eg:
+
+&lt;project_info&gt;
+  &lt;sf_unixname /&gt;
+  &lt;downloads_by_date /&gt;
+  &lt;lifespan_by_date /&gt;
+  &lt;releases&gt;
+    &lt;release datetime="2004-01-08T12:12:50Z" /&gt;
+    &lt;release datetime="2004-01-08T12:12:40Z" /&gt;
+    &lt;release datetime="2004-01-08T12:12:30Z" /&gt;
+    &lt;release datetime="2004-01-08T12:12:20Z" /&gt;
+    &lt;release datetime="2004-01-08T12:12:10Z" /&gt;
+    &lt;release datetime="2004-01-08T12:12:00Z" /&gt;
+  &lt;/releases&gt;
+&lt;/project_info&gt;</s:description>
+          <s:defaults>
+            <s:default name="num_releases_for_density">3</s:default>
+          </s:defaults>
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:e02f4de7-ce00-4a98-bd06-207541855879" author="James Howison" title="summarize_releases">This workflow calculates the summary of release history needed for the English and Schweik workflow.  The outputs are a simple count of releases (before a cutoff date), the seconds elapsed between the last release and the cutoff date, and recent release density, which is the aggreate time expired between the Nth last release and the last release (prior to the cutoff date).  N for density is defined by the num_releases_for_density input.</s:workflowdescription>
+              <s:processor name="SplitOutReleases">
+                <s:defaults>
+                  <s:default name="xpath">/releases/release</s:default>
+                </s:defaults>
+                <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+              </s:processor>
+              <s:processor name="TimeBetweenLastAndCutoff">
+                <s:beanshell>
+                  <s:scriptvalue>import java.text.SimpleDateFormat;
+
+dateAndTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+yingDate = dateAndTime.parse(datetime_1);
+yangDate = dateAndTime.parse(datetime_2);
+
+distance = ( yingDate.getTime() - yangDate.getTime() ) / 1000;
+
+// Need absolute value
+seconds_between = Math.abs(distance);</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">datetime_1</s:beanshellinput>
+                    <s:beanshellinput s:syntactictype="'text/plain'">datetime_2</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">seconds_between</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="TruncateReleasesList" boring="true">
+                <s:beanshell>
+                  <s:scriptvalue>import java.text.SimpleDateFormat;
+
+dateAndTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+dates = new ArrayList();
+
+cutoffDate = dateAndTime.parse(cutoff_date);
+
+for (dateString : release_datetimes) {
+  currDate = dateAndTime.parse(dateString); 
+  if (currDate.before(cutoffDate)) {  
+   dates.add(currDate);
+  }
+}
+
+trunc_release_datetimes = new ArrayList();
+
+for (Date myDate : dates ) {
+  trunc_release_datetimes.add(dateAndTime.format(myDate));
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="l('text/plain')">release_datetimes</s:beanshellinput>
+                    <s:beanshellinput s:syntactictype="'text/plain'">cutoff_date</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">trunc_release_datetimes</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="GetFirstRelease">
+                <s:beanshell>
+                  <s:scriptvalue>import java.text.SimpleDateFormat;
+
+dateAndTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+dates = new TreeSet();
+
+for (dateString : datetimes) {
+  dates.add(dateAndTime.parse(dateString));
+}
+
+chosenDate = dates.first();
+
+chosen_datetime = dateAndTime.format(chosenDate);</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="l('text/plain')">datetimes</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">chosen_datetime</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="GetLastRelease">
+                <s:defaults>
+                  <s:default name="index_wanted">1</s:default>
+                </s:defaults>
+                <s:beanshell>
+                  <s:scriptvalue>import java.text.SimpleDateFormat;
+
+dateAndTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+dates = new ArrayList();
+
+for (dateString : datetimes) {
+  dates.add(dateAndTime.parse(dateString));
+}
+
+Collections.sort(dates);
+Collections.reverse(dates);
+
+chosenDate = dates.get(Integer.valueOf(index_wanted) - 1);
+
+chosen_datetime = dateAndTime.format(chosenDate);</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">index_wanted</s:beanshellinput>
+                    <s:beanshellinput s:syntactictype="l('text/plain')">datetimes</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">chosen_datetime</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="GetReleaseForDensityCalc">
+                <s:beanshell>
+                  <s:scriptvalue>import java.text.SimpleDateFormat;
+
+dateAndTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+dates = new ArrayList();
+
+for (dateString : datetimes) {
+  dates.add(dateAndTime.parse(dateString));
+}
+
+Collections.sort(dates);
+Collections.reverse(dates);
+
+chosenDate = dates.get(Integer.valueOf(index_wanted) - 1);
+
+chosen_datetime = dateAndTime.format(chosenDate);</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">index_wanted</s:beanshellinput>
+                    <s:beanshellinput s:syntactictype="l('text/plain')">datetimes</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">chosen_datetime</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="CalcTimeBetweenFirstAndLast">
+                <s:beanshell>
+                  <s:scriptvalue>import java.text.SimpleDateFormat;
+
+dateAndTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+yingDate = dateAndTime.parse(datetime_1);
+yangDate = dateAndTime.parse(datetime_2);
+
+distance = ( yingDate.getTime() - yangDate.getTime() ) / 1000;
+
+// Need absolute value
+seconds_between = Math.abs(distance);</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">datetime_1</s:beanshellinput>
+                    <s:beanshellinput s:syntactictype="'text/plain'">datetime_2</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">seconds_between</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="CalcDensityLength">
+                <s:beanshell>
+                  <s:scriptvalue>import java.text.SimpleDateFormat;
+
+dateAndTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+yingDate = dateAndTime.parse(datetime_1);
+yangDate = dateAndTime.parse(datetime_2);
+
+distance = ( yingDate.getTime() - yangDate.getTime() ) / 1000;
+
+// Need absolute value
+seconds_between = Math.abs(distance);</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">datetime_1</s:beanshellinput>
+                    <s:beanshellinput s:syntactictype="'text/plain'">datetime_2</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">seconds_between</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="count_releases">
+                <s:beanshell>
+                  <s:scriptvalue>release_count = releases.size();</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="l('text/plain')">releases</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">release_count</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:link source="cutoff_date" sink="TimeBetweenLastAndCutoff:datetime_2" />
+              <s:link source="cutoff_date" sink="TruncateReleasesList:cutoff_date" />
+              <s:link source="GetLastRelease:chosen_datetime" sink="CalcDensityLength:datetime_2" />
+              <s:link source="GetLastRelease:chosen_datetime" sink="TimeBetweenLastAndCutoff:datetime_1" />
+              <s:link source="TruncateReleasesList:trunc_release_datetimes" sink="GetLastRelease:datetimes" />
+              <s:link source="TruncateReleasesList:trunc_release_datetimes" sink="count_releases:releases" />
+              <s:link source="num_releases_for_density" sink="GetReleaseForDensityCalc:index_wanted" />
+              <s:link source="GetReleaseForDensityCalc:chosen_datetime" sink="CalcDensityLength:datetime_1" />
+              <s:link source="TruncateReleasesList:trunc_release_datetimes" sink="GetReleaseForDensityCalc:datetimes" />
+              <s:link source="list_of_release_dates_xsd_datetime" sink="SplitOutReleases:xml-text" />
+              <s:link source="GetFirstRelease:chosen_datetime" sink="CalcTimeBetweenFirstAndLast:datetime_1" />
+              <s:link source="GetLastRelease:chosen_datetime" sink="CalcTimeBetweenFirstAndLast:datetime_2" />
+              <s:link source="SplitOutReleases:nodelist" sink="TruncateReleasesList:release_datetimes" />
+              <s:link source="TruncateReleasesList:trunc_release_datetimes" sink="GetFirstRelease:datetimes" />
+              <s:link source="CalcDensityLength:seconds_between" sink="recent_release_density" />
+              <s:link source="CalcTimeBetweenFirstAndLast:seconds_between" sink="time_between_first_last_release" />
+              <s:link source="TimeBetweenLastAndCutoff:seconds_between" sink="time_between_last_release_and_cutoff" />
+              <s:link source="count_releases:release_count" sink="release_count" />
+              <s:source name="cutoff_date" />
+              <s:source name="num_releases_for_density" />
+              <s:source name="list_of_release_dates_xsd_datetime" />
+              <s:sink name="recent_release_density" />
+              <s:sink name="release_count" />
+              <s:sink name="time_between_last_release_and_cutoff" />
+              <s:sink name="time_between_first_last_release" />
+            </s:scufl>
+          </s:workflow>
+          <s:iterationstrategy>
+            <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="list_of_release_dates_xsd_datetime" />
+              <i:iterator name="cutoff_date" />
+            </i:dot>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:processor name="GetReleases">
+          <s:description>This workflow gets a release list for a project.  It uses a wsdl defined proxy to access the Notre Dame Sourceforge repository.</s:description>
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:18788b61-e1ef-47f6-8373-538c0163e45b" author="James Howison" title="get_data_notre_dame">This workflow gets a release list for a project.  It uses a wsdl defined proxy to access the Notre Dame Sourceforge repository.</s:workflowdescription>
+              <s:processor name="extract_release_dates">
+                <s:defaults>
+                  <s:default name="xpath">/records/record/release-date-epoch</s:default>
+                </s:defaults>
+                <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+              </s:processor>
+              <s:processor name="buildQueryWhere">
+                <s:beanshell>
+                  <s:scriptvalue>where_clause = "schema.groups.unix_group_name = '"+sf_unixname+"' AND schema.frs_package.group_id = schema.groups.group_id AND schema.frs_package.package_id = schema.frs_release.package_id";</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">sf_unixname</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">where_clause</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="MergeReleasesToYamlArray">
+                <s:beanshell>
+                  <s:scriptvalue>releases_xml = "&lt;releases&gt;\n";
+
+for (String datetime : datetimes) {
+  releases_xml = releases_xml + "&lt;release&gt;"+datetime+"&lt;/release&gt;\n";
+}
+
+releases_xml = releases_xml + "&lt;/releases&gt;\n";</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="l('text/plain')">datetimes</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">releases_xml</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="ConvertEpochToXSD">
+                <s:beanshell>
+                  <s:scriptvalue>import java.text.SimpleDateFormat;
+
+dateAndTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+long milliSecs = Long.valueOf(epoch) * 1000;
+
+epochDate = new Date(milliSecs); // wants milliseconds
+
+xsdDateTime = dateAndTime.format(epochDate);</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">epoch</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">xsdDateTime</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="MakeQuery">
+                <s:defaults>
+                  <s:default name="nd_username">temp_username</s:default>
+                  <s:default name="nd_password">temp_password</s:default>
+                  <s:default name="schema">sf1105</s:default>
+                  <s:default name="select">schema.frs_release.release_date AS release_date_epoch</s:default>
+                  <s:default name="from">schema.groups, schema.frs_package, schema.frs_release</s:default>
+                  <s:default name="fix_xml">true</s:default>
+                </s:defaults>
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://rails-test.floss.syr.edu/notre_dame_sf/wsdl</s:wsdl>
+                  <s:operation>MakeQuery</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:link source="sf_unixname" sink="buildQueryWhere:sf_unixname" />
+              <s:link source="ConvertEpochToXSD:xsdDateTime" sink="MergeReleasesToYamlArray:datetimes" />
+              <s:link source="MakeQuery:return" sink="extract_release_dates:xml-text" />
+              <s:link source="MergeReleasesToYamlArray:releases_xml" sink="releases_as_xml" />
+              <s:link source="buildQueryWhere:where_clause" sink="MakeQuery:where" />
+              <s:link source="extract_release_dates:nodelist" sink="ConvertEpochToXSD:epoch" />
+              <s:source name="sf_unixname" />
+              <s:sink name="releases_as_xml" />
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:link source="sf_unixname" sink="GatherCSV:sf_unixname_list" />
+        <s:link source="GetReleases:releases_as_xml" sink="SummarizeReleases:list_of_release_dates_xsd_datetime" />
+        <s:link source="SummarizeReleases:recent_release_density" sink="GatherCSV:release_density_list" />
+        <s:link source="SummarizeReleases:release_count" sink="GatherCSV:release_count_list" />
+        <s:link source="SummarizeReleases:time_between_last_release_and_cutoff" sink="GatherCSV:time_last_and_cutoff_list" />
+        <s:link source="sf_unixname" sink="GetReleases:sf_unixname" />
+        <s:link source="GetFLOSSmoleData:aggregate_downloads" sink="GatherCSV:downloads_list" />
+        <s:link source="GetFLOSSmoleData:data_for_date" sink="SummarizeReleases:cutoff_date" />
+        <s:link source="GetFLOSSmoleData:has_sf_url" sink="GatherCSV:has_sf_url_list" />
+        <s:link source="GetFLOSSmoleData:lifespan_days" sink="GatherCSV:lifespan_list" />
+        <s:link source="SummarizeReleases:time_between_first_last_release" sink="GatherCSV:time_first_and_last_list" />
+        <s:link source="num_releases_threshold" sink="SummarizeReleases:num_releases_for_density" />
+        <s:link source="sf_unixname" sink="GetFLOSSmoleData:sf_unixname" />
+        <s:link source="GatherCSV:out_csv" sink="data_for_classification_csv" />
+        <s:source name="sf_unixname">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>l(text/plain)</s:mimeType>
+            </s:mimeTypes>
+          </s:metadata>
+        </s:source>
+        <s:source name="num_releases_threshold" />
+        <s:sink name="data_for_classification_csv" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Classification:classtypes" sink="delist_classtypes:stringlist" />
+  <s:link source="Classification:stages" sink="delist_stages:stringlist" />
+  <s:link source="GetData:data_for_classification_csv" sink="Classification:data_for_classification" />
+  <s:link source="delist_classtypes:concatenated" sink="Class_Analysis:classtypes" />
+  <s:link source="delist_stages:concatenated" sink="Stages_Analysis:stages" />
+  <s:link source="download_threshold:value" sink="Classification:download_threshold" />
+  <s:link source="initiation_age_threshold:value" sink="Classification:initiation_threshold" />
+  <s:link source="project_unixname" sink="GetData:sf_unixname" />
+  <s:link source="mortality_threshold:value" sink="Classification:mortality_threshold" />
+  <s:link source="release_count_threshold:value" sink="Classification:release_count_threshold" />
+  <s:link source="release_count_threshold:value" sink="GetData:num_releases_threshold" />
+  <s:link source="release_lag_threshold:value" sink="Classification:release_lag_threshold" />
+  <s:link source="release_rate_type:value" sink="Classification:release_rate_type" />
+  <s:link source="release_recency_threshold:value" sink="Classification:release_recency_threshold" />
+  <s:link source="Class_Analysis:analysis_output" sink="Analysis_Output" />
+  <s:link source="Classification:classified_data" sink="Classification_Output" />
+  <s:link source="Stages_Analysis:analysis_output" sink="Stages_Output" />
+  <s:source name="project_unixname" />
+  <s:sink name="Classification_Output" />
+  <s:sink name="Analysis_Output" />
+  <s:sink name="Stages_Output" />
+</s:scufl>
+

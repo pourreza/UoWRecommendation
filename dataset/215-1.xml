@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:70d8a2a8-a369-4824-879d-dbfa36fcecc8" author="Hamish McWilliam" title="tmap_single_sequence">Simple workflow using tmap to find transmembrane regions, using a single sequence as input.</s:workflowdescription>
+  <s:processor name="tmap">
+    <s:description>Displays membrane spanning regions</s:description>
+    <s:defaults>
+      <s:default name="graph_format">png</s:default>
+    </s:defaults>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/protein_2d_structure.tmap</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="Sequence_or_ID">
+    <s:description>For an entry identifer, fetch the sequence, otherwise ensure the sequence is in fasta format.</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:70d8a2a8-a369-4824-879d-dbfa36fcecc8" author="Hamish McWilliam" title="Sequence_or_ID">Given a sequence or sequence entry identifer (e.g. uniprot:wap_rat), return the sequence in fasta format.
+
+If a sequence identifier, in database:identifier format, is input the EBI's WSDbfetch web service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch) is used to retrive the sequence in fasta format. Otherwise the input is assumed to be a sequence and if passed through the Soaplab EMBOSS seqret service to force the sequence into fasta format.</s:workflowdescription>
+        <s:processor name="Is_sequence">
+          <s:description>Return true if the input is a sequence or false if the input is a sequence identifer (e.g. uniprot:wap_rat).</s:description>
+          <s:beanshell>
+            <s:scriptvalue>lineLen = sequence.indexOf("\n");
+if(lineLen &lt; 1) {
+  lineLen = sequence.length();
+}
+if(!sequence.startsWith("&gt;") &amp;&amp;
+   sequence.indexOf(":") &gt; 0 &amp;&amp;
+   sequence.indexOf(":") &lt; lineLen) {
+  is_sequence = "false";
+} else {
+  is_sequence = "true";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">sequence</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">is_sequence</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Fail_if_identifer">
+          <s:description>Fails if the workflow input is an identifier (i.e. is an actual sequence).</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="Fail_if_sequence">
+          <s:description>Fails if the workflow input was a sequence (i.e. is an identifer).</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+        </s:processor>
+        <s:processor name="fetchData">
+          <s:description>Fetch the sequence in fasta format from the identifer using EBI's WSDbfetch service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch).</s:description>
+          <s:defaults>
+            <s:default name="format">fasta</s:default>
+            <s:default name="style">raw</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSDbfetch.wsdl</s:wsdl>
+            <s:operation>fetchData</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="seqret">
+          <s:description>Format sequence into fasta format.</s:description>
+          <s:defaults>
+            <s:default name="osformat">fasta</s:default>
+          </s:defaults>
+          <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/edit.seqret</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="Sequence_or_ID" sink="Is_sequence:sequence" />
+        <s:link source="Is_sequence:is_sequence" sink="Fail_if_identifer:test" />
+        <s:link source="Is_sequence:is_sequence" sink="Fail_if_sequence:test" />
+        <s:link source="Sequence_or_ID" sink="fetchData:query" />
+        <s:link source="Sequence_or_ID" sink="seqret:sequence_direct_data" />
+        <s:link source="fetchData:fetchDataReturn" sink="Sequence" />
+        <s:link source="seqret:outseq" sink="Sequence" />
+        <s:source name="Sequence_or_ID">
+          <s:metadata>
+            <s:description>Either an actual sequence or an entry identifer in database:identifier format (e.g. uniprot:wap_rat).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="Sequence">
+          <s:metadata>
+            <s:description>Sequence in fasta format.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:coordination name="fetchData_BLOCKON_Fail_if_sequence">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_sequence</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>fetchData</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="seqret_BLOCKON_Fail_if_identifer">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_identifer</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>seqret</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Sequence_or_ID" sink="Sequence_or_ID:Sequence_or_ID" />
+  <s:link source="Sequence_or_ID:Sequence" sink="tmap:sequences_direct_data" />
+  <s:link source="tmap:Graphics_in_PNG" sink="tmap_plot" />
+  <s:link source="tmap:outfile" sink="tmap_report" />
+  <s:source name="Sequence_or_ID">
+    <s:metadata>
+      <s:description>Input sequence to analyse for transmembrane regions. Either the actual sequence (fasta format recommended) or an entry identifer in database:identifer format (e.g. uniprot:LPHN2_RAT).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="tmap_report">
+    <s:metadata>
+      <s:description>Output of tmap describing the found transmembrane features.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="tmap_plot">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>image/png</s:mimeType>
+      </s:mimeTypes>
+      <s:description>Plot showing the tmap score and the predicted transmembrane regions.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

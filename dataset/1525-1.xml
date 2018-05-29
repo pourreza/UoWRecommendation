@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:2892f337-c894-4707-a205-c19d5f185ccb" author="" title="Sff2Fasta_Blast_ParseBlast" />
+  <s:processor name="config_Blast" boring="true">
+    <s:stringconstant>lfn://lfc.grid.sara.nl:5010/grid/vlemed/AMC-e-BioScience/Sequence_WF/Blast/GasW/blastSeqFile.xml</s:stringconstant>
+  </s:processor>
+  <s:processor name="config_Sff2Fasta" boring="true">
+    <s:stringconstant>lfn://lfc.grid.sara.nl:5010/grid/vlemed/AMC-e-BioScience/Sequence_WF/bwa/GasW/Sff2Fasta.xml</s:stringconstant>
+  </s:processor>
+  <s:processor name="Blast" workers="1500">
+    <s:description>Service definition of function ns__GASWexecution</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://egee1.unice.fr/wsdl/gasw_service.wsdl</s:wsdl>
+      <s:operation>GASWexecution</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="config_ParseBlast" boring="true">
+    <s:stringconstant>lfn://lfc.grid.sara.nl:5010/grid/vlemed/AMC-e-BioScience/Sequence_WF/Blast/GasW/ParseBlast.xml</s:stringconstant>
+  </s:processor>
+  <s:processor name="ParseBlast" workers="1500">
+    <s:description>Service definition of function ns__GASWexecution</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://egee1.unice.fr/wsdl/gasw_service.wsdl</s:wsdl>
+      <s:operation>GASWexecution</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Sff2Fasta" workers="1500">
+    <s:description>Service definition of function ns__GASWexecution</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://egee1.unice.fr/wsdl/gasw_service.wsdl</s:wsdl>
+      <s:operation>GASWexecution</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="DatabaseFastaGz" sink="Blast:input1" />
+  <s:link source="MaxBlastHitsPerEntry" sink="ParseBlast:input0" />
+  <s:link source="SffFile" sink="Sff2Fasta:input0" />
+  <s:link source="Blast:result0" sink="BlastOutTarGz" />
+  <s:link source="Blast:result0" sink="ParseBlast:input1" />
+  <s:link source="Sff2Fasta:result0" sink="Blast:input0" />
+  <s:link source="ParseBlast:result0" sink="ParsedBlastTxt" />
+  <s:link source="Sff2Fasta:result0" sink="FastaFile" />
+  <s:link source="Sff2Fasta:result1" sink="QualFile" />
+  <s:link source="Sff2Fasta:result2" sink="FlowFile" />
+  <s:link source="config_Blast:value" sink="Blast:config-file" />
+  <s:link source="config_ParseBlast:value" sink="ParseBlast:config-file" />
+  <s:link source="config_Sff2Fasta:value" sink="Sff2Fasta:config-file" />
+  <s:source name="SffFile" />
+  <s:source name="DatabaseFastaGz" />
+  <s:source name="MaxBlastHitsPerEntry" />
+  <s:sink name="FastaFile" />
+  <s:sink name="QualFile" />
+  <s:sink name="FlowFile" />
+  <s:sink name="BlastOutTarGz" />
+  <s:sink name="ParsedBlastTxt" />
+</s:scufl>
+

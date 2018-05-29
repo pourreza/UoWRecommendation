@@ -1,0 +1,753 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:09866f2b-c262-4361-abf5-b6a11e693bc8" author="Hamish McWilliam" title="Protein_transmembrane_prediction">Transmembrane and signal peptide prediction using three methods:
+1. EMBOSS tmap with a single sequence. Uses Soaplab tmap.
+2. Phobius. Uses EBI's WSPhobius web service.
+3. TMHMM and SignalP. Uses the TMHMM and SignalP methods of InterProScan via the EBI's WSInterProScan service.
+
+The results of the three methods are converted into GFF format and collated.</s:workflowdescription>
+  <s:processor name="EBI_Phobius">
+    <s:description>Predict transmembrane domains and signal peptide using Phobius.</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:51119a7e-5f92-4515-b018-a8970880289e" author="Hamish McWilliam" title="EBI_Phobius">The Phobius tool predicts transmembrane domains and signal peptide region from a protein sequence. This workflow uses the EBI's WSPhobius web service (see http://www.ebi.ac.uk/Tools/webservices/services/phobius) to access the tool. The predicted features are returned in a UniProtKB style feature listing.</s:workflowdescription>
+        <s:processor name="Contents_list">
+          <s:description>Wrap input data in a list.</s:description>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:arraytype optional="false" unbounded="false" wrapped="false" typename="WSArrayofData" name="content" qname="{http://www.ebi.ac.uk/WSPhobius}WSArrayofData">
+                <s:elementtype>
+                  <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSPhobius}data">
+                    <s:elements>
+                      <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                      <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                    </s:elements>
+                  </s:complextype>
+                </s:elementtype>
+              </s:arraytype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="runPhobius">
+          <s:description>Submit a Phobius analysis job
+(see http://www.ebi.ac.uk/Tools/webservices/services/phobius#runphobius_params_content)</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSPhobius.wsdl</s:wsdl>
+            <s:operation>runPhobius</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Job_params">
+          <s:description>Parameters for the job. Set to give UniProtKB style features as output.</s:description>
+          <s:defaults>
+            <s:default name="outputformat">long</s:default>
+            <s:default name="async">1</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="inputParams" name="params" qname="{http://www.ebi.ac.uk/WSPhobius}inputParams">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="outputformat" qname="inputParams&gt;outputformat" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="inputParams&gt;email" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="async" qname="inputParams&gt;async" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Input_data">
+          <s:description>Add a type to the input data.</s:description>
+          <s:defaults>
+            <s:default name="type">sequence</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSPhobius}data">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Unpack_text_output">
+          <s:description>Unpack byte[] recived into a string.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="Get_text_result">
+          <s:description>Wait until the job has finished and get the specified type of result data.
+(see http://www.ebi.ac.uk/Tools/webservices/services/phobius#poll_jobid_type)</s:description>
+          <s:defaults>
+            <s:default name="type">tooloutput</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSPhobius.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="EBI_Phobius_poll_job" boring="true">
+          <s:description>Check for job completion.</s:description>
+          <s:workflow maxretries="100" retrydelay="5000">
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:4024c5e5-a4d5-46f6-b9ed-88e66d17da87" author="" title="EBI_Phobius_poll_job" />
+              <s:processor name="Is_done">
+                <s:beanshell>
+                  <s:scriptvalue>if(job_status.equals("DONE")) {
+  is_done = "true";
+} else {
+  is_done = "false";
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">job_status</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">is_done</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="checkStatus">
+                <s:description>Get the status of a submited job
+(see http://www.ebi.ac.uk/Tools/webservices/services/phobius#checkstatus_jobid)</s:description>
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSPhobius.wsdl</s:wsdl>
+                  <s:operation>checkStatus</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:processor name="Success">
+                <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+              </s:processor>
+              <s:link source="Job_ID" sink="checkStatus:jobid" />
+              <s:link source="Is_done:is_done" sink="Success:test" />
+              <s:link source="checkStatus:status" sink="Is_done:job_status" />
+              <s:link source="checkStatus:status" sink="Job_status" />
+              <s:source name="Job_ID" />
+              <s:sink name="Job_status" />
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:processor name="Format_as_GFF">
+          <s:beanshell>
+            <s:scriptvalue>import java.util.StringTokenizer;
+
+// GFF format document
+phobius_gff = "";
+// Sequence ID
+seqId = "";
+
+// Break input into lines.
+StringTokenizer tok1 = new StringTokenizer(phobius_output, "\n");
+while(tok1.hasMoreElements()) {
+  line = tok1.nextElement();
+  if(line.startsWith("ID ")) {
+    seqId = line.substring(5);
+  }
+  else if(line.startsWith("FT ")) {
+    phobius_gff += seqId + "\tPhobius";
+    StringTokenizer tok2 = new StringTokenizer(line);
+    fieldCount = 0;
+    while(tok2.hasMoreElements()) {
+      fieldStr = tok2.nextElement();
+      fieldCount++;
+      if(fieldCount &gt; 1 &amp;&amp; fieldCount &lt; 4) {
+        phobius_gff += "\t" + fieldStr;
+      }
+      else if(fieldCount == 4) { // Stop coord
+        phobius_gff += "\t" + fieldStr + "\t.\t.\t.\t";
+      }
+      else if(fieldCount &gt; 4) {
+        phobius_gff += fieldStr + " ";
+      }
+    }
+    phobius_gff += "\n";
+  }
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">phobius_output</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">phobius_gff</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:link source="Contents_list:output" sink="runPhobius:content" />
+        <s:link source="Email" sink="Job_params:email" />
+        <s:link source="Format_as_GFF:phobius_gff" sink="Phobius_GFF" />
+        <s:link source="Get_text_result:output" sink="Unpack_text_output:bytes" />
+        <s:link source="Input_data:output" sink="Contents_list:WSArrayofData" />
+        <s:link source="Sequence_or_ID" sink="Input_data:content" />
+        <s:link source="Job_params:output" sink="runPhobius:params" />
+        <s:link source="Unpack_text_output:string" sink="Format_as_GFF:phobius_output" />
+        <s:link source="Unpack_text_output:string" sink="Phobius_output" />
+        <s:link source="runPhobius:jobid" sink="EBI_Phobius_poll_job:Job_ID" />
+        <s:link source="runPhobius:jobid" sink="Get_text_result:jobid" />
+        <s:link source="runPhobius:jobid" sink="Job_ID" />
+        <s:source name="Email">
+          <s:metadata>
+            <s:description>User e-mail address.</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Sequence_or_ID">
+          <s:metadata>
+            <s:description>Protein sequence to analyse. Either the actual sequence (fasta format recommended) or an entry identifer in database:identifer format (e.g. uniprot:LPHN2_RAT).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="Job_ID">
+          <s:metadata>
+            <s:description>EBI job identifier.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Phobius_output">
+          <s:metadata>
+            <s:description>Predicted features in a UniProtKB style format.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Phobius_GFF" />
+        <s:coordination name="Get_text_result_BLOCKON_EBI_Phobius_poll_job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>EBI_Phobius_poll_job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_text_result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="EBI_InterProScan_tmhmm_signalp">
+    <s:description>Predict transmembrane regions using TMHMM and signal peptide using SignalP.</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f930f2fc-7b4b-48f9-abb0-e336b76e0ea0" author="Hamish McWilliam" title="EBI_InterProScan_tmhmm_signalp">Use the TMHMM and SignalP methods of InterProScan to perform transmembrane and signal peptide prediction. The EBI's InterProScan web service (see http://www.ebi.ac.uk/Tools/webservices/services/interproscan) is used.</s:workflowdescription>
+        <s:processor name="Unpack_XML_result">
+          <s:description>Unpack byte[] version of result into a string.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="Job_params">
+          <s:description>InterProScan job parameters.</s:description>
+          <s:defaults>
+            <s:default name="app">tmhmm signalp</s:default>
+            <s:default name="crc">0</s:default>
+            <s:default name="seqtype">p</s:default>
+            <s:default name="goterms">0</s:default>
+            <s:default name="async">1</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="inputParams" name="params" qname="{http://www.ebi.ac.uk/WSInterProScan}inputParams">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="app" qname="inputParams&gt;app" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="crc" qname="inputParams&gt;crc" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="seqtype" qname="inputParams&gt;seqtype" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="trlen" qname="inputParams&gt;trlen" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="trtable" qname="inputParams&gt;trtable" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="goterms" qname="inputParams&gt;goterms" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="async" qname="inputParams&gt;async" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="outformat" qname="inputParams&gt;outformat" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="inputParams&gt;email" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Get_XML_result">
+          <s:description>Get the XML format result.</s:description>
+          <s:defaults>
+            <s:default name="type">toolxml</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSInterProScan.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Get_text_result">
+          <s:description>Get the plain text format result.</s:description>
+          <s:defaults>
+            <s:default name="type">toolraw</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSInterProScan.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="runInterProScan">
+          <s:description>Submit the InterProScan job.</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSInterProScan.wsdl</s:wsdl>
+            <s:operation>runInterProScan</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Input_data">
+          <s:description>Populate input data structure with input sequence and data type.</s:description>
+          <s:defaults>
+            <s:default name="type">sequence</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSInterProScan}data">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Content_list">
+          <s:description>Wrap input data in a list.</s:description>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:arraytype optional="false" unbounded="false" wrapped="false" typename="WSArrayofData" name="content" qname="{http://www.ebi.ac.uk/WSInterProScan}WSArrayofData">
+                <s:elementtype>
+                  <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSInterProScan}data">
+                    <s:elements>
+                      <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                      <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                    </s:elements>
+                  </s:complextype>
+                </s:elementtype>
+              </s:arraytype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Unpack_text_result">
+          <s:description>Unpack byte[] version of result into a string.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="EBI_InterProScan_poll_job" boring="true">
+          <s:description>Wait for the job to complete.</s:description>
+          <s:workflow maxretries="100" retrydelay="10000">
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:e3e01aab-c09b-4006-8fc1-31696b6c727d" author="" title="EBI_InterProScan_poll_job" />
+              <s:processor name="Is_done">
+                <s:description>Map status codes into true/false is done flag.</s:description>
+                <s:beanshell>
+                  <s:scriptvalue>if(job_status.equals("DONE")) {
+  is_done = "true";
+} else {
+  is_done = "false";
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">job_status</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">is_done</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="Success">
+                <s:description>If job has not finished fail the workflow.</s:description>
+                <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+              </s:processor>
+              <s:processor name="checkStatus">
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSInterProScan.wsdl</s:wsdl>
+                  <s:operation>checkStatus</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:link source="Job_ID" sink="checkStatus:jobid" />
+              <s:link source="Is_done:is_done" sink="Success:test" />
+              <s:link source="checkStatus:status" sink="Is_done:job_status" />
+              <s:link source="checkStatus:status" sink="Job_status" />
+              <s:source name="Job_ID">
+                <s:metadata>
+                  <s:description>EBI job identifer</s:description>
+                </s:metadata>
+              </s:source>
+              <s:sink name="Job_status">
+                <s:metadata>
+                  <s:description>Status of job</s:description>
+                </s:metadata>
+              </s:sink>
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:processor name="Format_as_GFF">
+          <s:beanshell>
+            <s:scriptvalue>import java.util.StringTokenizer;
+
+gff_result = "";
+
+StringTokenizer tok1 = new StringTokenizer(interproscan_text_result, "\n");
+while(tok1.hasMoreElements()) {
+  feat1 = tok1.nextElement();
+  StringTokenizer tok2 = new StringTokenizer(feat1, "\t");
+  fieldCount = 0;
+  while(tok2.hasMoreElements()) {
+    fieldCount++;
+    fieldStr = tok2.nextElement();
+    if(fieldCount &lt; 2) {
+      gff_result += fieldStr;
+    }
+    else if(fieldCount &gt; 4 &amp;&amp; fieldCount &lt; 9) {
+      gff_result += "\t" + fieldStr;
+    }
+  }
+  gff_result += "\t.\t.\t.\tInterProScan\n";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">interproscan_text_result</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">gff_result</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:link source="Content_list:output" sink="runInterProScan:content" />
+        <s:link source="Email_address" sink="Job_params:email" />
+        <s:link source="Get_XML_result:output" sink="Unpack_XML_result:bytes" />
+        <s:link source="Get_text_result:output" sink="Unpack_text_result:bytes" />
+        <s:link source="Input_data:output" sink="Content_list:WSArrayofData" />
+        <s:link source="Job_params:output" sink="runInterProScan:params" />
+        <s:link source="Sequence_or_ID" sink="Input_data:content" />
+        <s:link source="Format_as_GFF:gff_result" sink="GFF_result" />
+        <s:link source="Unpack_text_result:string" sink="Format_as_GFF:interproscan_text_result" />
+        <s:link source="Unpack_text_result:string" sink="InterProScan_text_result" />
+        <s:link source="runInterProScan:jobid" sink="EBI_InterProScan_poll_job:Job_ID" />
+        <s:link source="runInterProScan:jobid" sink="Get_XML_result:jobid" />
+        <s:link source="runInterProScan:jobid" sink="Get_text_result:jobid" />
+        <s:link source="Unpack_XML_result:string" sink="InterProScan_XML_result" />
+        <s:link source="runInterProScan:jobid" sink="Job_ID" />
+        <s:source name="Email_address">
+          <s:metadata>
+            <s:description>User e-mail address</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Sequence_or_ID">
+          <s:metadata>
+            <s:description>Input protein sequence for analysis. This can either be the actual sequence (fasta format recommended) or a database identifier in database:identifer format (e.g. uniprot:LPHN2_RAT).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="InterProScan_text_result">
+          <s:metadata>
+            <s:description>InterProScan result in tab delimited plain text format.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="InterProScan_XML_result">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>text/xml</s:mimeType>
+            </s:mimeTypes>
+            <s:description>InterProScan result in XML format.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Job_ID">
+          <s:metadata>
+            <s:description>EBI job identifier.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="GFF_result" />
+        <s:coordination name="Get_text_result_BLOCKON_EBI_InterProScan_poll_job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>EBI_InterProScan_poll_job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_text_result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Get_XML_result_BLOCKON_EBI_InterProScan_poll_job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>EBI_InterProScan_poll_job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_XML_result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="tmap_single_seq">
+    <s:description>Transmembrane region prediction using EMBOSS tmap.</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:70d8a2a8-a369-4824-879d-dbfa36fcecc8" author="Hamish McWilliam" title="tmap_single_sequence">Simple workflow using tmap to find transmembrane regions, using a single sequence as input.</s:workflowdescription>
+        <s:processor name="tmap">
+          <s:description>Displays membrane spanning regions</s:description>
+          <s:defaults>
+            <s:default name="graph_format">png</s:default>
+          </s:defaults>
+          <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/protein_2d_structure.tmap</s:soaplabwsdl>
+        </s:processor>
+        <s:processor name="Sequence_or_ID">
+          <s:description>For an entry identifer, fetch the sequence, otherwise ensure the sequence is in fasta format.</s:description>
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:70d8a2a8-a369-4824-879d-dbfa36fcecc8" author="Hamish McWilliam" title="Sequence_or_ID">Given a sequence or sequence entry identifer (e.g. uniprot:wap_rat), return the sequence in fasta format.
+
+If a sequence identifier, in database:identifier format, is input the EBI's WSDbfetch web service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch) is used to retrive the sequence in fasta format. Otherwise the input is assumed to be a sequence and if passed through the Soaplab EMBOSS seqret service to force the sequence into fasta format.</s:workflowdescription>
+              <s:processor name="Is_sequence">
+                <s:description>Return true if the input is a sequence or false if the input is a sequence identifer (e.g. uniprot:wap_rat).</s:description>
+                <s:beanshell>
+                  <s:scriptvalue>lineLen = sequence.indexOf("\n");
+if(lineLen &lt; 1) {
+  lineLen = sequence.length();
+}
+if(!sequence.startsWith("&gt;") &amp;&amp;
+   sequence.indexOf(":") &gt; 0 &amp;&amp;
+   sequence.indexOf(":") &lt; lineLen) {
+  is_sequence = "false";
+} else {
+  is_sequence = "true";
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">sequence</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">is_sequence</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="Fail_if_identifer">
+                <s:description>Fails if the workflow input is an identifier (i.e. is an actual sequence).</s:description>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+              </s:processor>
+              <s:processor name="Fail_if_sequence">
+                <s:description>Fails if the workflow input was a sequence (i.e. is an identifer).</s:description>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+              </s:processor>
+              <s:processor name="fetchData">
+                <s:description>Fetch the sequence in fasta format from the identifer using EBI's WSDbfetch service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch).</s:description>
+                <s:defaults>
+                  <s:default name="format">fasta</s:default>
+                  <s:default name="style">raw</s:default>
+                </s:defaults>
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSDbfetch.wsdl</s:wsdl>
+                  <s:operation>fetchData</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:processor name="seqret">
+                <s:description>Format sequence into fasta format.</s:description>
+                <s:defaults>
+                  <s:default name="osformat">fasta</s:default>
+                </s:defaults>
+                <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/edit.seqret</s:soaplabwsdl>
+              </s:processor>
+              <s:link source="Sequence_or_ID" sink="Is_sequence:sequence" />
+              <s:link source="Is_sequence:is_sequence" sink="Fail_if_identifer:test" />
+              <s:link source="Is_sequence:is_sequence" sink="Fail_if_sequence:test" />
+              <s:link source="Sequence_or_ID" sink="fetchData:query" />
+              <s:link source="Sequence_or_ID" sink="seqret:sequence_direct_data" />
+              <s:link source="fetchData:fetchDataReturn" sink="Sequence" />
+              <s:link source="seqret:outseq" sink="Sequence" />
+              <s:source name="Sequence_or_ID">
+                <s:metadata>
+                  <s:description>Either an actual sequence or an entry identifer in database:identifier format (e.g. uniprot:wap_rat).</s:description>
+                </s:metadata>
+              </s:source>
+              <s:sink name="Sequence">
+                <s:metadata>
+                  <s:description>Sequence in fasta format.</s:description>
+                </s:metadata>
+              </s:sink>
+              <s:coordination name="fetchData_BLOCKON_Fail_if_sequence">
+                <s:condition>
+                  <s:state>Completed</s:state>
+                  <s:target>Fail_if_sequence</s:target>
+                </s:condition>
+                <s:action>
+                  <s:target>fetchData</s:target>
+                  <s:statechange>
+                    <s:from>Scheduled</s:from>
+                    <s:to>Running</s:to>
+                  </s:statechange>
+                </s:action>
+              </s:coordination>
+              <s:coordination name="seqret_BLOCKON_Fail_if_identifer">
+                <s:condition>
+                  <s:state>Completed</s:state>
+                  <s:target>Fail_if_identifer</s:target>
+                </s:condition>
+                <s:action>
+                  <s:target>seqret</s:target>
+                  <s:statechange>
+                    <s:from>Scheduled</s:from>
+                    <s:to>Running</s:to>
+                  </s:statechange>
+                </s:action>
+              </s:coordination>
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:processor name="Format_as_GFF">
+          <s:beanshell>
+            <s:scriptvalue>// Reformat a tmap report into GFF.
+
+import java.util.StringTokenizer;
+
+tmap_gff = ""; // Return GFF
+seqId = "";
+
+// Split into sections
+StringTokenizer tok1 = new StringTokenizer(tmap_output, "=");
+sectionNum = 0;
+while(tok1.hasMoreElements()) {
+  sectionStr = tok1.nextElement();
+  sectionNum++;
+  if(sectionNum == 4) { // Details for input sequence
+    // Split into lines
+    StringTokenizer tok2 = new StringTokenizer(sectionStr, "\n");
+    while(tok2.hasMoreElements()) {
+      lineStr = tok2.nextElement();
+      if(lineStr.startsWith("# Sequence: ")) { // Sequence ID
+        StringTokenizer tok3 = new StringTokenizer(lineStr);
+        fieldCount = 0;
+        while(tok3.hasMoreElements()) {
+          fieldStr = tok3.nextElement();
+          fieldCount++;
+          if(fieldCount == 3) {
+            seqId += fieldStr;
+          }
+        }
+      }
+    }
+  }
+  if(sectionNum == 5) { // Details of features
+    // Split into lines
+    StringTokenizer tok4 = new StringTokenizer(sectionStr, "\n");
+    while(tok4.hasMoreElements()) {
+      lineStr = tok4.nextElement();
+      if(!(lineStr.length() == 0 || lineStr.startsWith("#") || lineStr.startsWith("  Start"))) {
+        tmap_gff += seqId + "\ttmap\tTRANSMEM";
+        // Split into fields
+        StringTokenizer tok5 = new StringTokenizer(lineStr);
+        fieldCount = 0;
+        while(tok5.hasMoreElements()) {
+          fieldStr = tok5.nextElement();
+          fieldCount++;
+          if(fieldCount &gt; 0 &amp;&amp; fieldCount &lt; 3) { // Start and stop
+            tmap_gff += "\t" + fieldStr;
+          }
+        }
+        tmap_gff += "\t.\t.\t.\tEMBOSS tmap\n";
+      }
+    }
+  }
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">tmap_output</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">tmap_gff</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:link source="Sequence_or_ID" sink="Sequence_or_ID:Sequence_or_ID" />
+        <s:link source="Format_as_GFF:tmap_gff" sink="tmap_GFF" />
+        <s:link source="Sequence_or_ID:Sequence" sink="tmap:sequences_direct_data" />
+        <s:link source="tmap:outfile" sink="Format_as_GFF:tmap_output" />
+        <s:link source="tmap:Graphics_in_PNG" sink="tmap_plot" />
+        <s:link source="tmap:outfile" sink="tmap_report" />
+        <s:source name="Sequence_or_ID">
+          <s:metadata>
+            <s:description>Input sequence to analyse for transmembrane regions. Either the actual sequence (fasta format recommended) or an entry identifer in database:identifer format (e.g. uniprot:LPHN2_RAT).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="tmap_report">
+          <s:metadata>
+            <s:description>Output of tmap describing the found transmembrane features.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="tmap_plot">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>image/png</s:mimeType>
+            </s:mimeTypes>
+            <s:description>Plot showing the tmap score and the predicted transmembrane regions.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="tmap_GFF" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Merge_GFF">
+    <s:description>Collate GFF output from the prediction methods.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// Merge two GFF documents
+
+// Simply concatenate.
+gff_output = gff_input1 + gff_input2 + gff_input3;
+
+// Ideally the features would be sorted by start position 
+// so the correponding features would occur together.</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">gff_input1</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">gff_input2</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">gff_input3</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">gff_output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="Email" sink="EBI_InterProScan_tmhmm_signalp:Email_address" />
+  <s:link source="Email" sink="EBI_Phobius:Email" />
+  <s:link source="Sequence_or_ID" sink="EBI_InterProScan_tmhmm_signalp:Sequence_or_ID" />
+  <s:link source="Sequence_or_ID" sink="EBI_Phobius:Sequence_or_ID" />
+  <s:link source="Sequence_or_ID" sink="tmap_single_seq:Sequence_or_ID" />
+  <s:link source="EBI_InterProScan_tmhmm_signalp:GFF_result" sink="Merge_GFF:gff_input2" />
+  <s:link source="EBI_Phobius:Phobius_GFF" sink="Merge_GFF:gff_input1" />
+  <s:link source="tmap_single_seq:tmap_GFF" sink="Merge_GFF:gff_input3" />
+  <s:link source="EBI_InterProScan_tmhmm_signalp:InterProScan_text_result" sink="InterProScan_output" />
+  <s:link source="EBI_Phobius:Phobius_output" sink="Phobius_output" />
+  <s:link source="Merge_GFF:gff_output" sink="GFF_output" />
+  <s:link source="tmap_single_seq:tmap_report" sink="tmap_output" />
+  <s:source name="Email">
+    <s:metadata>
+      <s:description>User e-mail address.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Sequence_or_ID">
+    <s:metadata>
+      <s:description>Sequence to analyse. Either the actual sequence (fasta format recommended) or an entry identifier in database:identifer format (e.g. uniprot:LPHN2_RAT).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="Phobius_output">
+    <s:metadata>
+      <s:description>Predictions from Phobius.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="InterProScan_output">
+    <s:metadata>
+      <s:description>InterProScan methods TMHMM and SignalP predictions.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="tmap_output">
+    <s:metadata>
+      <s:description>EMBOSS tmap prediction, from single sequence input.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="GFF_output">
+    <s:metadata>
+      <s:description>Collated feature predictions in GFF format.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

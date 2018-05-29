@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:0d9b79b7-050c-495c-ae64-99338e61d50b" author="Thomas Kelder" title="Download pathways for external references list">Takes a list of external references to genes/proteins/metabolites, finds all pathways on WikiPathways that contain one of the given genes/proteins/metabolites and downloads them in a given file format.</s:workflowdescription>
+  <s:processor name="createFileName">
+    <s:beanshell>
+      <s:scriptvalue>String file_name = path_name + pathway_species + "_" + pathway_name;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">pathway_name</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">path_name</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">pathway_species</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">file_name</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="pathway_name" />
+        <i:iterator name="path_name" />
+        <i:iterator name="pathway_species" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="createPath">
+    <s:beanshell>
+      <s:scriptvalue>String path_name = output_path + File.separatorChar + 
+	xref + File.separatorChar;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">output_path</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">xref</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">path_name</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="count">
+    <s:beanshell>
+      <s:scriptvalue>int count = list.size();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">list</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">count</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="readXrefList">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="splitLines">
+    <s:defaults>
+      <s:default name="regex">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="clone_list">
+    <s:workflow>
+      <s:xscufllocation>http://www.myexperiment.org/workflows/106/download?version=1</s:xscufllocation>
+    </s:workflow>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="input" />
+        <i:iterator name="copy_number" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="write_pathway">
+    <s:defaults>
+      <s:default name="revision">0</s:default>
+    </s:defaults>
+    <s:workflow>
+      <s:xscufllocation>http://www.myexperiment.org/workflows/392/download?version=2</s:xscufllocation>
+    </s:workflow>
+    <s:iterationstrategy>
+      <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:dot>
+          <i:iterator name="file_name" />
+          <i:iterator name="pathway_id" />
+        </i:dot>
+        <i:iterator name="file_type" />
+      </i:cross>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="find_pathways_by_xref">
+    <s:defaults>
+      <s:default name="system_code" />
+    </s:defaults>
+    <s:workflow>
+      <s:xscufllocation>http://www.myexperiment.org/workflows/391/download?version=2</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:link source="output_path" sink="createPath:output_path" />
+  <s:link source="xreflist" sink="readXrefList:fileurl" />
+  <s:link source="clone_list:clones" sink="createFileName:path_name" />
+  <s:link source="count:count" sink="clone_list:copy_number" />
+  <s:link source="createFileName:file_name" sink="write_pathway:file_name" />
+  <s:link source="createPath:path_name" sink="clone_list:input" />
+  <s:link source="file_type" sink="write_pathway:file_type" />
+  <s:link source="find_pathways_by_xref:pathway_ids" sink="write_pathway:pathway_id" />
+  <s:link source="find_pathways_by_xref:pathway_names" sink="count:list" />
+  <s:link source="find_pathways_by_xref:pathway_names" sink="createFileName:pathway_name" />
+  <s:link source="find_pathways_by_xref:pathway_species" sink="createFileName:pathway_species" />
+  <s:link source="readXrefList:filecontents" sink="splitLines:string" />
+  <s:link source="splitLines:split" sink="createPath:xref" />
+  <s:link source="splitLines:split" sink="find_pathways_by_xref:identifier" />
+  <s:link source="write_pathway:writtenFile" sink="written_files" />
+  <s:source name="xreflist">
+    <s:metadata>
+      <s:description>The location of a text file containing on each line a gene/protein/metabolite identifier (e.g. P04637).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="output_path">
+    <s:metadata>
+      <s:description>The path to write the downloaded pathway files to.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="file_type">
+    <s:metadata>
+      <s:description>The type of the file to write. This can be one of:
+- gpml (xml format, for use in WikiPathways, PathVisio, Cytoscape)
+- png (rasterized image format)
+- svg (vector image format)
+- pdf (portable document format)
+- pwf (for use in Eu.Gene)
+- txt (a text file containing a list of external references for the genes/proteins/metabolites on the pathway)</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="written_files">
+    <s:metadata>
+      <s:description>A list of files that were written.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

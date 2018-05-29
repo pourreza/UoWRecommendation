@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+  <s:processor name="start" boring="true">
+    <s:stringconstant>19592504</s:stringconstant>
+  </s:processor>
+  <s:processor name="chromosome" boring="true">
+    <s:stringconstant>17</s:stringconstant>
+  </s:processor>
+  <s:processor name="comma" boring="true">
+    <s:stringconstant>,</s:stringconstant>
+  </s:processor>
+  <s:processor name="end" boring="true">
+    <s:stringconstant>44592504</s:stringconstant>
+  </s:processor>
+  <s:processor name="comma_separated">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="array_name" boring="true">
+    <s:stringconstant>Mouse430A_2</s:stringconstant>
+  </s:processor>
+  <s:processor name="database" boring="true">
+    <s:stringconstant>mus_musculus_core_36_34d</s:stringconstant>
+  </s:processor>
+  <s:processor name="spit_by_regex">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="regex" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="probeset_in_qtl">
+    <s:description>Gets the probesets that are in a region of a chromosome e.g. in a QTL or based on 2 marker names</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/qtl_analysis.probeset_in_qtl</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="array_name:value" sink="probeset_in_qtl:array_name" />
+  <s:link source="chromosome:value" sink="probeset_in_qtl:chromosome" />
+  <s:link source="comma:value" sink="comma_separated:seperator" />
+  <s:link source="database:value" sink="probeset_in_qtl:database" />
+  <s:link source="end:value" sink="probeset_in_qtl:end" />
+  <s:link source="comma_separated:concatenated" sink="comma_sep_probesets" />
+  <s:link source="probeset_in_qtl:output" sink="probesets_in_qtl" />
+  <s:link source="probeset_in_qtl:output" sink="spit_by_regex:string" />
+  <s:link source="regex:value" sink="spit_by_regex:regex" />
+  <s:link source="spit_by_regex:split" sink="comma_separated:stringlist" />
+  <s:link source="start:value" sink="probeset_in_qtl:start" />
+  <s:sink name="probesets_in_qtl" />
+  <s:sink name="comma_sep_probesets" />
+</s:scufl>
+
+

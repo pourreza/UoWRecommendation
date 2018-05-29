@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f37ba3c2-3f5d-4ea9-bf8a-767c2314d07a" author="Biosino why" title="Multi sequences NCBI BLAST">Run a BLAST analysis using the EBI's WSNCBIBlast service (see http://www.ebi.ac.uk/Tools/webservices/services/ncbiblast). This workflow wraps the EBI_NCBI_BLAST workflow to provide a basic user interface which prompts for the required inputs: sequence file, database, BLAST program and user e-mail. Other parameters (e.g. matrix, sort, gap penalties, etc.) are allowed to default.</s:workflowdescription>
+  <s:processor name="EBI_ncbiblast">
+    <s:workflow>
+      <s:xscufllocation>file:/D:/taverna/examples/EBIservices/NCBI_blast.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Ask_for_email_address">
+    <s:description>Input your E-mail address</s:description>
+    <s:defaults>
+      <s:default name="title">E-mail address</s:default>
+      <s:default name="message">Your e-mail address</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.AskWorker</s:local>
+  </s:processor>
+  <s:processor name="Search_database_list">
+    <s:description>List of database names for select.</s:description>
+    <s:defaults>
+      <s:default name="string">uniprot,swissprot,ipi,pdb,embl</s:default>
+      <s:default name="regex">,</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Select_database">
+    <s:description>choose database</s:description>
+    <s:defaults>
+      <s:default name="message">Search database</s:default>
+      <s:default name="title">Database</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.SelectWorker</s:local>
+  </s:processor>
+  <s:processor name="Blast_program_list">
+    <s:description>List of blast program names for select.</s:description>
+    <s:defaults>
+      <s:default name="string">blastp,blastn,blastx</s:default>
+      <s:default name="regex">,</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Select_blast_program">
+    <s:description>choose blast program</s:description>
+    <s:defaults>
+      <s:default name="message">Blast program</s:default>
+      <s:default name="title">Program</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.SelectWorker</s:local>
+  </s:processor>
+  <s:link source="Ask_for_email_address:answer" sink="EBI_ncbiblast:Email" />
+  <s:link source="Blast_program_list:split" sink="Select_blast_program:valueList" />
+  <s:link source="EBI_ncbiblast:Hit_id_list" sink="Hit_id_list" />
+  <s:link source="EBI_ncbiblast:Text_result" sink="Blast_result" />
+  <s:link source="Search_database_list:split" sink="Select_database:valueList" />
+  <s:link source="Select_blast_program:answer" sink="EBI_ncbiblast:BLAST_program" />
+  <s:link source="Select_database:answer" sink="EBI_ncbiblast:Search_database" />
+  <s:link source="Sequence_file" sink="EBI_ncbiblast:Sequence" />
+  <s:source name="Sequence_file">
+    <s:metadata>
+      <s:description>Select sequence file of fasta format</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="Hit_id_list" />
+  <s:sink name="Blast_result">
+    <s:metadata>
+      <s:description>text format result</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

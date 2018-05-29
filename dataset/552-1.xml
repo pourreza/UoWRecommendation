@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:544267e8-382b-4c20-a9ee-2bdcf7b4ed46" author="Thomas Kuhn" title="InsertMoleculesIntoDatabase">This workflow load molecules into a database. The molecules originally are stored in a MDL SD file. As workflow input an origin is added to each molecule which gets stored into the database. The output of the workflow shows logs from the database insert process.</s:workflowdescription>
+  <s:processor name="Read_MDL_SD_File_as_DB_input">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.io.ReadMDLSDFileAsDatabaseInput
+      <s:extensions>
+        <s:readmdlmolfile s:filename="" />
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Insert_Molecule_into_database">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.database.pgchem.InsertMoleculeIntoDB
+      <s:extensions>
+        <s:InsertMoleculeIntoDB>
+          <DBConnectionPostgres>
+            <DBURL>jdbc:postgresql://localhost/cdk-taverna</DBURL>
+            <DBUserName />
+            <DBUserPassword />
+            <SQLQuery>INSERT INTO molecules (molecule,originalid,origin,comment) VALUES(migrate_molecule(?),?,?,?)</SQLQuery>
+          </DBConnectionPostgres>
+        </s:InsertMoleculeIntoDB>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:link source="Read_MDL_SD_File_as_DB_input:resultStructures" sink="Insert_Molecule_into_database:inputStructures" />
+  <s:link source="origin" sink="Insert_Molecule_into_database:Origon" />
+  <s:link source="Insert_Molecule_into_database:comment" sink="Comments" />
+  <s:source name="origin" />
+  <s:sink name="Comments" />
+</s:scufl>
+

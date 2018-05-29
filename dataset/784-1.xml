@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:639d60e8-4d68-43af-9003-65cbded524f2" author="" title="getMap" />
+  <s:processor name="composeURL">
+    <s:beanshell>
+      <s:scriptvalue>List vars = new ArrayList(Arrays.asList(this.variables));
+
+// vars.remove("variables");
+vars.remove("bsh");
+
+
+String url = "http://gazetteer.openstreetmap.org/namefinder/?find";
+i=0;
+for (String variable : vars) {
+/*   if(i==0){
+	url = url + "=";
+   }		
+   url = url + eval(variable);
+   if(i==0){
+	url = url + "+near+";
+   }
+   if(i==1){
+	url = url + "%C";
+   }
+*/
+   if(i==2){
+	url = url + "=" + eval(variable) + "+near+";
+   }				
+   i++;
+}
+i=0;
+for(String variable : vars){
+	if(i==0){
+		url = url  + eval(variable) + "%2C";
+	}
+	i++;
+}
+i=0;
+for(String variable : vars){
+	if(i==1){
+		url = url + eval(variable);
+	}
+	i++;
+}
+url = url + "+";
+
+// Chop of last &amp;
+url = url.substring(0, url.length());</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">atarget</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">blat</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">clng</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="atarget" sink="composeURL:atarget" />
+  <s:link source="blat" sink="composeURL:blat" />
+  <s:link source="clng" sink="composeURL:clng" />
+  <s:link source="composeURL:url" sink="url" />
+  <s:source name="atarget" />
+  <s:source name="blat" />
+  <s:source name="clng" />
+  <s:sink name="url" />
+</s:scufl>
+

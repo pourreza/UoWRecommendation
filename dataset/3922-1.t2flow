@@ -1,0 +1,130 @@
+<workflow xmlns="http://taverna.sf.net/2008/xml/t2flow" version="1" producedBy="taverna-2.4.0"><dataflow id="1e19ec93-a021-4b89-8371-a652c8c0c27b" role="top"><name>Workflow6</name><inputPorts><port><name>siteinfo_drop</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port><port><name>worm_gen_matrix_drop</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port></inputPorts><outputPorts><port><name>NMDS</name><annotations /></port><port><name>stresses</name><annotations /></port></outputPorts><processors><processor><name>Rshell</name><inputPorts><port><name>siteinfo_drop</name><depth>0</depth></port><port><name>worm_gen_matrix_drop</name><depth>0</depth></port></inputPorts><outputPorts><port><name>NMDS</name><depth>0</depth><granularDepth>0</granularDepth></port><port><name>stresses</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>rshell-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.rshell.RshellActivity</class><inputMap><map from="worm_gen_matrix_drop" to="worm_gen_matrix_drop" /><map from="siteinfo_drop" to="siteinfo_drop" /></inputMap><outputMap><map from="NMDS" to="NMDS" /><map from="stresses" to="stresses" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.rshell.RshellActivityConfigurationBean xmlns="">
+  <inputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>worm_gen_matrix_drop</name>
+      <depth>0</depth>
+      <allowsLiteralValues>false</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>siteinfo_drop</name>
+      <depth>0</depth>
+      <allowsLiteralValues>false</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+  </inputs>
+  <outputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+      <name>stresses</name>
+      <depth>0</depth>
+      <mimeTypes />
+      <granularDepth>0</granularDepth>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+      <name>NMDS</name>
+      <depth>0</depth>
+      <mimeTypes />
+      <granularDepth>0</granularDepth>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+  </outputs>
+  <rVersion>false</rVersion>
+  <script># R Script authored by Daniel Pass, Cardiff University, UK
+# 3rd December 2013
+# 
+
+library(vegan)
+
+#Load data
+worm &lt;-read.csv(worm_gen_matrix_drop, header=TRUE)
+worm.env &lt;- read.csv(siteinfo_drop, header=TRUE)
+
+#Transpose so its one rows:sample, column:OTU
+worm_matrix &lt;- t(worm)
+
+#labels
+row.names(worm) &lt;-worm$Sample
+row.names(worm.env) &lt;-worm.env$Sample
+
+
+#Calculate distance
+worm.dis &lt;- vegdist(worm_matrix)
+
+#View stresses
+png(stresses)
+worm.mds0 &lt;-monoMDS(worm.dis)
+stressplot(worm.mds0, worm.dis)
+dev.off()
+
+
+#Make MDS
+png(NMDS)
+worm.mds &lt;- metaMDS(worm_matrix, trace = FALSE)
+plot(worm.mds, type = "p")		##t = labeled, p = points
+fac&lt;-worm.env$Site			## choose factor for grouping
+#ordispider(worm.mds,group=fac)		##also ordihull OR
+ordiellipse(worm.mds,group=fac, label=TRUE)
+
+
+#environmental variables
+ef &lt;- envfit(worm.mds ~ As + Cd + Cu  +  Fe + pH, worm.env)
+plot(ef)
+dev.off()
+
+#Save to pdf
+#pdf(file='c:/temp/hist.pdf')
+#plot(x)
+#dev.off()</script>
+  <connectionSettings>
+    <host>localhost</host>
+    <port>6311</port>
+    <keepSessionAlive>false</keepSessionAlive>
+    <newRVersion>false</newRVersion>
+  </connectionSettings>
+  <inputSymanticTypes>
+    <net.sf.taverna.t2.activities.rshell.RShellPortSymanticTypeBean>
+      <name>worm_gen_matrix_drop</name>
+      <symanticType>TEXT_FILE</symanticType>
+    </net.sf.taverna.t2.activities.rshell.RShellPortSymanticTypeBean>
+    <net.sf.taverna.t2.activities.rshell.RShellPortSymanticTypeBean>
+      <name>siteinfo_drop</name>
+      <symanticType>TEXT_FILE</symanticType>
+    </net.sf.taverna.t2.activities.rshell.RShellPortSymanticTypeBean>
+  </inputSymanticTypes>
+  <outputSymanticTypes>
+    <net.sf.taverna.t2.activities.rshell.RShellPortSymanticTypeBean>
+      <name>stresses</name>
+      <symanticType>PNG_FILE</symanticType>
+    </net.sf.taverna.t2.activities.rshell.RShellPortSymanticTypeBean>
+    <net.sf.taverna.t2.activities.rshell.RShellPortSymanticTypeBean>
+      <name>NMDS</name>
+      <symanticType>PNG_FILE</symanticType>
+    </net.sf.taverna.t2.activities.rshell.RShellPortSymanticTypeBean>
+  </outputSymanticTypes>
+</net.sf.taverna.t2.activities.rshell.RshellActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="siteinfo_drop" depth="0" /><port name="worm_gen_matrix_drop" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor></processors><conditions /><datalinks><datalink><sink type="processor"><processor>Rshell</processor><port>siteinfo_drop</port></sink><source type="dataflow"><port>siteinfo_drop</port></source></datalink><datalink><sink type="processor"><processor>Rshell</processor><port>worm_gen_matrix_drop</port></sink><source type="dataflow"><port>worm_gen_matrix_drop</port></source></datalink><datalink><sink type="dataflow"><port>NMDS</port></sink><source type="processor"><processor>Rshell</processor><port>NMDS</port></source></datalink><datalink><sink type="dataflow"><port>stresses</port></sink><source type="processor"><processor>Rshell</processor><port>stresses</port></source></datalink></datalinks><annotations><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>1e19ec93-a021-4b89-8371-a652c8c0c27b</identification>
+      </annotationBean>
+      <date>2013-12-03 20:36:04.415 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>7d6f91f1-8b1b-4355-b358-52500b8b48cf</identification>
+      </annotationBean>
+      <date>2013-12-03 20:28:27.566 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2></annotations></dataflow></workflow>

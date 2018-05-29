@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:e290bdf6-3305-4f4e-a093-145aa846b63f" author="Alan R Williams" title="Transform XML - no output file">The get_xml_file_from_web service downloads an example xml from myExperiment.  The content of that file is then saved to a temporary file by create_and_populate_xml_file.  The path to the temporary file is passed to the inFileURL port of Transform_XML.
+
+The get_xslt_file_from_web service downloads an example xslt file from myExperiment.  The content of that file is then saved to a temporary file by create_and_populate_xslt_file.  The path to the temporary file is passed to the xslFileURL port of Transform_XML.
+
+The Transform_XML service transforms the XML using the specified XSLT and sends the resultant XML document to its outputStr port and so to the workflow's out port.</s:workflowdescription>
+  <s:processor name="Transform_XML">
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XSLTWorker</s:local>
+  </s:processor>
+  <s:processor name="Create_and_populate_XML_file">
+    <s:beanshell>
+      <s:scriptvalue>File f = File.createTempFile("taverna", ".xml");
+
+BufferedWriter writer = new BufferedWriter(new FileWriter(f));
+writer.write(content);
+writer.close();
+
+filePath = f.getCanonicalPath();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">content</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">filePath</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Create_and_populate_xslt_file">
+    <s:beanshell>
+      <s:scriptvalue>File f = File.createTempFile("taverna", ".xslt");
+
+BufferedWriter writer = new BufferedWriter(new FileWriter(f));
+writer.write(content);
+writer.close();
+
+filePath = f.getCanonicalPath();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">content</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">filePath</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Get_xml_file_from_web">
+    <s:defaults>
+      <s:default name="url">http://www.myexperiment.org/blobs/137/download/test.xml?version=1</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="Get_xslt_file_from_web">
+    <s:defaults>
+      <s:default name="url">http://www.myexperiment.org/blobs/138/download/test.xslt?version=1</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:link source="Create_and_populate_XML_file:filePath" sink="Transform_XML:inFileURL" />
+  <s:link source="Create_and_populate_xslt_file:filePath" sink="Transform_XML:xslFileURL" />
+  <s:link source="Get_xml_file_from_web:contents" sink="Create_and_populate_XML_file:content" />
+  <s:link source="Get_xslt_file_from_web:contents" sink="Create_and_populate_xslt_file:content" />
+  <s:link source="Transform_XML:outputStr" sink="out" />
+  <s:sink name="out" />
+</s:scufl>
+

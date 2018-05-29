@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:VZJS5NJL4P0" author="Paul Fisher" title="BLASTP with simplified results returned">Perform a blastp search on protein sequence and extract information based on the user input, e.g. a list of GI numbers.
+
+N.B. this workflow does not function correctly as it is designed for use with NCBI blast scripts. Some errors may occur. Please use two blast text file inputs for a secure result output.</s:workflowdescription>
+  <s:processor name="species_filter" boring="true">
+    <s:stringconstant>Human, Mouse</s:stringconstant>
+  </s:processor>
+  <s:processor name="chromosome_filter" boring="true">
+    <s:stringconstant>1, 2, 3, 4, 5, 6, 7, 8, 9, 10</s:stringconstant>
+  </s:processor>
+  <s:processor name="blast_ddbj">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/Blast.wsdl</s:wsdl>
+      <s:operation>searchSimple</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="blastfilecomparer">
+    <s:description>Compares a new BLAST file output with an older BLAST file output to check for new hits</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.blastfilecomparer</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="blast_ddbj:Result" sink="blastfilecomparer:blastResult_direct_data" />
+  <s:link source="database" sink="blast_ddbj:database" />
+  <s:link source="program" sink="blast_ddbj:program" />
+  <s:link source="query" sink="blast_ddbj:query" />
+  <s:link source="blast_ddbj:Result" sink="blast_output" />
+  <s:link source="blastfilecomparer:output" sink="compared_output" />
+  <s:link source="chromosome_filter:value" sink="blastfilecomparer:chromo" />
+  <s:link source="species_filter:value" sink="blastfilecomparer:species" />
+  <s:source name="database" />
+  <s:source name="program" />
+  <s:source name="query" />
+  <s:sink name="blast_output" />
+  <s:sink name="compared_output" />
+</s:scufl>
+
+

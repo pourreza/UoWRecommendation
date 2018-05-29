@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f30606ae-6e79-4658-b803-73514a5bd5a9" author="Hamish McWilliam" title="Nucleotide_InterProScan">Run InterProScan using a nucleotide sequence as input.</s:workflowdescription>
+  <s:processor name="Nucleotide_ORF_translation">
+    <s:description>From a nucleotide sequence get the protein translations of the open reading frames (stop to stop) that are longer than a specifed minimum length.
+
+EMBOSS getorf is used to find the ORFs and perform the translations. The getorf tool is accessed via Soaplab (see http://www.ebi.ac.uk/Tools/webservices/soaplab/overview).</s:description>
+    <s:defaults>
+      <s:default name="Translation_table">1</s:default>
+      <s:default name="Minimum_ORF_length">240</s:default>
+    </s:defaults>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:29efbfca-ecfa-44f4-81e7-f6c1df5ea544" author="Hamish McWilliam" title="Nucleotide_ORF_translation">From a nucleotide sequence get the protein translations of the open reading frames (stop to stop) that are longer than a specifed minimum length.
+
+EMBOSS getorf is used to find the ORFs and perform the translations. The getorf tool is accessed via Soaplab (see http://www.ebi.ac.uk/Tools/webservices/soaplab/overview).</s:workflowdescription>
+        <s:processor name="Fasta_String_to_fasta_list">
+          <s:description>Split a string containing a set of sequences in fasta format into a list for fasta formated sequences.</s:description>
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:be87921d-4da7-42fd-a7b0-86dbc47d6579" author="Hamish McWilliam" title="Fasta_string_to_fasta_list">Split a string containing a set of sequences in fasta format into a list for fasta formated sequences.</s:workflowdescription>
+              <s:processor name="Add_angle">
+                <s:description>For sequences where the angle bracket (&gt;), denoting the start of the fasta formated sequence, was removed during the split, prepend it.</s:description>
+                <s:beanshell>
+                  <s:scriptvalue>if(!stripped_fasta.startsWith("&gt;")) {
+  full_fasta = "&gt;" + stripped_fasta;
+} else {
+  full_fasta = stripped_fasta;
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">stripped_fasta</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">full_fasta</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="Split_into_sequences">
+                <s:description>Split string using a regular expression, to get the individual sequences.</s:description>
+                <s:defaults>
+                  <s:default name="regex">\n&gt;</s:default>
+                </s:defaults>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+              </s:processor>
+              <s:link source="fasta_string" sink="Split_into_sequences:string" />
+              <s:link source="Split_into_sequences:split" sink="Add_angle:stripped_fasta" />
+              <s:link source="Add_angle:full_fasta" sink="fasta_list" />
+              <s:source name="fasta_string">
+                <s:metadata>
+                  <s:description>String containing one or more fasta sequences.</s:description>
+                </s:metadata>
+              </s:source>
+              <s:sink name="fasta_list">
+                <s:metadata>
+                  <s:description>List of fasta sequences.</s:description>
+                </s:metadata>
+              </s:sink>
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:processor name="Sequence_or_ID">
+          <s:description>Ensure the sequence is in fasta format.</s:description>
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:70d8a2a8-a369-4824-879d-dbfa36fcecc8" author="Hamish McWilliam" title="Sequence_or_ID">Given a sequence or sequence entry identifer (e.g. uniprot:wap_rat), return the sequence in fasta format.
+
+If a sequence identifier, in database:identifier format, is input the EBI's WSDbfetch web service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch) is used to retrive the sequence in fasta format. Otherwise the input is assumed to be a sequence and if passed through the Soaplab EMBOSS seqret service to force the sequence into fasta format.</s:workflowdescription>
+              <s:processor name="Fail_if_sequence">
+                <s:description>Fails if the workflow input was a sequence (i.e. is an identifer).</s:description>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+              </s:processor>
+              <s:processor name="Fail_if_identifer">
+                <s:description>Fails if the workflow input is an identifier (i.e. is an actual sequence).</s:description>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+              </s:processor>
+              <s:processor name="Is_sequence">
+                <s:description>Return true if the input is a sequence or false if the input is a sequence identifer (e.g. uniprot:wap_rat).</s:description>
+                <s:beanshell>
+                  <s:scriptvalue>lineLen = sequence.indexOf("\n");
+if(lineLen &lt; 1) {
+  lineLen = sequence.length();
+}
+if(!sequence.startsWith("&gt;") &amp;&amp;
+   sequence.indexOf(":") &gt; 0 &amp;&amp;
+   sequence.indexOf(":") &lt; lineLen) {
+  is_sequence = "false";
+} else {
+  is_sequence = "true";
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">sequence</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">is_sequence</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="fetchData">
+                <s:description>Fetch the sequence in fasta format from the identifer using EBI's WSDbfetch service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch).</s:description>
+                <s:defaults>
+                  <s:default name="format">fasta</s:default>
+                  <s:default name="style">raw</s:default>
+                </s:defaults>
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSDbfetch.wsdl</s:wsdl>
+                  <s:operation>fetchData</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:processor name="seqret">
+                <s:description>Format sequence into fasta format.</s:description>
+                <s:defaults>
+                  <s:default name="osformat">fasta</s:default>
+                </s:defaults>
+                <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/edit.seqret</s:soaplabwsdl>
+              </s:processor>
+              <s:link source="Sequence_or_ID" sink="Is_sequence:sequence" />
+              <s:link source="Is_sequence:is_sequence" sink="Fail_if_identifer:test" />
+              <s:link source="Is_sequence:is_sequence" sink="Fail_if_sequence:test" />
+              <s:link source="Sequence_or_ID" sink="fetchData:query" />
+              <s:link source="Sequence_or_ID" sink="seqret:sequence_direct_data" />
+              <s:link source="fetchData:fetchDataReturn" sink="Sequence" />
+              <s:link source="seqret:outseq" sink="Sequence" />
+              <s:source name="Sequence_or_ID">
+                <s:metadata>
+                  <s:description>Either an actual sequence or an entry identifer in database:identifier format (e.g. uniprot:wap_rat).</s:description>
+                </s:metadata>
+              </s:source>
+              <s:sink name="Sequence">
+                <s:metadata>
+                  <s:description>Sequence in fasta format.</s:description>
+                </s:metadata>
+              </s:sink>
+              <s:coordination name="fetchData_BLOCKON_Fail_if_sequence">
+                <s:condition>
+                  <s:state>Completed</s:state>
+                  <s:target>Fail_if_sequence</s:target>
+                </s:condition>
+                <s:action>
+                  <s:target>fetchData</s:target>
+                  <s:statechange>
+                    <s:from>Scheduled</s:from>
+                    <s:to>Running</s:to>
+                  </s:statechange>
+                </s:action>
+              </s:coordination>
+              <s:coordination name="seqret_BLOCKON_Fail_if_identifer">
+                <s:condition>
+                  <s:state>Completed</s:state>
+                  <s:target>Fail_if_identifer</s:target>
+                </s:condition>
+                <s:action>
+                  <s:target>seqret</s:target>
+                  <s:statechange>
+                    <s:from>Scheduled</s:from>
+                    <s:to>Running</s:to>
+                  </s:statechange>
+                </s:action>
+              </s:coordination>
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:processor name="getorf">
+          <s:description>Finds and extracts open reading frames
+                  (ORFs)</s:description>
+          <s:defaults>
+            <s:default name="find">0</s:default>
+            <s:default name="osformat">fasta</s:default>
+          </s:defaults>
+          <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/nucleic_gene_finding.getorf</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="Minimum_ORF_length" sink="getorf:minsize" />
+        <s:link source="Sequence_or_ID" sink="Sequence_or_ID:Sequence_or_ID" />
+        <s:link source="Sequence_or_ID:Sequence" sink="getorf:sequence_direct_data" />
+        <s:link source="Translation_table" sink="getorf:table" />
+        <s:link source="getorf:outseq" sink="Fasta_String_to_fasta_list:fasta_string" />
+        <s:link source="Fasta_String_to_fasta_list:fasta_list" sink="Translated_ORF_list" />
+        <s:link source="getorf:outseq" sink="Translated_ORFs" />
+        <s:source name="Sequence_or_ID">
+          <s:metadata>
+            <s:description>Input nucleotide sequence. Either the actual sequence (fasta format) or an entry identifier in database:identifer format (e.g. embl:x01153).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Translation_table">
+          <s:metadata>
+            <s:description>The ID of the codon translation table to be used (e.g. 1).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Minimum_ORF_length">
+          <s:metadata>
+            <s:description>Minimum ORF length to report in base pairs (e.g. 240).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="Translated_ORFs">
+          <s:metadata>
+            <s:description>Translations of the ORFs found.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Translated_ORF_list" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="EBI_NCBI_BLAST">
+    <s:defaults>
+      <s:default name="Search_database">uniprot</s:default>
+      <s:default name="BLAST_program">blastp</s:default>
+    </s:defaults>
+    <s:workflow>
+      <s:xscufllocation>file:/C:/Documents%20and%20Settings/hamish/My%20Documents/My%20Workflows/Taverna/EBI_NCBI_BLAST_for_InterProScan.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="EBI_InterProScan">
+    <s:workflow>
+      <s:xscufllocation>file:/C:/Documents%20and%20Settings/hamish/My%20Documents/My%20Workflows/Taverna/EBI_InterProScan.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Email_address" sink="EBI_InterProScan:Email_address" />
+  <s:link source="Email_address" sink="EBI_NCBI_BLAST:Email_address" />
+  <s:link source="Sequence_or_ID" sink="Nucleotide_ORF_translation:Sequence_or_ID" />
+  <s:link source="EBI_InterProScan:InterProScan_XML_result" sink="InterProScan_result_XML" />
+  <s:link source="EBI_InterProScan:InterProScan_text_result" sink="InterProScan_result_text" />
+  <s:link source="EBI_InterProScan:Job_ID" sink="InterProScan_job_ID" />
+  <s:link source="EBI_NCBI_BLAST:Sequence" sink="EBI_InterProScan:Sequence_or_ID" />
+  <s:link source="EBI_NCBI_BLAST:Job_ID" sink="NCBI_BLAST_job_ID" />
+  <s:link source="EBI_NCBI_BLAST:Text_result" sink="NCBI_BLAST_result_text" />
+  <s:link source="Nucleotide_ORF_translation:Translated_ORF_list" sink="EBI_NCBI_BLAST:Sequence_or_ID" />
+  <s:link source="Nucleotide_ORF_translation:Translated_ORF_list" sink="Translated_ORF_list" />
+  <s:source name="Sequence_or_ID">
+    <s:metadata>
+      <s:description>Input nucleotide sequence. Either the actual sequence (fasta format) or an entry identifier in database:identifer format (e.g. embl:x01153).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Email_address">
+    <s:metadata>
+      <s:description>User e-mail address.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="InterProScan_result_text">
+    <s:metadata>
+      <s:description>InterProScan result in tab-delimited format.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="InterProScan_result_XML">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+      <s:description>InterProScan result in XML format.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="Translated_ORF_list" />
+  <s:sink name="InterProScan_job_ID" />
+  <s:sink name="NCBI_BLAST_job_ID" />
+  <s:sink name="NCBI_BLAST_result_text" />
+</s:scufl>
+

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:87c56f6c-5d25-4d32-a24d-cc6e2582069a" author="Alan R Williams" title="List files by regex - empty directory">The create_temporary_directory beanshell creates a temporary directory and outputs the path to that directory.
+
+The empty directory is examined by the List_files_by_regex service.  Since there are no files, an empty list is output.</s:workflowdescription>
+  <s:processor name="create_temporary_directory">
+    <s:beanshell>
+      <s:scriptvalue>File temp = File.createTempFile("taverna", ".dir");
+temp.delete();
+temp.mkdir();
+temp.deleteOnExit();
+directoryPath = temp.getCanonicalPath();</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">directoryPath</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="List_Files_By_Regex">
+    <s:defaults>
+      <s:default name="regex">.*c.*</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.FileListByRegexTask</s:local>
+  </s:processor>
+  <s:link source="List_Files_By_Regex:filelist" sink="out" />
+  <s:link source="create_temporary_directory:directoryPath" sink="List_Files_By_Regex:directory" />
+  <s:sink name="out" />
+</s:scufl>
+

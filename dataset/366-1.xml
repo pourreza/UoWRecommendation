@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:925e314b-0aa3-44cd-be6f-c13aa9b43027" author="" title="ex5" />
+  <s:processor name="searchSimple">
+    <s:description>Execute Blast</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/Blast.wsdl</s:wsdl>
+      <s:operation>searchSimple</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="program" boring="true">
+    <s:stringconstant>blastp</s:stringconstant>
+  </s:processor>
+  <s:processor name="database" boring="true">
+    <s:stringconstant>SWISS</s:stringconstant>
+  </s:processor>
+  <s:processor name="Get_Protein_FASTA">
+    <s:local>net.sourceforge.taverna.scuflworkers.ncbi.ProteinFastaWorker</s:local>
+  </s:processor>
+  <s:processor name="PDB_sequence_ID_input">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:E51AE8IPB73" author="Katy Wolstencroft" title="LinkUniprotandPDB">Given a UniProt identifier such as 'P29373', this workflow fetches the PDB format flatfile from the RCSB (Note: there is not always a PDB structure available)</s:workflowdescription>
+        <s:processor name="AddPrefixToID">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+        </s:processor>
+        <s:processor name="FetchPage">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+        </s:processor>
+        <s:processor name="Split_string_into_string_list_by_regular_expression">
+          <s:defaults>
+            <s:default name="regex">PDB:</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+        </s:processor>
+        <s:processor name="RCSBPrefix" boring="true">
+          <s:stringconstant>http://www.rcsb.org/pdb/download/downloadFile.do?fileFormat=pdb&amp;compression=NO&amp;structureId=</s:stringconstant>
+        </s:processor>
+        <s:processor name="secondsplit">
+          <s:defaults>
+            <s:default name="regex">\n</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+        </s:processor>
+        <s:processor name="ebi_srslinks">
+          <s:description>For cross-referencing between databanks</s:description>
+          <s:defaults>
+            <s:default name="databank">swissprot</s:default>
+            <s:default name="fieldname">acc</s:default>
+            <s:default name="xrefDatabank">PDB</s:default>
+          </s:defaults>
+          <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/linking.srslinks</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="AddPrefixToID:output" sink="FetchPage:url" />
+        <s:link source="ID" sink="ebi_srslinks:searchterm" />
+        <s:link source="RCSBPrefix:value" sink="AddPrefixToID:string1" />
+        <s:link source="Split_string_into_string_list_by_regular_expression:split" sink="secondsplit:string" />
+        <s:link source="ebi_srslinks:result" sink="Split_string_into_string_list_by_regular_expression:string" />
+        <s:link source="secondsplit:split" sink="AddPrefixToID:string2" />
+        <s:link source="FetchPage:contents" sink="pdbFlatFile" />
+        <s:source name="ID" />
+        <s:sink name="pdbFlatFile">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>chemical/x-pdb</s:mimeType>
+            </s:mimeTypes>
+          </s:metadata>
+        </s:sink>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="geneIdentifier" sink="Get_Protein_FASTA:id" />
+  <s:link source="Get_Protein_FASTA:outputText" sink="searchSimple:query" />
+  <s:link source="database:value" sink="searchSimple:database" />
+  <s:link source="geneIdentifier" sink="PDB_sequence_ID_input:ID" />
+  <s:link source="Get_Protein_FASTA:outputText" sink="fastaSequence" />
+  <s:link source="PDB_sequence_ID_input:pdbFlatFile" sink="Protein_structure" />
+  <s:link source="program:value" sink="searchSimple:program" />
+  <s:link source="searchSimple:Result" sink="blast_report" />
+  <s:source name="geneIdentifier" />
+  <s:sink name="fastaSequence" />
+  <s:sink name="blast_report" />
+  <s:sink name="Protein_structure">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>chemical/x-pdb=Protein Data Bank Flat File</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

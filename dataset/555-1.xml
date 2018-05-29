@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:87f859a2-bb76-470d-8b9a-0d95ee38aa4a" author="Thomas Kuhn" title="Substructure Search On Database">This workflow takes as input a SMILES. This represents the substructure, for which the database gets searched. The output of this workflow is a PDF showing the 2D structures of the matched structure from the substructure search on the database.</s:workflowdescription>
+  <s:processor name="Substructure_Search_of_molecules_on_the_database">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.database.pgchem.GetMoleculesFromDBForSubstructure
+      <s:extensions>
+        <s:GetMoleculesFromDB>
+          <DBConnectionPostgres>
+            <DBURL>jdbc:postgresql://localhost/cdktaverna</DBURL>
+            <DBUserName></DBUserName>
+            <DBUserPassword></DBUserPassword>
+            <SQLQuery>SELECT id, molecule FROM chebimolecules WHERE migrate_molecule(?) &lt;= molecule</SQLQuery>
+          </DBConnectionPostgres>
+        </s:GetMoleculesFromDB>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Create_PDF_File_with_2D_Structures">
+    <s:cdk>org.openscience.cdk.applications.taverna.renderers.CreatePDFWith2DStructures</s:cdk>
+  </s:processor>
+  <s:processor name="Parse_SMILES">
+    <s:cdk>org.openscience.cdk.applications.taverna.smiles.SMILESParser</s:cdk>
+  </s:processor>
+  <s:link source="Parse_SMILES:resultStructure" sink="Substructure_Search_of_molecules_on_the_database:substructure" />
+  <s:link source="Substructure_Search_of_molecules_on_the_database:molecules" sink="Create_PDF_File_with_2D_Structures:inputStructures" />
+  <s:link source="in_SMILES" sink="Parse_SMILES:SMILE" />
+  <s:source name="in_SMILES" />
+</s:scufl>
+

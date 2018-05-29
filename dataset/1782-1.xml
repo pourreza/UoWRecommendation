@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:85187e42-e01e-4df8-803a-dbee10f0d9d7" author="Mikołaj Rybiński" title="prism Web service">PRISM model checking (http://www.prismmodelchecker.org/manual/RunningPRISM/ModelChecking). The '-fixdl' switch is used, which means that all deadlock states in model are fixed by addition of self-loops.</s:workflowdescription>
+  <s:processor name="setConstantCompactXmlList">
+    <s:beanshell>
+      <s:scriptvalue>source(new URL("http://bioputer.mimuw.edu.pl/tav4sb/workflows/setConstantCompactXmlList.bsh"));</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/xml')">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="prismParamsCompactXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="prismParamsCompact" name="prismParamsCompact" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/wsdl}prismParamsCompact">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="model" qname="&gt;prismParamsCompact&gt;model" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="properties" qname="&gt;prismParamsCompact&gt;properties" />
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="FiniteValues" name="constantCompact" qname="&gt;prismParamsCompact&gt;constantCompact">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="FiniteValues" name="" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/wsdl}FiniteValues">
+                  <s:elements>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="name" qname="FiniteValues&gt;name" />
+                    <s:arraytype optional="false" unbounded="true" wrapped="false" typename="decimal" name="value" qname="FiniteValues&gt;value">
+                      <s:elementtype>
+                        <s:basetype optional="false" unbounded="false" typename="decimal" name="" qname="{http://www.w3.org/2001/XMLSchema}decimal" />
+                      </s:elementtype>
+                    </s:arraytype>
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="prism">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://bioputer.mimuw.edu.pl/tav4sb/services/wsdl</s:wsdl>
+      <s:operation>prism</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="prismResultXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="prismResult" name="prismResult" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/prism}prismResult">
+          <s:elements>
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="ResultValue" name="result" qname="&gt;prismResult&gt;result">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="ResultValue" name="" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/prism}ResultValue">
+                  <s:elements>
+                    <s:arraytype optional="true" unbounded="true" wrapped="false" typename="FiniteValue" name="constant" qname="ResultValue&gt;constant">
+                      <s:elementtype>
+                        <s:basetype optional="false" unbounded="false" typename="string" name="FiniteValue" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/prism}FiniteValue" />
+                      </s:elementtype>
+                    </s:arraytype>
+                    <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Value" name="property" qname="ResultValue&gt;property">
+                      <s:elementtype>
+                        <s:basetype optional="false" unbounded="false" typename="double" name="Value" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/prism}Value" />
+                      </s:elementtype>
+                    </s:arraytype>
+                    <s:basetype optional="true" unbounded="false" typename="string" name="error" qname="ResultValue&gt;error" />
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Merge_string_list_to_string">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="wrapWithResultsTag">
+    <s:beanshell>
+      <s:scriptvalue>if (name != void) {
+    wrapped = "&lt;results name=\""+name+"\"&gt;\n"+str+"\n&lt;/results&gt;";
+} else {
+    wrapped = "&lt;results&gt;\n"+str+"\n&lt;/results&gt;";
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">str</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">name</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/xml'">wrapped</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="constants" sink="setConstantCompactXmlList:input" />
+  <s:link source="model" sink="prismParamsCompactXML:model" />
+  <s:link source="properties" sink="prismParamsCompactXML:properties" />
+  <s:link source="Merge_string_list_to_string:concatenated" sink="wrapWithResultsTag:str" />
+  <s:link source="prism:prismResult" sink="prismResultXML:input" />
+  <s:link source="prismParamsCompactXML:output" sink="prism:prismParamsCompact" />
+  <s:link source="prismResultXML:result" sink="Merge_string_list_to_string:stringlist" />
+  <s:link source="setConstantCompactXmlList:output" sink="prismParamsCompactXML:constantCompact" />
+  <s:link source="wrapWithResultsTag:wrapped" sink="resultsXml" />
+  <s:source name="model">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/x-taverna-web-url</s:mimeType>
+      </s:mimeTypes>
+      <s:description>PRISM model file content.
+
+Reference: http://www.prismmodelchecker.org/manual/ThePRISMLanguage/PRISMLanguageFiles
+
+Example value:
+// Enzymatic reaction model
+
+ctmc
+
+// Reaction rates constants
+const double k1 = 0.184;
+const double k2 = 0.016;
+const double k3 = 0.211;
+
+// Species s (Substrate)
+const int s_MAX;
+module s
+
+    s : [0..s_MAX] init s_MAX;
+
+    // r1 (ES-complex association)
+    [r1] s &gt; 0 -&gt; (s'=s-1);
+    // r2 (ES-complex dissociation)
+    [r2]  s &lt;= s_MAX-1 -&gt; (s'=s+1);
+
+endmodule
+
+// Species e (Enzyme)
+const int e_MAX;
+module e
+
+    e : [0..e_MAX] init e_MAX;
+
+    // r1 (ES-complex association)
+    [r1] e &gt; 0 -&gt; (e'=e-1);
+    // r2 (ES-complex dissociation)
+    [r2]  e &lt;= e_MAX-1 -&gt; (e'=e+1);
+    // r3 (Product creation)
+    [r3]  e &lt;= e_MAX-1 -&gt; (e'=e+1);
+
+endmodule
+
+// Species es (ES-complex)
+const int es_MAX = min(s_MAX, e_MAX);
+module es
+
+    es : [0..es_MAX] init 0;
+
+    // r1 (ES-complex association)
+    [r1]  es &lt;= es_MAX-1 -&gt; (es'=es+1);
+    // r2 (ES-complex dissociation)
+    [r2] es &gt; 0 -&gt; (es'=es-1);
+    // r3 (Product creation)
+    [r3] es &gt; 0 -&gt; (es'=es-1);
+
+endmodule
+
+// Species p (Product)
+const int p_MAX = s_MAX;
+module p
+
+    p : [0..p_MAX] init 0;
+
+    // r3 (Product creation)
+    [r3]  p &lt;= p_MAX-1 -&gt; (p'=p+1);
+
+endmodule
+
+// Reaction rates
+module reaction_rates
+
+    // r1 (ES-complex association)
+    [r1] (k1*s*e) &gt; 0 -&gt; (k1*s*e) : true;
+    // r2 (ES-complex dissociation)
+    [r2] (k2*es) &gt; 0 -&gt; (k2*es) : true;
+    // r3 (Product creation)
+    [r3] (k3*es) &gt; 0 -&gt; (k3*es) : true;
+
+endmodule
+
+// A expected number of enzyme-substrate complex association reactions.
+rewards "r1"
+  [r1] true : 1;
+endrewards</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="properties">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/x-taverna-web-url</s:mimeType>
+      </s:mimeTypes>
+      <s:description>PRISM properties file content.
+
+Reference:
+http://www.prismmodelchecker.org/manual/PropertySpecification/PropertiesFiles
+
+Example value:
+
+// How many times on average a enzyme-substrate complex association reaction have to occure before the amount of product reaches 50% of it's maximum? Corresponds to EC50 coefficient.
+// Attention: for this formula to make sense, the maximum amount of product must be known and set to the appropriate value; in this particular case it means that p_MAX must be equal to sum of initial amounts of all species, except of enzyme e.
+R{"r1"}=? [ F (p &gt;= 0.5 * p_MAX) ]</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="constants">
+    <s:metadata>
+      <s:description>Optional constants and their values in the format of PRISM '-const' switch, i.e. comma separated definitons of constants: name=start:[step:]stop, where step is optional and by default equal to 1.
+
+Reference:
+http://www.prismmodelchecker.org/manual/RunningPRISM/Experiments
+
+Example value:
+e_MAX=1:2:15,s_MAX=1:10</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="resultsXml">
+    <s:metadata>
+      <s:description>A &lt;results&gt; XML element with list of results containing set of constants values and, for that set, a set of properties values or an error element with PRISM error message.
+
+Example value:
+&lt;results&gt;
+  &lt;result&gt;
+    &lt;constant name="e_MAX"&gt;1&lt;/constant&gt;
+    &lt;constant name="s_MAX"&gt;1&lt;/constant&gt;
+    &lt;property name="R{&amp;quot;r1&amp;quot;}=? [ F (p&amp;gt;=0.5*p_MAX) ]"&gt;1.0758293745879832&lt;/property&gt;
+  &lt;/result&gt;
+  ...
+&lt;/results&gt;</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:QM8274VGE529" author="Paul Fisher" title="Search InChI in NCBI eSearch (pccompound)">This workflow takes in a search term and a database (e.g. snp, gene, protein) in which to perfom the search over. The result is an xml file containing summary information about the search term</s:workflowdescription>
+  <s:processor name="NCBI_eSearch">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://eutils.ncbi.nlm.nih.gov/entrez/eutils/soap/eutils.wsdl</s:wsdl>
+      <s:operation>run_eSearch</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="fetch_compound_info">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="fetch_compound_image">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebImageFetcher</s:local>
+  </s:processor>
+  <s:processor name="Beanshell_scripting_host">
+    <s:beanshell>
+      <s:scriptvalue>String temp = xml;
+String id_xml = "&lt;Id&gt;";
+List info = new ArrayList();
+List image = new ArrayList();
+List db = new ArrayList();
+List id = new ArrayList();
+String url_image = "http://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?t=l&amp;cid=";
+String url_info = "http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=";
+
+String[] split = temp.split(id_xml);
+String temp2 = "";
+// start at index 1 because of xml fragment at position 0 caused by split
+for(int k = 1; k &lt; split.length; k++) {
+temp2 = split[k].split("&lt;/Id&gt;")[0];
+info.add(url_info + temp2);
+image.add(url_image + temp2);
+db.add(db_search);
+id.add(temp2);
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/xml'">xml</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">db_search</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">image</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">info</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">db</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">id</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="parametersXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="eSearchRequest" name="parameters" qname="eSearchRequest">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="db" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="term" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="WebEnv" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="QueryKey" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="usehistory" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="tool" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="email" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="field" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="reldate" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="mindate" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="maxdate" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="datetype" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="RetStart" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="RetMax" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="rettype" qname="string" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="sort" qname="string" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="run_eSummary">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ncbi.nlm.nih.gov/entrez/eutils/soap/v2.0/eutils.wsdl</s:wsdl>
+      <s:operation>run_eSummary</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="requestXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="eSummaryRequest" name="request" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/esummary}eSummaryRequest">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="db" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/esummary}&gt;eSummaryRequest&gt;db" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="id" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/esummary}&gt;eSummaryRequest&gt;id" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="WebEnv" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/esummary}&gt;eSummaryRequest&gt;WebEnv" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="query_key" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/esummary}&gt;eSummaryRequest&gt;query_key" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="retstart" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/esummary}&gt;eSummaryRequest&gt;retstart" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="retmax" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/esummary}&gt;eSummaryRequest&gt;retmax" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="tool" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/esummary}&gt;eSummaryRequest&gt;tool" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="email" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/esummary}&gt;eSummaryRequest&gt;email" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="id" />
+        <i:iterator name="db" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="NCBI_database" boring="true">
+    <s:stringconstant>pccompound</s:stringconstant>
+  </s:processor>
+  <s:link source="Beanshell_scripting_host:id" sink="requestXML:id" />
+  <s:link source="Beanshell_scripting_host:image" sink="fetch_compound_image:url" />
+  <s:link source="Beanshell_scripting_host:info" sink="fetch_compound_info:url" />
+  <s:link source="NCBI_database:value" sink="Beanshell_scripting_host:db_search" />
+  <s:link source="NCBI_database:value" sink="parametersXML:db" />
+  <s:link source="fetch_compound_image:image" sink="image" />
+  <s:link source="fetch_compound_info:contents" sink="webpage" />
+  <s:link source="parametersXML:output" sink="NCBI_eSearch:parameters" />
+  <s:link source="terms" sink="parametersXML:term" />
+  <s:link source="Beanshell_scripting_host:db" sink="requestXML:db" />
+  <s:link source="NCBI_eSearch:parameters" sink="Beanshell_scripting_host:xml" />
+  <s:link source="requestXML:output" sink="run_eSummary:request" />
+  <s:link source="run_eSummary:result" sink="out" />
+  <s:source name="terms" />
+  <s:sink name="webpage" />
+  <s:sink name="image" />
+  <s:sink name="out" />
+</s:scufl>
+

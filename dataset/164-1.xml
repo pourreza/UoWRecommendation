@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:VI9FMF5HBQ10" author="Tom Oinn" title="Demonstration of configurable iteration">This workflow shows the use of the iteration strategy editor to ensure that only relevant combinations of inputs are used during an implicit iteration.</s:workflowdescription>
+  <s:processor name="Colours">
+    <s:description>Contains the list of colours to be used later in the workflow</s:description>
+    <s:stringconstant>red ,green ,</s:stringconstant>
+  </s:processor>
+  <s:processor name="ShapeAnimals">
+    <s:description>This concatenation doesn't have an explicit iteration strategy so will use the default; this means that the process will be invoked over all possible combinations of its inputs. For an input set of three items in 'string2' and two in 'string1' this will therefore iterate six times and produce an output list of length six.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="ColourAnimals">
+    <s:description>Create a description of a coloured animal. In this case we're using an explicit iteration strategy declaration to state that the inputs should be treated as linked; rather than iterating over all combinations of 'string1' and 'string2' we combine the nth elements of each one. This of course only works if the iterators have the same size.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="string2" />
+        <i:iterator name="string1" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="ShapesList">
+    <s:description>Splits the shapes string value into a list, as no regex is supplied it uses the default ','</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="AnimalsList">
+    <s:description>Splits the animals string value into a list, as no regex is supplied it uses the default ','</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="ColoursList">
+    <s:description>Splits the colours string value into a list, as no regex is supplied it uses the default ','</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Shapes">
+    <s:description>Contains a list of shapes to be used later in the workflow</s:description>
+    <s:stringconstant>square ,circular ,triangular ,</s:stringconstant>
+  </s:processor>
+  <s:processor name="Animals">
+    <s:description>Contains a list of animals to be used later in the workflow</s:description>
+    <s:stringconstant>cat ,rabbit ,</s:stringconstant>
+  </s:processor>
+  <s:link source="Shapes:value" sink="ShapesList:string" />
+  <s:link source="Animals:value" sink="AnimalsList:string" />
+  <s:link source="Colours:value" sink="ColoursList:string" />
+  <s:link source="ColoursList:split" sink="ColourAnimals:string1" />
+  <s:link source="AnimalsList:split" sink="ColourAnimals:string2" />
+  <s:link source="ColourAnimals:output" sink="ShapeAnimals:string2" />
+  <s:link source="ShapesList:split" sink="ShapeAnimals:string1" />
+  <s:link source="ShapeAnimals:output" sink="Output" />
+  <s:sink name="Output" />
+</s:scufl>
+
+

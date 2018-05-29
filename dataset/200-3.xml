@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:830133cb-62ab-4f1c-8148-746f88cd5376" author="Hamish McWilliam" title="EBI FASTA with prompts">Run a FASTA analysis using the EBI’s WSFasta service (see http://www.ebi.ac.uk/Tools/webservices/services/fasta). This workflow wraps the EBI_FASTA workflow to provide a basic user interface which prompts for the required inputs: sequence, database, FASTA program and user e-mail. Other parameters (e.g. matrix, gap penalties, etc.) are allowed to default.</s:workflowdescription>
+  <s:processor name="Make_database_list">
+    <s:description>List of available databases.</s:description>
+    <s:defaults>
+      <s:default name="string">embl,uniprot,pdb</s:default>
+      <s:default name="regex">,</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Select_database">
+    <s:description>Select the required database.</s:description>
+    <s:defaults>
+      <s:default name="message">Database</s:default>
+      <s:default name="title">Database</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.SelectWorker</s:local>
+  </s:processor>
+  <s:processor name="Select_FASTA_program">
+    <s:description>Select the required FASTA program.</s:description>
+    <s:defaults>
+      <s:default name="message">Program</s:default>
+      <s:default name="title">FASTA Program</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.SelectWorker</s:local>
+  </s:processor>
+  <s:processor name="Make_FASTA_program_list">
+    <s:description>List of available FASTA programs.</s:description>
+    <s:defaults>
+      <s:default name="string">fasta3,fastf3,fasts3,fastx3,fasty3,tfastx3,tfasty3,ssearch</s:default>
+      <s:default name="regex">,</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Ask_for_email">
+    <s:description>Ask for the user's e-mail address.</s:description>
+    <s:defaults>
+      <s:default name="title">E-mail</s:default>
+      <s:default name="message">Your e-mail</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.AskWorker</s:local>
+  </s:processor>
+  <s:processor name="Ask_for_sequence">
+    <s:description>Ask for the query sequence, either as a sequence identifier in database:identifer format (e.g. uniprot:wap_rat) or the actual sequence (fasta format recommended).</s:description>
+    <s:defaults>
+      <s:default name="title">Query sequence</s:default>
+      <s:default name="message">Sequence or ID</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.AskWorker</s:local>
+  </s:processor>
+  <s:processor name="Nested_Workflow">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:23bd481b-319a-4249-8cb0-ade72b29df6e" author="Hamish McWilliam" title="EBI_FASTA">Run a FASTA or SSEARCH sequence similarity search using the EBI's WSFasta service (see http://www.ebi.ac.uk/Tools/webservices/services/fasta).</s:workflowdescription>
+        <s:processor name="runFasta">
+          <s:description>Submit the FASTA/SSEARCH job.</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSFasta.wsdl</s:wsdl>
+            <s:operation>runFasta</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Input_data">
+          <s:description>Input data structure, adds a type to the input sequence.</s:description>
+          <s:defaults>
+            <s:default name="type">sequence</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSFasta}data">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Unpack_XML_Result">
+          <s:description>Unpack XML FASTA report from byte[] into string.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="Unpack_Text_Result">
+          <s:description>Unpack plain text FASTA report from byte[] into string.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="getIds">
+          <s:description>Get the hit identifers.</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSFasta.wsdl</s:wsdl>
+            <s:operation>getIds</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Input_data_list">
+          <s:description>Wrap the input sequence in a list.</s:description>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:arraytype optional="false" unbounded="false" wrapped="false" typename="WSArrayofData" name="content" qname="{http://www.ebi.ac.uk/WSFasta}WSArrayofData">
+                <s:elementtype>
+                  <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSFasta}data">
+                    <s:elements>
+                      <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                      <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                    </s:elements>
+                  </s:complextype>
+                </s:elementtype>
+              </s:arraytype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Get_XML_Result">
+          <s:description>Get the FASTA report as XML.</s:description>
+          <s:defaults>
+            <s:default name="type">toolxml</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSFasta.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Get_Text_Result">
+          <s:description>Get the FASTA report as text.</s:description>
+          <s:defaults>
+            <s:default name="type">tooloutput</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSFasta.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="FASTA_job_params">
+          <s:description>Parameters for the FASTA/SSEARCH job.</s:description>
+          <s:defaults>
+            <s:default name="scores">50</s:default>
+            <s:default name="alignments">50</s:default>
+            <s:default name="eupper">1.0</s:default>
+            <s:default name="elower">0.0</s:default>
+            <s:default name="async">1</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="inputParams" name="params" qname="{http://www.ebi.ac.uk/WSFasta}inputParams">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="program" qname="inputParams&gt;program" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="database" qname="inputParams&gt;database" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="moltype" qname="inputParams&gt;moltype" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="histogram" qname="inputParams&gt;histogram" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="nucleotide" qname="inputParams&gt;nucleotide" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="topstrand" qname="inputParams&gt;topstrand" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="bottomstrand" qname="inputParams&gt;bottomstrand" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="gapopen" qname="inputParams&gt;gapopen" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="gapext" qname="inputParams&gt;gapext" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="scores" qname="inputParams&gt;scores" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="alignments" qname="inputParams&gt;alignments" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="ktup" qname="inputParams&gt;ktup" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="matrix" qname="inputParams&gt;matrix" />
+                  <s:basetype optional="false" unbounded="false" typename="float" name="eupper" qname="inputParams&gt;eupper" />
+                  <s:basetype optional="false" unbounded="false" typename="float" name="elower" qname="inputParams&gt;elower" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="dbrange" qname="inputParams&gt;dbrange" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="seqrange" qname="inputParams&gt;seqrange" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="outformat" qname="inputParams&gt;outformat" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="async" qname="inputParams&gt;async" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="inputParams&gt;email" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Poll_FASTA_Job">
+          <s:description>Check for job completion.</s:description>
+          <s:workflow maxretries="100" retrydelay="3000">
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f67bf7d6-cd5e-4ac7-be1e-d8b97255889b" author="" title="Poll_FASTA_Job" />
+              <s:processor name="checkStatus">
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSFasta.wsdl</s:wsdl>
+                  <s:operation>checkStatus</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:processor name="Success">
+                <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+              </s:processor>
+              <s:processor name="Is_Done">
+                <s:beanshell>
+                  <s:scriptvalue>if(job_status.equals("DONE")) {
+  is_done = "true";
+} else {
+  is_done = "false";
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">job_status</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">is_done</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:link source="Is_Done:is_done" sink="Success:test" />
+              <s:link source="Job_ID" sink="checkStatus:jobid" />
+              <s:link source="checkStatus:status" sink="Is_Done:job_status" />
+              <s:link source="checkStatus:status" sink="Job_Status" />
+              <s:source name="Job_ID" />
+              <s:sink name="Job_Status" />
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:link source="Database" sink="FASTA_job_params:database" />
+        <s:link source="E-mail" sink="FASTA_job_params:email" />
+        <s:link source="FASTA_Program" sink="FASTA_job_params:program" />
+        <s:link source="Get_Text_Result:output" sink="Unpack_Text_Result:bytes" />
+        <s:link source="Get_XML_Result:output" sink="Unpack_XML_Result:bytes" />
+        <s:link source="Input_data:output" sink="Input_data_list:WSArrayofData" />
+        <s:link source="Input_data_list:output" sink="runFasta:content" />
+        <s:link source="Sequence_or_ID" sink="Input_data:content" />
+        <s:link source="FASTA_job_params:output" sink="runFasta:params" />
+        <s:link source="Unpack_Text_Result:string" sink="FASTA_Text_Result" />
+        <s:link source="Unpack_XML_Result:string" sink="FASTA_XML_Result" />
+        <s:link source="runFasta:jobid" sink="Get_Text_Result:jobid" />
+        <s:link source="runFasta:jobid" sink="Get_XML_Result:jobid" />
+        <s:link source="runFasta:jobid" sink="Poll_FASTA_Job:Job_ID" />
+        <s:link source="runFasta:jobid" sink="getIds:jobid" />
+        <s:link source="getIds:result" sink="Hit_ID_List" />
+        <s:link source="runFasta:jobid" sink="Job_ID" />
+        <s:source name="Sequence_or_ID">
+          <s:metadata>
+            <s:description>Query sequence (fasta format recommended) or sequence identifer in database:identifer format (e.g. uniprot:wap_rat).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Database">
+          <s:metadata>
+            <s:description>The database to search (e.g. uniprot).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="E-mail">
+          <s:metadata>
+            <s:description>Your e-mail address.</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="FASTA_Program">
+          <s:metadata>
+            <s:description>The FASTA program to run (e.g. fasta3, fastf3, fasts3, fastx3, fasty3, tfastx, tfasty).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="FASTA_Text_Result">
+          <s:metadata>
+            <s:description>FASTA program output as plain text. Note the exact format of the output depends on the chosen FASTA program.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="FASTA_XML_Result">
+          <s:metadata>
+            <s:description>FASTA output in an XML format.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Hit_ID_List">
+          <s:metadata>
+            <s:description>List of the identifiers of the hits found.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Job_ID">
+          <s:metadata>
+            <s:description>The identifier of the job at EBI.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:coordination name="getIds_BLOCKON_Poll_FASTA_Job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Poll_FASTA_Job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>getIds</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Get_Text_Result_BLOCKON_Poll_FASTA_Job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Poll_FASTA_Job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_Text_Result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Get_XML_Result_BLOCKON_Poll_FASTA_Job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Poll_FASTA_Job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_XML_Result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Ask_for_email:answer" sink="Nested_Workflow:E-mail" />
+  <s:link source="Ask_for_sequence:answer" sink="Nested_Workflow:Sequence_or_ID" />
+  <s:link source="Make_FASTA_program_list:split" sink="Select_FASTA_program:valueList" />
+  <s:link source="Make_database_list:split" sink="Select_database:valueList" />
+  <s:link source="Nested_Workflow:FASTA_Text_Result" sink="FASTA_report" />
+  <s:link source="Select_FASTA_program:answer" sink="Nested_Workflow:FASTA_Program" />
+  <s:link source="Select_database:answer" sink="Nested_Workflow:Database" />
+  <s:sink name="FASTA_report">
+    <s:metadata>
+      <s:description>Plain text FASTA report.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:fdcff787-04fa-4454-b065-56c16e65ebda" author="Mikołaj Rybiński" title="sampleDistribution Web service operation">Probabilistic distribution sampling operation with a use of Mathematica (http://www.wolfram.com/mathematica/) software.</s:workflowdescription>
+  <s:processor name="sampleDistributionParamsXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="sampleDistributionParams" name="sampleDistributionParams" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}sampleDistributionParams">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="positiveInteger" name="number" qname="&gt;sampleDistributionParams&gt;number" />
+            <s:arraytype optional="false" unbounded="true" wrapped="false" typename="Distribution" name="distribution" qname="&gt;sampleDistributionParams&gt;distribution">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="Distribution" name="" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}Distribution">
+                  <s:elements>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="name" qname="Distribution&gt;name" />
+                    <s:arraytype optional="true" unbounded="true" wrapped="false" typename="MathType" name="parameter" qname="Distribution&gt;parameter">
+                      <s:elementtype>
+                        <s:complextype optional="false" unbounded="false" typename="MathType" name="" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}MathType">
+                          <s:elements />
+                        </s:complextype>
+                      </s:elementtype>
+                    </s:arraytype>
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+            <s:basetype optional="true" unbounded="false" typename="string" name="method" qname="&gt;sampleDistributionParams&gt;method" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="sampleXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:arraytype optional="false" unbounded="false" wrapped="true" typename="NumericArray" name="ArrayOfdecimal" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}NumericArray">
+          <s:elementtype>
+            <s:basetype optional="false" unbounded="false" typename="decimal" name="" qname="{http://www.w3.org/2001/XMLSchema}decimal" />
+          </s:elementtype>
+        </s:arraytype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="sampleDistributionResultXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="sampleDistributionResult" name="sampleDistributionResult" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}sampleDistributionResult">
+          <s:elements>
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="NumericArray" name="sample" qname="&gt;sampleDistributionResult&gt;sample">
+              <s:elementtype>
+                <s:arraytype optional="false" unbounded="false" wrapped="true" typename="NumericArray" name="ArrayOfdecimal" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}NumericArray">
+                  <s:elementtype>
+                    <s:basetype optional="false" unbounded="false" typename="decimal" name="" qname="{http://www.w3.org/2001/XMLSchema}decimal" />
+                  </s:elementtype>
+                </s:arraytype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="sampleDistribution">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://localhost:8080/tav4sb/services?wsdl</s:wsdl>
+      <s:operation>sampleDistribution</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="setDistributionXml">
+    <s:beanshell>
+      <s:scriptvalue>source(new URL("http://localhost/tav4sb/workflows/setDistributionXml.bsh"));</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">name</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">parameterList</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/xml'">distributionXml</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="name" />
+        <i:iterator name="parameterList" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="headTail">
+    <s:beanshell>
+      <s:scriptvalue>head = list.get(0);
+tail = list.subList(1, list.size());</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">list</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">head</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">tail</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="echo2DList">
+    <s:beanshell>
+      <s:scriptvalue>out = in;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l(l('text/plain'))">in</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l(l('text/plain'))">out</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="distributionNameParamsList" sink="echo2DList:in" />
+  <s:link source="method" sink="sampleDistributionParamsXML:method" />
+  <s:link source="number" sink="sampleDistributionParamsXML:number" />
+  <s:link source="echo2DList:out" sink="headTail:list" />
+  <s:link source="headTail:head" sink="setDistributionXml:name" />
+  <s:link source="headTail:tail" sink="setDistributionXml:parameterList" />
+  <s:link source="sampleDistribution:sampleDistributionResult" sink="sampleDistributionResultXML:input" />
+  <s:link source="sampleDistributionParamsXML:output" sink="sampleDistribution:sampleDistributionParams" />
+  <s:link source="sampleDistributionResultXML:sample" sink="sampleXML:input" />
+  <s:link source="sampleXML:ArrayOfdecimal" sink="sampleList" />
+  <s:link source="setDistributionXml:distributionXml" sink="sampleDistributionParamsXML:distribution" />
+  <s:source name="number">
+    <s:metadata>
+      <s:description>Desired number of samples. Note: for the "full" method the resulting number of samples will be equal to number of samples to the power equal to dimension of each sample.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="distributionNameParamsList">
+    <s:metadata>
+      <s:description>List of lists which specify probabilistic distributions to sample from. Size of this list defines dimension of samples.
+
+Each distribution is specified by name and parameter values. Name is a string with a prefix from Mathematica's *Distribution symbols. See the Mathematica's documentation for comprehensive list o available distributions and their parameters: http://reference.wolfram.com/legacy/v7/guide/StatisticalDistributions.html .  Parameters are specified using number, string, Mathematica symbol or heterogeneous list of any of those types . These are represented as:
+    d.n
+    "text"
+    Symbol
+    { el1, el2, ... }
+repectively, i.e. text containing '.' character is treated as a decimal number (e.g. '1.0', '0.15', etc.), quoted text is interpreted as a string, plain text w/o '.' character is interpreted as a Mathematica symbol and curly brackets delimit list, which elements are comma-separated. ATTENTION: comas and quotes inside of the string must be escaped with backslash (i.e. "\," or "\""); you can also escape curly brackets for consistency but it's not mandatory.
+
+Example - two dimensional samples defined by two lists of three and two elements respectively:
+    "normal", 0.0, 1.0
+    "uniform", {0.0, 1.0}</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="method">
+    <s:metadata>
+      <s:description>Method is one of:
+ * "random" (default) - standard, random distribution sampling,
+ * "lhs" - Latin Hypercube sampling (see http://en.wikipedia.org/wiki/Latin_hypercube_sampling),
+ * "full" - "lhs" over each of the sampled dimensions with theirs full product, i.e. each grid part of the sample space is represented by one sample; note: returned number of samples is a given number of samples to the power equal to dimension of a sample.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="sampleList" />
+</s:scufl>
+

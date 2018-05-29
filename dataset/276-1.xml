@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:RJUXV3ITT5157" author="" title="" />
+  <s:processor name="options" boring="true">
+    <s:stringconstant>swiss</s:stringconstant>
+  </s:processor>
+  <s:processor name="split_by_regex">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="parse_swiss">
+    <s:beanshell>
+      <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++) 
+{		
+	String trimmed = split[i].trim();
+	String[] trimmedSplit = trimmed.split(":");
+	System.out.println(trimmedSplit.length);
+	if (trimmedSplit.length == 2){
+	    nonEmpty.add(trimmedSplit[1].trim());	
+	}
+}
+
+String output = "";
+
+for (int i = 0; i &lt; nonEmpty.size(); i++)
+{
+	output = output + (String) (nonEmpty.elementAt(i) + "\n");
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="regex" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="parse_ddbj_gene_info">
+    <s:description>extract information from geneGeneInfo processor at http://xml.nig.ac.jp/wsdl/Ensembl.wsdl</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.parse_ddbj_gene_info</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="probeset_to_gene">
+    <s:description>Gets ENSEMBL gene IDS that are based on the probeset names passed to it</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/qtl_analysis.probeset_to_gene</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getGeneInfo">
+    <s:description>get gene information</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/Ensembl.wsdl</s:wsdl>
+      <s:operation>getGeneInfo</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="chromosome" boring="true">
+    <s:stringconstant>17</s:stringconstant>
+  </s:processor>
+  <s:processor name="database" boring="true">
+    <s:stringconstant>mus_musculus_core_37_34e</s:stringconstant>
+  </s:processor>
+  <s:processor name="probeset_ids" boring="true">
+    <s:stringconstant>Mouse430A_2:1454738_x_at,Mouse430_2:1443660_at,Mouse430_2:1453598_at,Mouse430_2:1458299_s_at,Mouse430A_2:1425346_at,Mouse430A_2:1418255_s_at,Mouse430A_2:1427620_at,Mouse430_2:1460036_at,Mouse430_2:1458623_at,Mouse430_2:1440225_at,Mouse430A_2:1426479_a_at,Mouse430A_2:1425347_a_at,Mouse430_2:1460140_at,Mouse430_2:1431494_at,Mouse430_2:1443710_s_at,Mouse430_2:1434580_at</s:stringconstant>
+  </s:processor>
+  <s:processor name="start" boring="true">
+    <s:stringconstant>19592504</s:stringconstant>
+  </s:processor>
+  <s:processor name="stop" boring="true">
+    <s:stringconstant>44592504</s:stringconstant>
+  </s:processor>
+  <s:link source="chromosome:value" sink="probeset_to_gene:chromosome" />
+  <s:link source="database:value" sink="probeset_to_gene:database" />
+  <s:link source="getGeneInfo:Result" sink="parse_ddbj_gene_info:file_direct_data" />
+  <s:link source="options:value" sink="parse_ddbj_gene_info:options" />
+  <s:link source="parse_ddbj_gene_info:output" sink="parse_swiss:input" />
+  <s:link source="probeset_ids:value" sink="probeset_to_gene:probeset_list" />
+  <s:link source="probeset_to_gene:output" sink="split_by_regex:string" />
+  <s:link source="regex:value" sink="split_by_regex:regex" />
+  <s:link source="split_by_regex:split" sink="getGeneInfo:geneId" />
+  <s:link source="start:value" sink="probeset_to_gene:start" />
+  <s:link source="stop:value" sink="probeset_to_gene:end" />
+  <s:link source="parse_swiss:output" sink="swiss_ids" />
+  <s:sink name="swiss_ids" />
+</s:scufl>
+
+

@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:29ce4255-9c51-46f7-a517-5b9bcc275069" author="Ingo Wassink, Han Rauwerda, Pieter Neerincx" title="Blat">The blat workflow invokes the blat services provided at www.bioinformatics.nl (author Pieter Neerincx).
+
+As input, it takes a database name (for example, Danio_rerio_Genome for Zebra Fish) and one or more sequences in Fasta format. The output will be a tab separated output of the blat. An eValue string constant is added to filter on the e-Value.
+
+Note, the e-Value is not exactly the same as the blast e-Value.</s:workflowdescription>
+  <s:processor name="Flatten_urls">
+    <s:defaults>
+      <s:default name="seperator" />
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="Download_Report_and_Filter">
+    <s:description>This Beanshell downloads a file to disk. The standard download local Java widgets don't handle URLs with HTTP(S) Basic Authentication, but this Beanshell can. When a webserver uses BasicAuth, a login and password can be coded as part of the URL using the following syntax: http(s)://login:password@www.some.website/my/great/tool/result.xml. This beanshel extracts the login and password from the URL and supplies them automatically to the webserver. This prevents Taverna from showing popup dialogs requesting the login and password from the user as this will be problematic for large workflows.
+
+Please note that the path where the downloaded file will be stored must be an absolute path to a folder ended with a slash. (Slash backward on Windows or a slash forward on Linux/Unix/Mac OS X.) The filename for the result is automatically extracted from the URL.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>//
+// Import modules;
+//
+import java.io.*;
+import java.net.*;
+import java.util.regex.*;
+
+
+// Connect to URL.
+URL oURL = new URL(URL);
+URLConnection oURLConnection = oURL.openConnection();
+
+// Check if we are are dealing with a site 
+// that uses basic http(s) authentication.
+oPattern = Pattern.compile("(\\w+://)??([^:]+):([^:@]+)@.*");
+oMatcher = oPattern.matcher(URL);
+vHit = oMatcher.matches();
+if (vHit) {
+	//String vProtocol = oMatcher.group(1);
+	String vUser = oMatcher.group(2);
+	String vPass = oMatcher.group(3);
+	String vAuth = vUser + ":" + vPass;
+	String vEncodedUserPassword = new sun.misc.BASE64Encoder().encode(vAuth.getBytes());
+	oURLConnection.setRequestProperty ("Authorization", "Basic " + vEncodedUserPassword);	
+}
+
+// get input stream
+InputStream inputStream = oURLConnection.getInputStream();
+
+
+// download all results and filter
+BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+List blatResults = new ArrayList();
+double ev = Double.parseDouble(eValue);
+
+String line;
+while((line = reader.readLine()) != null){
+  String[] values = line.split("\t");
+  double currentEValue = Double.parseDouble(values[values.length-2]);
+
+  if(currentEValue &lt; ev){
+    blatResults.add(line);
+  }
+}
+reader.close();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">URL</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">eValue</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">blatResults</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="eValue" boring="true">
+    <s:stringconstant>0.00015</s:stringconstant>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_URL">
+    <s:description>Processor to parse the datatype URL</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>URL</s:datatype>
+      <s:articleName>result</s:articleName>
+      <s:description>Processor to parse the datatype URL</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="MobyBlat">
+    <s:description>BioMOBY web service wrapper for the command line query tool 'BLAT'.</s:description>
+    <s:biomobywsdl maxretries="30" retrydelay="500">
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>MobyBlat</s:serviceName>
+      <s:authorityName>www.bioinformatics.nl</s:authorityName>
+      <s:Parameter s:name="out">blast8</s:Parameter>
+      <s:Parameter s:name="q">dna</s:Parameter>
+      <s:Parameter s:name="minScore">0</s:Parameter>
+      <s:Parameter s:name="minIdentity">0</s:Parameter>
+      <s:Parameter s:name="maxIntron">1000000</s:Parameter>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Email">
+    <s:description>An e-mail address object.</s:description>
+    <s:defaults>
+      <s:default name="namespace">www.bioinformatics.nl</s:default>
+      <s:default name="id">some.user@domain.nl</s:default>
+      <s:default name="article name">email</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Email</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="BlatJob">
+    <s:description>A BLAT job.</s:description>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>BlatJob</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="DataBase">
+    <s:description>A database object.</s:description>
+    <s:defaults>
+      <s:default name="namespace">blat</s:default>
+      <s:default name="article name">dataBase</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>DataBase</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="User">
+    <s:description>A generic user object.</s:description>
+    <s:defaults>
+      <s:default name="namespace">www.bioinformatics.nl</s:default>
+      <s:default name="id">client</s:default>
+      <s:default name="article name">user</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>User</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="FASTA">
+    <s:description>FASTA formatted sequence</s:description>
+    <s:defaults>
+      <s:default name="id">1</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>FASTA</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="String">
+    <s:description>a string</s:description>
+    <s:defaults>
+      <s:default name="article name">fasta</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>String</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="Password">
+    <s:description>A generic password object.</s:description>
+    <s:defaults>
+      <s:default name="namespace">www.bioinformatics.nl</s:default>
+      <s:default name="id">testing</s:default>
+      <s:default name="article name">password</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Password</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:link source="BlatJob:mobyData" sink="MobyBlat:BlatJob(input)" />
+  <s:link source="DataBase" sink="DataBase:id" />
+  <s:link source="DataBase:mobyData" sink="BlatJob:DataBase(database)" />
+  <s:link source="Email:mobyData" sink="User:Email(email)" />
+  <s:link source="FASTA:mobyData" sink="BlatJob:FASTA(fasta)" />
+  <s:link source="MobyBlat:URL(result)" sink="Parse_Moby_Data_URL:mobyData('URL')" />
+  <s:link source="Sequences" sink="String:value" />
+  <s:link source="Download_Report_and_Filter:blatResults" sink="blatResults" />
+  <s:link source="Flatten_urls:concatenated" sink="Download_Report_and_Filter:URL" />
+  <s:link source="Parse_Moby_Data_URL:id" sink="Flatten_urls:stringlist" />
+  <s:link source="Password:mobyData" sink="User:Password(password)" />
+  <s:link source="String:mobyData" sink="FASTA:String(content)" />
+  <s:link source="User:mobyData" sink="MobyBlat:User(user)" />
+  <s:link source="eValue:value" sink="Download_Report_and_Filter:eValue" />
+  <s:source name="DataBase">
+    <s:metadata>
+      <s:description>Database name (Danio_rerio_Genome for Zebra Fish)</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Sequences">
+    <s:metadata>
+      <s:description>Sequences in fasta format</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="blatResults" />
+</s:scufl>
+

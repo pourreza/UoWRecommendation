@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:b2c992d9-e119-44f9-912b-bb0dff1ad8ad" author="Don Cruickshank" title="Unique tags">This workflow takes a comma separated list of tags and removes duplicate entries.  Tags may have multiple words in them.  An example string is "carrots,handbags,carrots,cheese".</s:workflowdescription>
+  <s:processor name="Comma" boring="true">
+    <s:stringconstant>,</s:stringconstant>
+  </s:processor>
+  <s:processor name="Split_on_commas">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Remove_duplicates">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringStripDuplicates</s:local>
+  </s:processor>
+  <s:processor name="Merge_with_commas">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:link source="Comma:value" sink="Split_on_commas:regex" />
+  <s:link source="Tags" sink="Split_on_commas:string" />
+  <s:link source="Comma:value" sink="Merge_with_commas:seperator" />
+  <s:link source="Merge_with_commas:concatenated" sink="Unique tags" />
+  <s:link source="Remove_duplicates:strippedlist" sink="Merge_with_commas:stringlist" />
+  <s:link source="Split_on_commas:split" sink="Remove_duplicates:stringlist" />
+  <s:source name="Tags" />
+  <s:sink name="Unique tags" />
+</s:scufl>
+

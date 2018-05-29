@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:845965f6-8763-4581-84f9-a30610dd3856" author="Steffen Möller" title="echo">The workflow tests the standard-compliance of web service descriptions of ARC-1, a development of the EU project "KnowARC" to modernise the grid infrastructure ARC of the NorduGrid. Learn more about it on http://www.knowarc.eu and http://www.nordugrid.org. If you have computers in spare - join us - and help you very own and many other sciences. And you make many interesting contacts just en passent.
+
+No authorisation is required for this very experimental service.</s:workflowdescription>
+  <s:processor name="echo">
+    <s:description>Listens and then speaks what it has heard.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://knowarc1.grid.niif.hu/wsdl/echo.wsdl</s:wsdl>
+      <s:operation>echo</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="echoRequestXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="echo" name="echoRequest" qname="{urn:echo}echo">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="say" qname="echoRequest&gt;say" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="echoResponseXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="echoResponse" name="echoResponse" qname="{urn:echo}echoResponse">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="hear" qname="echoResponse&gt;hear" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="StringToEcho" sink="echoRequestXML:say" />
+  <s:link source="echo:echoResponse" sink="echoResponseXML:input" />
+  <s:link source="echoRequestXML:output" sink="echo:echoRequest" />
+  <s:link source="echoResponseXML:hear" sink="StringEchoed" />
+  <s:source name="StringToEcho">
+    <s:metadata>
+      <s:description>Whatever string is entered here, it should be replied by the Echo service. To stress the experimental atmosphere of this workflow, the string "Hello, Grid!" seems appropriate.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="StringEchoed">
+    <s:metadata>
+      <s:description>Here, the resulting echo is displayed. Somewhat amazingly, but kind of conceptional, the echo is phrased in brackets ([....]). Just accept it as a slightly distored echo.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

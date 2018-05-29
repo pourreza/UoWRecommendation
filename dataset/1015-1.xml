@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:RTE7A0GDUO0" author="Domenico Marra, IST, Genova, Italy (domenico.marra@istge.it) " title="Search TP53 Somatic Mutation catalogue by exon and effect and retrieve full somatic mutation descriptions">This workflow takes the exon, the effect and the TP53 somatic mutation database as input and retrieves the full TP53 somatic mutation description(s) by first retrieving two different outputs: 
+- first output: a TP53 somatic mutation database unique IDs list associated with the input exon (done via a call to the getP53MutationIdsByExon web service) 
+- second output: a TP53 somatic mutation database unique IDs list associated with the input effect (done via a call to the getP53MutationIdsByEffect web service)and then using IDs for retrieving the full TP53 somatic mutations descriptions (done via a call to the getP53MutationsByIds web service).
+All these web services are available at the soaplab system at http://bioinformatics.istge.it:8080/axis/services
+&lt;br&gt;
+A number or string list local elaborations (for both outputs) are required:
+- returned IDs are in a string and this must be transformed in a list (done by the 'Split_string_into_string_list_by_regular_expression' processor and by the 'Split_string_into_string_list_by_regular_expression_2' processor, that are implemented by using a Split_string_into_string_list_by_regular_expression local processor)
+- comparison of the two above outputs and identification of the common subset (done by the 'String_list_intersection' processor, that is implemented by using a String_list_intersection local processor)
+- returned IDs include catalogues' names and this must be removed before their utilization for further processing (done by the 'Filter_list_of_strings_extracting_match_to_a_regex' processor, that is implemented by using a Filter_list_of_strings_extracting_match_to_a_regex local processor)
+&lt;br&gt;
+Special requirements on input data are:
+- the exon range of numbers is 2-11,
+- one or more of the following effects can be specified: 'fs' (frameshift), 'missense', 'na' (not available), 'nonsense', 'other', 'silent', 'splice'. Other values may lead to errors,
+- when specifying more than one exon or effect, they must be in a unique input string but on distinct text lines</s:workflowdescription>
+  <s:processor name="regex_entry_list_separator" boring="true">
+    <s:description>This string ('\n') specify that TP53 somatic mutation IDs are separated by a end of line character.
+It is used as a regex separator string to move more TP53 somatic mutation IDs from one text string into a list of strings.</s:description>
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="id_position" boring="true">
+    <s:description>This data specifies that the mutation code is the second part of the ID (wrt the regular expression specified by the
+'regex_id_separator' string.</s:description>
+    <s:stringconstant>2</s:stringconstant>
+  </s:processor>
+  <s:processor name="regex_id_separator" boring="true">
+    <s:description>This regular expression specifies the format of a TP53 somatic mutation id in the O2I SRS network service.
+This regular expression - ([A-Z0-9]*:)([0-9]*) - specifies that:
+- the first part of the ID is the catalogue name and is made up of one or more uppercase letters, numbers and underscore characters
+  followed by a colon (':')
+- the second part of the ID is the code of the mutation and must include numbers only.</s:description>
+    <s:stringconstant>([A-Z0-9]*:)([0-9]*)</s:stringconstant>
+  </s:processor>
+  <s:processor name="tp53_somatic_mutations_database" boring="true">
+    <s:description>This data specifies the name (constant) of the TP53 somatic mutation database that must be queried</s:description>
+    <s:stringconstant>tp53_somatic</s:stringconstant>
+  </s:processor>
+  <s:processor name="Split_string_into_list_by_regular_expression_2">
+    <s:description>This processor implements the following local string elaboration.
+IDs which are returned by the getP53MutationIdsByEffect call are included in a plain text string.
+They must be transformed in a list of strings.
+This task is implemented by using a Split_string_into_string_list_by_regular_expression local processor.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Filter_list_of_strings_extracting_match_to_a_regex">
+    <s:description>This processor implements the following local string elaboration.
+IDs which are returned by the call to String_list_intersection local processor include catalogue's name.
+The catalogue's code must be removed before the utilization of Ids for further processing.
+This task is implemented by using a Filter_list_of_strings_extracting_match_to_a_regex local processor.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="Split_string_into_string_list_by_regular_expression">
+    <s:description>This processor implements the following local string elaboration.
+IDs which are returned by the getP53MutationIdsByExon call are included in a plain text string.
+They must be transformed in a list of strings.
+This task is implemented by using a Split_string_into_string_list_by_regular_expression local processor.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="String_list_intersection">
+    <s:description>This processor implements the following local string elaboration.
+The two lists of strings, which are returned by calls to the Split_string_into_string_list_by_regular_expression local processor and to Split_string_into_string_list_by_regular_expression_2 local processor, are compared in order to identify the common subset.
+This task is implemented by using a String_list_intersection local processor.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringSetIntersection</s:local>
+  </s:processor>
+  <s:processor name="getP53MutationIdsByExon">
+    <s:description>Get tp53 gene mutation ids by exon from IARC TP53 Database catalogue (see srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getP53MutationIdsByExon</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53MutationsByIds">
+    <s:description>Get tp53 gene mutations by ids from TP53 IARC database (see http://srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getP53MutationsByIds</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53MutationIdsByEffect">
+    <s:description>Get tp53 gene mutation ids by effect from IARC TP53 Database catalogue (see srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getP53MutationIdsByEffect</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="regex_entry_list_separator:value" sink="Split_string_into_string_list_by_regular_expression:regex" />
+  <s:link source="regex_id_separator:value" sink="Filter_list_of_strings_extracting_match_to_a_regex:regex" />
+  <s:link source="id_position:value" sink="Filter_list_of_strings_extracting_match_to_a_regex:group" />
+  <s:link source="Filter_list_of_strings_extracting_match_to_a_regex:filteredlist" sink="getP53MutationsByIds:id" />
+  <s:link source="getP53MutationsByIds:result" sink="mutations" />
+  <s:link source="effect" sink="getP53MutationIdsByEffect:effect" />
+  <s:link source="getP53MutationIdsByEffect:result" sink="Split_string_into_list_by_regular_expression_2:string" />
+  <s:link source="regex_entry_list_separator:value" sink="Split_string_into_list_by_regular_expression_2:regex" />
+  <s:link source="regex_entry_list_separator:value" sink="Split_string_into_list_by_regular_expression_2:regex" />
+  <s:link source="Split_string_into_string_list_by_regular_expression:split" sink="String_list_intersection:list1" />
+  <s:link source="Split_string_into_list_by_regular_expression_2:split" sink="String_list_intersection:list2" />
+  <s:link source="String_list_intersection:intersection" sink="Filter_list_of_strings_extracting_match_to_a_regex:stringlist" />
+  <s:link source="tp53_somatic_mutations_database:value" sink="getP53MutationIdsByEffect:libs" />
+  <s:link source="getP53MutationIdsByExon:result" sink="Split_string_into_string_list_by_regular_expression:string" />
+  <s:link source="tp53_somatic_mutations_database:value" sink="getP53MutationIdsByExon:libs" />
+  <s:link source="exon" sink="getP53MutationIdsByExon:exon" />
+  <s:source name="exon" />
+  <s:source name="effect" />
+  <s:sink name="mutations" />
+</s:scufl>
+
+

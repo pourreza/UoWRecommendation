@@ -1,0 +1,655 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:5002070a-0041-4fb0-becf-ca6966a9fce8" author="Hamish McWilliam" title="Protein_alignment_transmembrane">Transmembrane domain prediction using EMBOSS tmap with an input sequence alignment of homolouges:
+1. Sequence similarity search (SSS) to find homologues
+2. Fetch sequences of hits
+3. Multiple sequence alignment (MSA) of hit sequences
+4. EMBOSS tmap with alignment from 3.
+
+Uses the EBI web services:
+1. WSFasta (see http://www.ebi.ac.uk/Tools/webservices/services/fasta)
+2. WSDbfetch (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch)
+3. WSClustalW2 (see http://www.ebi.ac.uk/Tools/webservices/services/clustalw2)
+4. Soaplab EMBOSS tmap
+
+Note: currently this workflow does not attempt to add the query sequence into the set of sequences passed to the multiple alignment. Thus it is most suitable for searches using entires which are persent in the searched database (i.e. will be included via the self hit).</s:workflowdescription>
+  <s:processor name="SSS">
+    <s:description>Find homologues for the input sequence via a sequence similarity search (SSS). In this case FASTA is used.</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:23bd481b-319a-4249-8cb0-ade72b29df6e" author="Hamish McWilliam" title="EBI_FASTA_for_tmap">Run a FASTA or SSEARCH sequence similarity search using the EBI's WSFasta service (see http://www.ebi.ac.uk/Tools/webservices/services/fasta).</s:workflowdescription>
+        <s:processor name="Unpack_Text_Result">
+          <s:description>Unpack plain text FASTA report from byte[] into string.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="Input_data">
+          <s:description>Input data structure, adds a type to the input sequence.</s:description>
+          <s:defaults>
+            <s:default name="type">sequence</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSFasta}data">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Unpack_XML_Result">
+          <s:description>Unpack XML FASTA report from byte[] into string.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="Input_data_list">
+          <s:description>Wrap the input sequence in a list.</s:description>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:arraytype optional="false" unbounded="false" wrapped="false" typename="WSArrayofData" name="content" qname="{http://www.ebi.ac.uk/WSFasta}WSArrayofData">
+                <s:elementtype>
+                  <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSFasta}data">
+                    <s:elements>
+                      <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                      <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                    </s:elements>
+                  </s:complextype>
+                </s:elementtype>
+              </s:arraytype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="FASTA_job_params">
+          <s:description>Parameters for the FASTA/SSEARCH job.</s:description>
+          <s:defaults>
+            <s:default name="moltype">Protein</s:default>
+            <s:default name="scores">10</s:default>
+            <s:default name="alignments">10</s:default>
+            <s:default name="eupper">0.00001</s:default>
+            <s:default name="elower">0.0</s:default>
+            <s:default name="async">1</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="inputParams" name="params" qname="{http://www.ebi.ac.uk/WSFasta}inputParams">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="program" qname="inputParams&gt;program" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="database" qname="inputParams&gt;database" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="moltype" qname="inputParams&gt;moltype" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="histogram" qname="inputParams&gt;histogram" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="nucleotide" qname="inputParams&gt;nucleotide" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="topstrand" qname="inputParams&gt;topstrand" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="bottomstrand" qname="inputParams&gt;bottomstrand" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="gapopen" qname="inputParams&gt;gapopen" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="gapext" qname="inputParams&gt;gapext" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="scores" qname="inputParams&gt;scores" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="alignments" qname="inputParams&gt;alignments" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="ktup" qname="inputParams&gt;ktup" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="matrix" qname="inputParams&gt;matrix" />
+                  <s:basetype optional="false" unbounded="false" typename="float" name="eupper" qname="inputParams&gt;eupper" />
+                  <s:basetype optional="false" unbounded="false" typename="float" name="elower" qname="inputParams&gt;elower" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="dbrange" qname="inputParams&gt;dbrange" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="seqrange" qname="inputParams&gt;seqrange" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="outformat" qname="inputParams&gt;outformat" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="async" qname="inputParams&gt;async" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="inputParams&gt;email" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="runFasta">
+          <s:description>Submit the FASTA/SSEARCH job.</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSFasta.wsdl</s:wsdl>
+            <s:operation>runFasta</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Poll_FASTA_Job">
+          <s:description>Check for job completion.</s:description>
+          <s:workflow maxretries="100" retrydelay="3000">
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f67bf7d6-cd5e-4ac7-be1e-d8b97255889b" author="" title="Poll_FASTA_Job" />
+              <s:processor name="Success">
+                <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+              </s:processor>
+              <s:processor name="Is_Done">
+                <s:beanshell>
+                  <s:scriptvalue>if(job_status.equals("DONE")) {
+  is_done = "true";
+} else {
+  is_done = "false";
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">job_status</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">is_done</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="checkStatus">
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSFasta.wsdl</s:wsdl>
+                  <s:operation>checkStatus</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:link source="Is_Done:is_done" sink="Success:test" />
+              <s:link source="Job_ID" sink="checkStatus:jobid" />
+              <s:link source="checkStatus:status" sink="Is_Done:job_status" />
+              <s:link source="checkStatus:status" sink="Job_Status" />
+              <s:source name="Job_ID" />
+              <s:sink name="Job_Status" />
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:processor name="Get_Text_Result">
+          <s:description>Get the FASTA report as text.</s:description>
+          <s:defaults>
+            <s:default name="type">tooloutput</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSFasta.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Get_XML_Result">
+          <s:description>Get the FASTA report as XML.</s:description>
+          <s:defaults>
+            <s:default name="type">toolxml</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSFasta.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="getIds">
+          <s:description>Get the hit identifers.</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSFasta.wsdl</s:wsdl>
+            <s:operation>getIds</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:link source="Database" sink="FASTA_job_params:database" />
+        <s:link source="E-mail" sink="FASTA_job_params:email" />
+        <s:link source="FASTA_Program" sink="FASTA_job_params:program" />
+        <s:link source="Get_Text_Result:output" sink="Unpack_Text_Result:bytes" />
+        <s:link source="Get_XML_Result:output" sink="Unpack_XML_Result:bytes" />
+        <s:link source="Input_data:output" sink="Input_data_list:WSArrayofData" />
+        <s:link source="Input_data_list:output" sink="runFasta:content" />
+        <s:link source="Sequence_or_ID" sink="Input_data:content" />
+        <s:link source="FASTA_job_params:output" sink="runFasta:params" />
+        <s:link source="Unpack_Text_Result:string" sink="FASTA_Text_Result" />
+        <s:link source="Unpack_XML_Result:string" sink="FASTA_XML_Result" />
+        <s:link source="runFasta:jobid" sink="Get_Text_Result:jobid" />
+        <s:link source="runFasta:jobid" sink="Get_XML_Result:jobid" />
+        <s:link source="runFasta:jobid" sink="Poll_FASTA_Job:Job_ID" />
+        <s:link source="runFasta:jobid" sink="getIds:jobid" />
+        <s:link source="getIds:result" sink="Hit_ID_List" />
+        <s:link source="runFasta:jobid" sink="Job_ID" />
+        <s:source name="Sequence_or_ID">
+          <s:metadata>
+            <s:description>Query sequence (fasta format recommended) or sequence identifer in database:identifer format (e.g. uniprot:wap_rat).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Database">
+          <s:metadata>
+            <s:description>The database to search (e.g. uniprot).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="E-mail">
+          <s:metadata>
+            <s:description>Your e-mail address.</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="FASTA_Program">
+          <s:metadata>
+            <s:description>The FASTA program to run (e.g. fasta3, fastf3, fasts3, fastx3, fasty3, tfastx, tfasty).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="FASTA_Text_Result">
+          <s:metadata>
+            <s:description>FASTA program output as plain text. Note the exact format of the output depends on the chosen FASTA program.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="FASTA_XML_Result">
+          <s:metadata>
+            <s:description>FASTA output in an XML format.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Hit_ID_List">
+          <s:metadata>
+            <s:description>List of the identifiers of the hits found.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Job_ID">
+          <s:metadata>
+            <s:description>The identifier of the job at EBI.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:coordination name="getIds_BLOCKON_Poll_FASTA_Job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Poll_FASTA_Job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>getIds</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Get_Text_Result_BLOCKON_Poll_FASTA_Job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Poll_FASTA_Job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_Text_Result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Get_XML_Result_BLOCKON_Poll_FASTA_Job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Poll_FASTA_Job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_XML_Result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Fetch_hits">
+    <s:description>Get the sequences for the hits from the sequence similarity search (SSS) to be used for the multiple sequence alignment (MSA).</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:b7b398cd-046b-4348-a82d-e75088d0f1c2" author="Hamish McWilliam" title="EBI_dbfetch_fetchBatch">From a list of sequence entry identifiers and a database name, fetch the sequences in fasta format using EBI's WSDbfetch service (see http://www.ebi.ac.uk/Tools/webservices/wsdl/WSDbfetch.wsdl).</s:workflowdescription>
+        <s:processor name="Format_list_for_dbfetch">
+          <s:description>Reformat the list of identifiers into a comma-delimited string for use with fetchBatch.</s:description>
+          <s:defaults>
+            <s:default name="seperator">,</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+        </s:processor>
+        <s:processor name="fetchBatch">
+          <s:description>Get a set of database entries (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch#fetchbatch_db_ids_format_style)</s:description>
+          <s:defaults>
+            <s:default name="format">fasta</s:default>
+            <s:default name="style">raw</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSDbfetch.wsdl</s:wsdl>
+            <s:operation>fetchBatch</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:link source="Database" sink="fetchBatch:db" />
+        <s:link source="ID_list" sink="Format_list_for_dbfetch:stringlist" />
+        <s:link source="Format_list_for_dbfetch:concatenated" sink="fetchBatch:ids" />
+        <s:link source="fetchBatch:fetchBatchReturn" sink="Sequences" />
+        <s:source name="ID_list">
+          <s:metadata>
+            <s:description>List of entry identifers from a specific database.</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Database">
+          <s:metadata>
+            <s:description>Name of the database to which the identifiers belong. For example "uniprot".</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="Sequences">
+          <s:metadata>
+            <s:description>Set of sequences in fasta format.</s:description>
+          </s:metadata>
+        </s:sink>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Database" boring="true">
+    <s:description>Database to search in the sequence similarity search (SSS) step.</s:description>
+    <s:stringconstant>uniprot</s:stringconstant>
+  </s:processor>
+  <s:processor name="SSS_program" boring="true">
+    <s:description>Program to use for the sequence similarity search (SSS).</s:description>
+    <s:stringconstant>fasta3</s:stringconstant>
+  </s:processor>
+  <s:processor name="MSA">
+    <s:description>Perform a multiple sequence alignment (MSA) using the sequences found by the sequence similarity search (SSS).</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:5822c9c0-5a58-43ef-afe4-73ff963ca984" author="Hamish McWilliam" title="EBI_ClustalW2">Perform a ClustalW multiple sequence alignment using the EBI’s WSClustalW2 service (see http://www.ebi.ac.uk/Tools/webservices/services/clustalw2). The set of sequences to align are the input, the other parameters for the search (see Job_params) are allowed to default.</s:workflowdescription>
+        <s:processor name="Input_data">
+          <s:defaults>
+            <s:default name="type">sequence</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSClustalW2}data">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Content_list">
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:arraytype optional="false" unbounded="false" wrapped="false" typename="WSArrayofData" name="content" qname="{http://www.ebi.ac.uk/WSClustalW2}WSArrayofData">
+                <s:elementtype>
+                  <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSClustalW2}data">
+                    <s:elements>
+                      <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                      <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                    </s:elements>
+                  </s:complextype>
+                </s:elementtype>
+              </s:arraytype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Unpack_output_result">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="Job_params">
+          <s:defaults>
+            <s:default name="async">1</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="inputParams" name="params" qname="{http://www.ebi.ac.uk/WSClustalW2}inputParams">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="alignment" qname="inputParams&gt;alignment" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="output" qname="inputParams&gt;output" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="tossgaps" qname="inputParams&gt;tossgaps" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="ktup" qname="inputParams&gt;ktup" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="window" qname="inputParams&gt;window" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="gapopen" qname="inputParams&gt;gapopen" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="endgaps" qname="inputParams&gt;endgaps" />
+                  <s:basetype optional="false" unbounded="false" typename="float" name="gapext" qname="inputParams&gt;gapext" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="gapdist" qname="inputParams&gt;gapdist" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="topdiags" qname="inputParams&gt;topdiags" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="pairgap" qname="inputParams&gt;pairgap" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="outputtree" qname="inputParams&gt;outputtree" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="matrix" qname="inputParams&gt;matrix" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="cpu" qname="inputParams&gt;cpu" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="kimura" qname="inputParams&gt;kimura" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="tree" qname="inputParams&gt;tree" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="align" qname="inputParams&gt;align" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="quicktree" qname="inputParams&gt;quicktree" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="score" qname="inputParams&gt;score" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="iteration" qname="inputParams&gt;iteration" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="clustering" qname="inputParams&gt;clustering" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="numiter" qname="inputParams&gt;numiter" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="outorder" qname="inputParams&gt;outorder" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="inputParams&gt;email" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="async" qname="inputParams&gt;async" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Unpack_alignment_result">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="Unpack_guide_tree_result">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="Get_output_result">
+          <s:description>Get the results of a job (see http://www.ebi.ac.uk/Tools/webservices/services/clustalw2#poll_jobid_type)</s:description>
+          <s:defaults>
+            <s:default name="type">tooloutput</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSClustalW2.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="runClustalW2">
+          <s:description>Submit a ClustalW analysis job (see http://www.ebi.ac.uk/Tools/webservices/services/clustalw2#runclustalw2_params_content)</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSClustalW2.wsdl</s:wsdl>
+            <s:operation>runClustalW2</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Get_guide_tree_result">
+          <s:description>Get the results of a job (see http://www.ebi.ac.uk/Tools/webservices/services/clustalw2#poll_jobid_type)</s:description>
+          <s:defaults>
+            <s:default name="type">tooldnd</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSClustalW2.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="EBI_ClustalW2_poll_job" boring="true">
+          <s:description>Check for job status, and wait if job not finished.</s:description>
+          <s:workflow maxretries="100" retrydelay="10000">
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:aae0d8c8-4e78-4c8c-827f-17ae9a618ee3" author="Hamish McWilliam" title="EBI_ClustalW2_poll_job">Check status of job.</s:workflowdescription>
+              <s:processor name="Success">
+                <s:description>If job not finished fail.</s:description>
+                <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+              </s:processor>
+              <s:processor name="Is_done">
+                <s:description>Map job status into true/false is done flag</s:description>
+                <s:beanshell>
+                  <s:scriptvalue>if(job_status.equals("DONE")) {
+  is_done = "true";
+} else {
+  is_done = "false";
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">job_status</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">is_done</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="checkStatus">
+                <s:description>Get the status of a submited job (see http://www.ebi.ac.uk/Tools/webservices/services/clustalw2#checkstatus_jobid)</s:description>
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSClustalW2.wsdl</s:wsdl>
+                  <s:operation>checkStatus</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:link source="Job_ID" sink="checkStatus:jobid" />
+              <s:link source="Is_done:is_done" sink="Success:test" />
+              <s:link source="checkStatus:status" sink="Is_done:job_status" />
+              <s:link source="checkStatus:status" sink="Job_status" />
+              <s:source name="Job_ID">
+                <s:metadata>
+                  <s:description>EBI job identifier for the job to check.</s:description>
+                </s:metadata>
+              </s:source>
+              <s:sink name="Job_status">
+                <s:metadata>
+                  <s:description>Status of the job.</s:description>
+                </s:metadata>
+              </s:sink>
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:processor name="Get_alignment_result">
+          <s:description>Get the results of a job (see http://www.ebi.ac.uk/Tools/webservices/services/clustalw2#poll_jobid_type)</s:description>
+          <s:defaults>
+            <s:default name="type">toolaln</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSClustalW2.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:link source="Email_address" sink="Job_params:email" />
+        <s:link source="Content_list:output" sink="runClustalW2:content" />
+        <s:link source="Get_alignment_result:output" sink="Unpack_alignment_result:bytes" />
+        <s:link source="Get_guide_tree_result:output" sink="Unpack_guide_tree_result:bytes" />
+        <s:link source="Get_output_result:output" sink="Unpack_output_result:bytes" />
+        <s:link source="Input_data:output" sink="Content_list:WSArrayofData" />
+        <s:link source="Job_params:output" sink="runClustalW2:params" />
+        <s:link source="Sequences" sink="Input_data:content" />
+        <s:link source="runClustalW2:jobid" sink="EBI_ClustalW2_poll_job:Job_ID" />
+        <s:link source="runClustalW2:jobid" sink="Get_alignment_result:jobid" />
+        <s:link source="runClustalW2:jobid" sink="Get_guide_tree_result:jobid" />
+        <s:link source="runClustalW2:jobid" sink="Get_output_result:jobid" />
+        <s:link source="Unpack_alignment_result:string" sink="ClustalW_alignment" />
+        <s:link source="Unpack_guide_tree_result:string" sink="ClustalW_guide_tree" />
+        <s:link source="Unpack_output_result:string" sink="ClustalW_output" />
+        <s:link source="runClustalW2:jobid" sink="Job_ID" />
+        <s:source name="Sequences">
+          <s:metadata>
+            <s:description>Sequences to align (fasta format recommended).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Email_address">
+          <s:metadata>
+            <s:description>User e-mail address.</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="ClustalW_alignment">
+          <s:metadata>
+            <s:description>The alignment in ClustalW format.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="ClustalW_guide_tree">
+          <s:metadata>
+            <s:description>Guide tree used to produce the final alignment.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Job_ID">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>text/xml</s:mimeType>
+            </s:mimeTypes>
+            <s:description>EBI job identifier</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="ClustalW_output" />
+        <s:coordination name="Get_alignment_result_BLOCKON_EBI_ClustalW2_poll_job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>EBI_ClustalW2_poll_job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_alignment_result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Get_guide_tree_result_BLOCKON_EBI_ClustalW2_poll_job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>EBI_ClustalW2_poll_job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_guide_tree_result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Get_output_result_BLOCKON_EBI_ClustalW2_poll_job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>EBI_ClustalW2_poll_job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_output_result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="tmap">
+    <s:description>From the multiple sequence alignment (MSA) predict the transmembrane regions.</s:description>
+    <s:defaults>
+      <s:default name="graph_format">png</s:default>
+    </s:defaults>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/protein_2d_structure.tmap</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="Email" sink="MSA:Email_address" />
+  <s:link source="Email" sink="SSS:E-mail" />
+  <s:link source="Sequence_or_ID" sink="SSS:Sequence_or_ID" />
+  <s:link source="Database:value" sink="Fetch_hits:Database" />
+  <s:link source="Database:value" sink="SSS:Database" />
+  <s:link source="Fetch_hits:Sequences" sink="MSA:Sequences" />
+  <s:link source="MSA:ClustalW_alignment" sink="MSA_alignment" />
+  <s:link source="MSA:ClustalW_alignment" sink="tmap:sequences_direct_data" />
+  <s:link source="MSA:Job_ID" sink="MSA_job_ID" />
+  <s:link source="SSS:Hit_ID_List" sink="Fetch_hits:ID_list" />
+  <s:link source="SSS:Hit_ID_List" sink="SSS_hit_IDs" />
+  <s:link source="SSS:Job_ID" sink="SSS_job_ID" />
+  <s:link source="SSS_program:value" sink="SSS:FASTA_Program" />
+  <s:link source="tmap:Graphics_in_PNG" sink="tmap_plot" />
+  <s:link source="tmap:outfile" sink="tmap_prediction" />
+  <s:source name="Email">
+    <s:metadata>
+      <s:description>User e-mail address.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Sequence_or_ID">
+    <s:metadata>
+      <s:description>Sequence to analyse for transmembrane regions. Either the actual sequence (fasta format recommended) or an entry identifer in database:identifer format (e.g. uniprot:LPHN2_RAT).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="SSS_job_ID">
+    <s:metadata>
+      <s:description>EBI job identifer for the sequence similarity search.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="MSA_job_ID">
+    <s:metadata>
+      <s:description>EBI job identifer for the multiple sequence alignment (MSA).</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="tmap_prediction">
+    <s:metadata>
+      <s:description>Report from tmap describing the predicted transmembrane regions.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="SSS_hit_IDs">
+    <s:metadata>
+      <s:description>Identifiers of the entries found by the sequence similarity search (SSS).</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="MSA_alignment">
+    <s:metadata>
+      <s:description>The multiple sequence alignment (MSA) produced for input to tmap.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="tmap_plot">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>image/png</s:mimeType>
+      </s:mimeTypes>
+      <s:description>Plot of the score used by tmap and the predicted regions.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:043a84d4-6f01-402e-845a-0f834249217f" author="Steffen Moeller" title="Structural alignment of arbitrary number of protein structures.">This grid-executed Mustang application performs a structural alignment of protein sequences. The number of arguments is variable, in principle, but is shown here for three. The application is executed via the Taverna-ARC plugin on a machine of the NorduGrid. Although your machine can be a part of it, you may prefer to wait for a later version of that interface that does not require grid certificates.</s:workflowdescription>
+  <s:processor name="Mustang_Structure_Alignment">
+    <s:description>structural alignment of arbitrary number of protein structures</s:description>
+    <s:knowarcjanitor>
+      <s:usecaseid>mustang</s:usecaseid>
+    </s:knowarcjanitor>
+    <s:mergemode input="pdb_structures" mode="merge" />
+    <s:iterationstrategy>
+      <i:iterator xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10" name="pdb_structures" />
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="2nd">
+    <s:workflow>
+      <s:xscufllocation>http://www.myexperiment.org/workflows/167/download?version=1</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="3rd">
+    <s:workflow>
+      <s:xscufllocation>http://www.myexperiment.org/workflows/167/download?version=1</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="1st">
+    <s:workflow>
+      <s:xscufllocation>http://www.myexperiment.org/workflows/167/download?version=1</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:link source="1st structure PDB ID" sink="1st:pdbID" />
+  <s:link source="2nd structure PDB ID" sink="2nd:pdbID" />
+  <s:link source="3rd structure PDB ID" sink="3rd:pdbID" />
+  <s:link source="1st:pdbFlatFile" sink="Mustang_Structure_Alignment:pdb_structures" />
+  <s:link source="2nd:pdbFlatFile" sink="Mustang_Structure_Alignment:pdb_structures" />
+  <s:link source="3rd:pdbFlatFile" sink="Mustang_Structure_Alignment:pdb_structures" />
+  <s:link source="1st:pdbFlatFile" sink="1st_structure" />
+  <s:link source="2nd:pdbFlatFile" sink="2nd_structure" />
+  <s:link source="3rd:pdbFlatFile" sink="3rd_structure" />
+  <s:link source="Mustang_Structure_Alignment:STDERR" sink="stderr" />
+  <s:link source="Mustang_Structure_Alignment:STDOUT" sink="stdout" />
+  <s:link source="Mustang_Structure_Alignment:combined_structures" sink="combined structures" />
+  <s:link source="Mustang_Structure_Alignment:structure_derived_alignment" sink="structure_derived_sequence_alignment" />
+  <s:source name="1st structure PDB ID">
+    <s:metadata>
+      <s:description>A PDB ID like '1va1'. The corresponding PDB entry is fetched from the database.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="2nd structure PDB ID">
+    <s:metadata>
+      <s:description>A PDB ID like '1va2. The corresponding PDB entry is fetched from the database.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="3rd structure PDB ID">
+    <s:metadata>
+      <s:description>A PDB ID like '1va3'. The corresponding PDB entry is fetched from the database.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="stdout">
+    <s:metadata>
+      <s:description>Standard output of mustang.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="stderr">
+    <s:metadata>
+      <s:description>Error messages are presented here. If there are any, then these should be forwarded to the author of this workflow.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="combined structures">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>application/x-chemical</s:mimeType>
+        <s:mimeType>chemical/x-pdb</s:mimeType>
+      </s:mimeTypes>
+      <s:description>Overlay of all structurally aligned structures.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="structure_derived_sequence_alignment">
+    <s:metadata>
+      <s:description>A protein sequence alignment that has its assignment primarily in the spacial vicinity of the corresponding amino acids in the protein structure alignment.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="1st_structure">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>chemical/x-pdb</s:mimeType>
+      </s:mimeTypes>
+      <s:description>The first structure that was retrieved from PDB.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="2nd_structure">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>chemical/x-pdb</s:mimeType>
+      </s:mimeTypes>
+      <s:description>The second structure that was retrieved from PDB.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="3rd_structure">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>chemical/x-pdb</s:mimeType>
+      </s:mimeTypes>
+      <s:description>The third structure that was retrieved from PDB.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

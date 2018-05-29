@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:N4RV9RBFGB0" author="" title="" />
+  <s:processor name="result_type" boring="true">
+    <s:stringconstant>result</s:stringconstant>
+  </s:processor>
+  <s:processor name="arguments" boring="true">
+    <s:stringconstant>&lt;action&gt;browse&lt;/action&gt;&lt;format&gt;text&lt;/format&gt;&lt;ids&gt;*&lt;/ids&gt;&lt;table&gt;Gene&lt;/table&gt;</s:stringconstant>
+  </s:processor>
+  <s:processor name="query">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://130.88.197.210/maxdBrowse/maxdBrowse.wsdl</s:wsdl>
+      <s:operation>query</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="affy_ids">
+    <s:description>Parses the text based output from maxdBrowse query to list the probeset ids</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/qtl_analysis.affy_ids</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="arguments:value" sink="query:args" />
+  <s:link source="query:return" sink="affy_ids:data_direct_data" />
+  <s:link source="result_type:value" sink="query:resultType" />
+  <s:link source="affy_ids:output" sink="output" />
+  <s:sink name="output" />
+</s:scufl>
+
+

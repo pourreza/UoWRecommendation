@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:a10a8f7d-aca3-4adb-aaf1-3099bc11f23d" author="" title="getCountryCode" />
+  <s:processor name="Get_web_page_from_URL">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="composeURL">
+    <s:defaults>
+      <s:default name="lat">47.03</s:default>
+      <s:default name="lng">10.2</s:default>
+    </s:defaults>
+    <s:beanshell>
+      <s:scriptvalue>List vars = new ArrayList(Arrays.asList(this.variables));
+
+// vars.remove("variables");
+vars.remove("bsh");
+
+
+String url = "http://ws.geonames.org/countryCode?";
+
+for (String variable : vars) {
+   url = url + variable + "=" + eval(variable) + "&amp;";
+}
+
+
+// Chop of last &amp;
+url = url.substring(0, url.length());</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">lat</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">lng</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="composeURL:url" sink="Get_web_page_from_URL:url" />
+  <s:link source="lat" sink="composeURL:lat" />
+  <s:link source="lng" sink="composeURL:lng" />
+  <s:link source="Get_web_page_from_URL:contents" sink="country code" />
+  <s:link source="composeURL:url" sink="url" />
+  <s:source name="lat" />
+  <s:source name="lng" />
+  <s:sink name="url" />
+  <s:sink name="country code" />
+</s:scufl>
+

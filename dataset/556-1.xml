@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:2dc68802-e350-49ef-866f-f454c9c8a5ad" author="Thomas Kuhn" title="Extract ChEBI molecules from TSV file and upload them into a database">This worklfow load a TSV file from the ChEBI database. (normally structures.tsv) After the extraction of the molecules from the TSV file all non MDL mol files are removed before the valid molecules are inserted into a database.</s:workflowdescription>
+  <s:processor name="Write_CSV___TXT_Files">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.io.FileWriter
+      <s:extensions>
+        <s:filewriter s:filename="log_chebimolecules.txt" />
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Textfile_Reader">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.io.TextFileReader
+      <s:extensions>
+        <s:filereader>
+          <s:filenamelist>
+            <s:filenames s:filename="structures.tsv" />
+          </s:filenamelist>
+        </s:filereader>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Extract_Data_from_Chebi_Structure_TSV">
+    <s:cdk>org.openscience.cdk.applications.taverna.tools.chebi.ExtractDataFromChebiStructureTSV</s:cdk>
+  </s:processor>
+  <s:processor name="Origin" boring="true">
+    <s:stringconstant>chebi</s:stringconstant>
+  </s:processor>
+  <s:processor name="Insert_Molecule_into_database">
+    <s:defaults>
+      <s:default name="Origon" />
+    </s:defaults>
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.database.pgchem.InsertMoleculeIntoDB
+      <s:extensions>
+        <s:InsertMoleculeIntoDB>
+          <DBConnectionPostgres>
+            <DBURL>jdbc:postgresql://localhost/cdktaverna</DBURL>
+            <DBUserName></DBUserName>
+            <DBUserPassword />
+            <SQLQuery>INSERT INTO chebimolecules (molecule,originalid,origin,comment) VALUES(migrate_molecule(?),?,?,?)</SQLQuery>
+          </DBConnectionPostgres>
+        </s:InsertMoleculeIntoDB>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Remove_all_non_MDL_Mol_entries_from_list">
+    <s:cdk>org.openscience.cdk.applications.taverna.tools.chebi.RemoveAllNonMolFilesFromChebiStructureExtraction</s:cdk>
+  </s:processor>
+  <s:link source="Extract_Data_from_Chebi_Structure_TSV:COMPOUND_ID" sink="Remove_all_non_MDL_Mol_entries_from_list:COMPOUND_ID" />
+  <s:link source="Extract_Data_from_Chebi_Structure_TSV:DIMENSION" sink="Remove_all_non_MDL_Mol_entries_from_list:DIMENSION" />
+  <s:link source="Extract_Data_from_Chebi_Structure_TSV:ID" sink="Remove_all_non_MDL_Mol_entries_from_list:ID" />
+  <s:link source="Extract_Data_from_Chebi_Structure_TSV:STRUCTURE" sink="Remove_all_non_MDL_Mol_entries_from_list:STRUCTURE" />
+  <s:link source="Extract_Data_from_Chebi_Structure_TSV:TYPE" sink="Remove_all_non_MDL_Mol_entries_from_list:TYPE" />
+  <s:link source="Insert_Molecule_into_database:comment" sink="Write_CSV___TXT_Files:content" />
+  <s:link source="Origin:value" sink="Insert_Molecule_into_database:Origon" />
+  <s:link source="Remove_all_non_MDL_Mol_entries_from_list:COMPOUND_ID" sink="Insert_Molecule_into_database:Comment" />
+  <s:link source="Remove_all_non_MDL_Mol_entries_from_list:ID" sink="Insert_Molecule_into_database:orginalIDs" />
+  <s:link source="Remove_all_non_MDL_Mol_entries_from_list:STRUCTURE" sink="Insert_Molecule_into_database:inputStructures" />
+  <s:link source="Textfile_Reader:fileContent" sink="Extract_Data_from_Chebi_Structure_TSV:inputContent" />
+</s:scufl>
+

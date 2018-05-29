@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:7297f341-36ad-4786-9c22-df3847703ac1" author="" title="Download Entries from PubChem" />
+  <s:processor name="Compression" boring="true">
+    <s:stringconstant>eCompress_None</s:stringconstant>
+  </s:processor>
+  <s:processor name="Format" boring="true">
+    <s:stringconstant>eFormat_XML</s:stringconstant>
+  </s:processor>
+  <s:processor name="Download_out">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="DownloadResponse" name="parameters" qname="{http://pubchem.ncbi.nlm.nih.gov/}DownloadResponse">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="DownloadKey" qname="{http://pubchem.ncbi.nlm.nih.gov/}&gt;DownloadResponse&gt;DownloadKey" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="GetDownloadUrl_in">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetDownloadUrl" name="parameters" qname="{http://pubchem.ncbi.nlm.nih.gov/}GetDownloadUrl">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="DownloadKey" qname="{http://pubchem.ncbi.nlm.nih.gov/}&gt;GetDownloadUrl&gt;DownloadKey" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="InputListText_in">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="InputListText" name="parameters" qname="{http://pubchem.ncbi.nlm.nih.gov/}InputListText">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="ids" qname="{http://pubchem.ncbi.nlm.nih.gov/}&gt;InputListText&gt;ids" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="idType" qname="{http://pubchem.ncbi.nlm.nih.gov/}&gt;InputListText&gt;idType" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="idType" />
+        <i:iterator name="ids" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="GetDownloadUrl_out">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetDownloadUrlResponse" name="parameters" qname="{http://pubchem.ncbi.nlm.nih.gov/}GetDownloadUrlResponse">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="url" qname="{http://pubchem.ncbi.nlm.nih.gov/}&gt;GetDownloadUrlResponse&gt;url" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="InputListText_out">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="InputListTextResponse" name="parameters" qname="{http://pubchem.ncbi.nlm.nih.gov/}InputListTextResponse">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="ListKey" qname="{http://pubchem.ncbi.nlm.nih.gov/}&gt;InputListTextResponse&gt;ListKey" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Download_in">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="Download" name="parameters" qname="{http://pubchem.ncbi.nlm.nih.gov/}Download">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="ListKey" qname="{http://pubchem.ncbi.nlm.nih.gov/}&gt;Download&gt;ListKey" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="eFormat" qname="{http://pubchem.ncbi.nlm.nih.gov/}&gt;Download&gt;eFormat" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="eCompress" qname="{http://pubchem.ncbi.nlm.nih.gov/}&gt;Download&gt;eCompress" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="ListKey" />
+        <i:iterator name="eFormat" />
+        <i:iterator name="eCompress" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="GetDownloadUrl">
+    <s:description>Given a download key, return an FTP URL that may be used to
+      download the requested file. Synchronous.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://pubchem.ncbi.nlm.nih.gov/pug_soap/pug_soap.cgi?wsdl</s:wsdl>
+      <s:operation>GetDownloadUrl</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="InputListText">
+    <s:description>Input a set of identifiers for a PubChem database,
+      as a simple string of integer values separated by commas and/or whitespace. Returns a list key. Synchronous.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://pubchem.ncbi.nlm.nih.gov/pug_soap/pug_soap.cgi?wsdl</s:wsdl>
+      <s:operation>InputListText</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Download">
+    <s:description>Given a list key, prepare for download a file
+      containing those records in the selected format. See the web download service documentation
+      (http://pubchem.ncbi.nlm.nih.gov/pc_fetch/pc_fetch-help.html) for more detail on the supported formats and file types.
+      Returns a download key. Asynchronous.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://pubchem.ncbi.nlm.nih.gov/pug_soap/pug_soap.cgi?wsdl</s:wsdl>
+      <s:operation>Download</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Status_Check">
+    <s:workflow maxretries="100" retrydelay="10000" critical="true">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:36b55808-18e0-4269-ad57-7084227c7b77" author="" title="status-check" />
+        <s:processor name="Fail_if_false">
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="CheckForSuccess">
+          <s:beanshell>
+            <s:scriptvalue>if (!(status.equals("eStatus_Success") ||
+	status.equals("eStatus_Running") ||
+	status.equals("eStatus_Queued") ||
+        status.equals("eStatus_HitLimit") ||
+        status.equals("eStatus_TimeLimit")))
+{
+	throw new Exception("Request error - job has failed");
+}
+success = (status.equals("eStatus_Success") ||  status.equals("eStatus_HitLimit") || status.equals("eStatus_TimeLimit")).toString();</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">status</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">success</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="GetOperationStatus_in">
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="GetOperationStatus" name="parameters" qname="{http://pubchem.ncbi.nlm.nih.gov/}GetOperationStatus">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="AnyKey" qname="{http://pubchem.ncbi.nlm.nih.gov/}AnyKeyType&gt;AnyKey" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="GetOperationStatus_out">
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="GetOperationStatusResponse" name="parameters" qname="{http://pubchem.ncbi.nlm.nih.gov/}GetOperationStatusResponse">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="status" qname="{http://pubchem.ncbi.nlm.nih.gov/}&gt;GetOperationStatusResponse&gt;status" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="GetOperationStatus">
+          <s:description>Query for asynchronous
+        operation status by AnyKey returned when operation was spawned.</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://pubchem.ncbi.nlm.nih.gov/pug_soap/pug_soap.cgi?wsdl</s:wsdl>
+            <s:operation>GetOperationStatus</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:link source="KeyIn" sink="KeyOut" />
+        <s:link source="CheckForSuccess:success" sink="Fail_if_false:test" />
+        <s:link source="GetOperationStatus_in:output" sink="GetOperationStatus:parameters" />
+        <s:link source="KeyIn" sink="GetOperationStatus_in:AnyKey" />
+        <s:link source="GetOperationStatus:parameters" sink="GetOperationStatus_out:input" />
+        <s:link source="GetOperationStatus_out:status" sink="CheckForSuccess:status" />
+        <s:source name="KeyIn" />
+        <s:sink name="KeyOut" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Compression:value" sink="Download_in:eCompress" />
+  <s:link source="Download:parameters" sink="Download_out:input" />
+  <s:link source="Download_in:output" sink="Download:parameters" />
+  <s:link source="Download_out:DownloadKey" sink="Status_Check:KeyIn" />
+  <s:link source="Format:value" sink="Download_in:eFormat" />
+  <s:link source="GetDownloadUrl:parameters" sink="GetDownloadUrl_out:input" />
+  <s:link source="GetDownloadUrl_in:output" sink="GetDownloadUrl:parameters" />
+  <s:link source="ID" sink="InputListText_in:ids" />
+  <s:link source="InputListText:parameters" sink="InputListText_out:input" />
+  <s:link source="InputListText_in:output" sink="InputListText:parameters" />
+  <s:link source="InputListText_out:ListKey" sink="Download_in:ListKey" />
+  <s:link source="Status_Check:KeyOut" sink="GetDownloadUrl_in:DownloadKey" />
+  <s:link source="idType" sink="InputListText_in:idType" />
+  <s:link source="GetDownloadUrl_out:url" sink="URL" />
+  <s:source name="ID">
+    <s:metadata>
+      <s:description>1, 2, 3, 4, 5, 6, 7, 8, 9, 10</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="idType">
+    <s:metadata>
+      <s:description>eID_CID</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="URL" />
+</s:scufl>
+

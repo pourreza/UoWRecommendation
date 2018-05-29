@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:4a10d766-1358-4db7-b65e-92406db0ae9c" author="Andrea Wiggins" title="DOI Files">This workflow generates additional files required for handling DOI creation: the DOI URL mapping required for the DOI deposit, and a set of sql update statements to insert the DOIs into an eprints database.
+
+Note that it is extremely important for this workflow to use the same CSV file as was used with the DOI record generator, as well as the same seed number.</s:workflowdescription>
+  <s:processor name="file_location" boring="true">
+    <s:description>Location of the source CSV with data for creating records.</s:description>
+    <s:stringconstant>/file_location/eprint.csv</s:stringconstant>
+  </s:processor>
+  <s:processor name="read_input">
+    <s:description>Shim to read in the file, location provided by a string constant.</s:description>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="split_rows">
+    <s:description>Takes a flat CSV input file and splits it into a list.</s:description>
+    <s:defaults>
+      <s:default name="regex">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="split_numbers_to_list">
+    <s:description>Takes a single string output and converts it to a list.</s:description>
+    <s:defaults>
+      <s:default name="regex">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="split_more">
+    <s:description>Takes the list input and creates a 2-deep list.</s:description>
+    <s:defaults>
+      <s:default name="regex">";"</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="make_number_sequence">
+    <s:description>Creates a sequential integer series for assignment to DOIs.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+count = trigger.size();
+
+delim = "\n";
+
+out = new String();
+
+for(i=0; i &lt; count; i++){
+out = out + (i + Integer.valueOf(seed));
+out = out + delim;
+}
+number_sequence = out;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">seed</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">trigger</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">number_sequence</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="format_months">
+    <s:description>Ensures two-digit month values.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+import java.util.regex.Pattern;
+
+String jan_regex = "1";
+String feb_regex = "2";
+String mar_regex = "3";
+String apr_regex = "4";
+String may_regex = "5";
+String jun_regex = "6";
+String jul_regex = "7";
+String aug_regex = "8";
+String sep_regex = "9";
+
+if (Pattern.matches(jan_regex, month)) {
+formatted_month = "01";
+} else {
+	if (Pattern.matches(feb_regex, month)) {
+	formatted_month = "02";
+} else {
+	if (Pattern.matches(mar_regex, month)) {
+	formatted_month = "03";
+} else {
+	if (Pattern.matches(apr_regex, month)) {
+	formatted_month = "04";
+} else {
+	if (Pattern.matches(may_regex, month)) {
+	formatted_month = "05";
+} else {
+	if (Pattern.matches(jun_regex, month)) {
+	formatted_month = "06";
+} else {
+	if (Pattern. matches(jul_regex, month)) {
+	formatted_month = "07";
+} else {
+	if (Pattern.matches(aug_regex, month)) {
+	formatted_month = "08";
+} else {
+	if (Pattern.matches(sep_regex, month)) {
+	formatted_month = "09";
+} else {
+	formatted_month = month;
+}
+}
+}
+}
+}
+}
+}
+}
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">month</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">formatted_month</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="aggregate_doi_urls">
+    <s:description>Aggregates the individual URL mappings into a single file to send to the registry agency.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+delim = "\n";
+
+count = doi.size();
+
+out = "" + delim;
+
+for(i = 0; i &lt; count; i++) {
+out = out + doi.get(i);
+out = out + delim;
+}
+out = out;
+
+import_file = out;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">doi</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">import_file</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="generate_doi">
+    <s:description>Creates a unique DOI string following the format &lt;DOI.base&gt;/&lt;source&gt;.&lt;year&gt;-&lt;month&gt;.&lt;sequential number&gt;.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+//replace any spaces in the name of the source repository
+formatted_source = source.replaceAll("\\s","");
+
+//assemble metadata elements and numberic list into DOI
+doi = "doi.base/FLOSSmole." + formatted_source + "." + year + "-" + month + "." + seed;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">source</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">year</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">month</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">seed</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">doi</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="source" />
+        <i:iterator name="year" />
+        <i:iterator name="month" />
+        <i:iterator name="seed" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="generate_doi_url_mapping">
+    <s:description>Generates a pairlist of DOIs and associated URLs for the files.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+doi_records = doi+" - "+url;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">doi</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">url</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">doi_records</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="url" />
+        <i:iterator name="doi" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="split_fields">
+    <s:description>Reads the 2-deep input list and splits out the values into separate variables.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 4/29/2009
+
+eprintid = file.get(0);
+year = file.get(3);
+month = file.get(4);
+url = file.get(6);
+source = file.get(11);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">file</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">eprintid</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">year</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">month</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">source</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:iterator xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10" name="file" />
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="make_sql_doi_updates">
+    <s:description>Creates sql update statements for each new DOI.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 6/5/2009
+
+sql_insert = "UPDATE `eprint` SET `id_number` = \"" + doi + "\" WHERE `eprintid` = \""+eprintid+"\";";</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">doi</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">eprintid</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">sql_insert</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="doi" />
+        <i:iterator name="eprintid" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="aggregate_sql_updates">
+    <s:description>Aggregates the individual sql update statements into a single file.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>// A. Wiggins 6/5/2009
+
+delim = "\n";
+
+count = sql.size();
+
+out = "" + delim;
+
+for(i = 0; i &lt; count; i++) {
+out = out + sql.get(i);
+out = out + delim;
+}
+out = out;
+
+update_statements = out;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">sql</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">update_statements</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="aggregate_doi_urls:import_file" sink="DOIURLs" />
+  <s:link source="aggregate_sql_updates:update_statements" sink="sqlUpdateStatements" />
+  <s:link source="file_location:value" sink="read_input:fileurl" />
+  <s:link source="format_months:formatted_month" sink="generate_doi:month" />
+  <s:link source="generate_doi:doi" sink="make_sql_doi_updates:doi" />
+  <s:link source="generate_doi_url_mapping:doi_records" sink="aggregate_doi_urls:doi" />
+  <s:link source="make_sql_doi_updates:sql_insert" sink="aggregate_sql_updates:sql" />
+  <s:link source="read_input:filecontents" sink="split_rows:string" />
+  <s:link source="seed" sink="make_number_sequence:seed" />
+  <s:link source="generate_doi:doi" sink="generate_doi_url_mapping:doi" />
+  <s:link source="make_number_sequence:number_sequence" sink="split_numbers_to_list:string" />
+  <s:link source="split_fields:eprintid" sink="make_number_sequence:trigger" />
+  <s:link source="split_fields:eprintid" sink="make_sql_doi_updates:eprintid" />
+  <s:link source="split_fields:month" sink="format_months:month" />
+  <s:link source="split_fields:source" sink="generate_doi:source" />
+  <s:link source="split_fields:url" sink="generate_doi_url_mapping:url" />
+  <s:link source="split_fields:year" sink="generate_doi:year" />
+  <s:link source="split_more:split" sink="split_fields:file" />
+  <s:link source="split_numbers_to_list:split" sink="generate_doi:seed" />
+  <s:link source="split_rows:split" sink="split_more:string" />
+  <s:source name="seed">
+    <s:metadata>
+      <s:description>Seed number for generating unique DOIs.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="sqlUpdateStatements">
+    <s:metadata>
+      <s:description>Update statements to insert DOIs into an existing eprints database.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="DOIURLs" />
+</s:scufl>
+

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:74716b28-2176-4490-b00f-65f77420292f" author="Thomas Kelder" title="Write pathway to disk">Downloads and writes a pathway from WikiPathways to a local disk in the given file type.</s:workflowdescription>
+  <s:processor name="concat_filetype">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="concat_dot">
+    <s:defaults>
+      <s:default name="string2">.</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="writeFile">
+    <s:beanshell>
+      <s:scriptvalue>File file = new File(fileName);
+if(file.getParentFile() != null) {
+	file.getParentFile().mkdirs();
+}
+
+if(data instanceof String) {
+	BufferedWriter out = new BufferedWriter(new FileWriter(file));
+	out.write(data);
+	out.close();
+} else {
+	FileOutputStream out = new FileOutputStream(file);
+	out.write(data);
+	out.close();
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">data</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">fileName</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist />
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="getPathwayAsOutput">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getPathwayAsResponse" name="parameters" qname="{http://www.wso2.org/php/xsd}getPathwayAsResponse">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="base64Binary" name="data" qname="{http://www.wso2.org/php/xsd}&gt;getPathwayAsResponse&gt;data" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="getPathwayAsInput">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getPathwayAs" name="parameters" qname="{http://www.wso2.org/php/xsd}getPathwayAs">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="fileType" qname="{http://www.wso2.org/php/xsd}&gt;getPathwayAs&gt;fileType" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="pwName" qname="{http://www.wso2.org/php/xsd}&gt;getPathwayAs&gt;pwName" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="pwSpecies" qname="{http://www.wso2.org/php/xsd}&gt;getPathwayAs&gt;pwSpecies" />
+            <s:basetype optional="false" unbounded="false" typename="integer" name="revision" qname="{http://www.wso2.org/php/xsd}&gt;getPathwayAs&gt;revision" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="revision" />
+        <i:iterator name="pwSpecies" />
+        <i:iterator name="pwName" />
+        <i:iterator name="fileType" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="getPathwayAs">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.wikipathways.org/wpi/webservice/webservice.php?wsdl</s:wsdl>
+      <s:operation>getPathwayAs</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="file_name" sink="concat_dot:string1" />
+  <s:link source="file_type" sink="getPathwayAsInput:fileType" />
+  <s:link source="concat_dot:output" sink="concat_filetype:string1" />
+  <s:link source="file_type" sink="concat_filetype:string2" />
+  <s:link source="getPathwayAs:parameters" sink="getPathwayAsOutput:input" />
+  <s:link source="getPathwayAsInput:output" sink="getPathwayAs:parameters" />
+  <s:link source="pathway_name" sink="getPathwayAsInput:pwName" />
+  <s:link source="pathway_species" sink="getPathwayAsInput:pwSpecies" />
+  <s:link source="revision" sink="getPathwayAsInput:revision" />
+  <s:link source="concat_filetype:output" sink="writeFile:fileName" />
+  <s:link source="concat_filetype:output" sink="writtenFile" />
+  <s:link source="getPathwayAsOutput:data" sink="writeFile:data" />
+  <s:source name="pathway_name">
+    <s:metadata>
+      <s:description>The name of the pathway (e.g. "Apoptosis").</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="pathway_species">
+    <s:metadata>
+      <s:description>The species of the pathway (e.g. "Homo sapiens"). See http://www.wikipathways.org for a list of available species.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="file_type">
+    <s:metadata>
+      <s:description>The type of the file to write. This can be one of:
+- gpml (xml format, for use in WikiPathways, PathVisio, Cytoscape)
+- png (rasterized image format)
+- svg (vector image format)
+- pdf (portable document format)
+- pwf (for use in Eu.Gene)
+- txt (a text file containing a list of external references for the genes/proteins/metabolites on the pathway)</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="revision">
+    <s:metadata>
+      <s:description>The version of the pathway to download. Use '0' for the latest revision.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="file_name">
+    <s:metadata>
+      <s:description>The name of the file to write the pathway to, without the file extension (this will be derived form the file type).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="writtenFile">
+    <s:metadata>
+      <s:description>The file that was written.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:7263f5cf-0259-4b8f-8034-ac62b95d9989" author="Mikołaj Rybiński" title="Transform XML">Similar to Transform_XML local widget but accepts transformation parameters and skips the part with writing to the output file. The essence, i.e. Transform_XML beanshell works with Strings representing file contents, not with file URLs.</s:workflowdescription>
+  <s:processor name="Transform_XML">
+    <s:beanshell>
+      <s:scriptvalue>param(paramstr) {
+    nameAndValue = paramstr.split("=");
+    if (nameAndValue.length != 2) {
+        throw new RuntimeException("Wrong parameter format: \"" + paramstr + "\".");
+    }
+    name = nameAndValue[0].trim();
+    value = nameAndValue[1].trim();
+    return this;
+}
+
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+
+Source inSource = new StreamSource(new StringReader(inContent));
+Source xslSource = new StreamSource(new StringReader(xslContent));
+
+// the factory pattern supports different XSLT processors
+// e.g. set the "javax.xml.transform.TransformerFactory" system property
+TransformerFactory tnfFact = TransformerFactory.newInstance();
+Transformer tnf = tnfFact.newTransformer(xslSource);
+
+for (paramstr : xslParamList) {
+    p = param(paramstr);
+    tnf.setParameter(p.name, p.value);
+
+}
+
+Writer outputWriter = new StringWriter();
+tnf.transform(inSource, new StreamResult(outputWriter));
+outputStr = outputWriter.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">inContent</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">xslContent</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">xslParamList</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">outputStr</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Read_xslFile">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="Read_inFile">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:link source="inFileURL" sink="Read_inFile:fileurl" />
+  <s:link source="xslFileURL" sink="Read_xslFile:fileurl" />
+  <s:link source="xslParamList" sink="Transform_XML:xslParamList" />
+  <s:link source="Read_inFile:filecontents" sink="Transform_XML:inContent" />
+  <s:link source="Read_xslFile:filecontents" sink="Transform_XML:xslContent" />
+  <s:link source="Transform_XML:outputStr" sink="outputStr" />
+  <s:source name="xslFileURL" />
+  <s:source name="inFileURL" />
+  <s:source name="xslParamList" />
+  <s:sink name="outputStr" />
+</s:scufl>
+

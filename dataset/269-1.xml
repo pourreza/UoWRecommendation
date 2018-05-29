@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+  <s:processor name="fieldName" boring="true">
+    <s:stringconstant>Alltext</s:stringconstant>
+  </s:processor>
+  <s:processor name="Swissprot_Id" boring="true">
+    <s:stringconstant>Q8BTW2</s:stringconstant>
+  </s:processor>
+  <s:processor name="parse_uniprot">
+    <s:description>Extract information from a Uniprot text file including PubMed, InterPro, Pfam and other related accession numbers</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.parse_uniprot</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="Uniprot_search">
+    <s:description>To be added</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/uniprotsequence.uniprot</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="parse_go_term">
+    <s:beanshell>
+      <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++) 
+{		
+	String trimmed = split[i].trim();
+	String[] trimmedSplit = trimmed.split("=");
+	if (trimmedSplit.length &gt;= 1)
+	{
+	   if(trimmedSplit[0].equals("GO"))
+   		{
+       			nonEmpty.add(trimmedSplit[1].trim());
+   		}	
+	}
+}
+
+String output = "";
+
+for (int i = 0; i &lt; nonEmpty.size(); i++)
+{
+	output = output + (String) (nonEmpty.elementAt(i) + "\n");
+}
+//AC=Q5DTJ5
+//EMBL=AK220525
+//EMBL=BAD90524.1
+//Ensembl=ENSMUSG00000002763
+//MGI=MGI:2385054
+//GO=GO:0005515
+//InterPro=IPR003593
+//InterPro=IPR003959
+//Pfam=PF00004
+//SMART=SM00382</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+    </s:beanshell>
+  </s:processor>
+  <s:link source="Swissprot_Id:value" sink="Uniprot_search:searchterm" />
+  <s:link source="Uniprot_search:result" sink="parse_uniprot:file_direct_data" />
+  <s:link source="fieldName:value" sink="Uniprot_search:fieldname" />
+  <s:link source="parse_go_term:output" sink="Go_Terms" />
+  <s:link source="parse_uniprot:output" sink="parse_go_term:input" />
+  <s:link source="parse_uniprot:output" sink="parsed_data" />
+  <s:sink name="parsed_data" />
+  <s:sink name="Go_Terms" />
+</s:scufl>
+
+

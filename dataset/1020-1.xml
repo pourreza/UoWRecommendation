@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:US38XCRXJA0" author="Paolo Romano, IST, Genova, Italy (paolo.romano@istge.it)" title="Search CABRI human and animal cell lines catalogues by cell line name and retrieve full cell line descriptions">This workflow takes the cell line name and the catalogue(s) name(s) as input and retrieve the full cell line description(s) by first retrieving the cell lines' unique IDs associated with the input (done via a call to the getCellLineIdsByName web service) and then using IDs for retrieving the full cell lines descriptions (done via a call to the getCellLinesByIds web service).
+</s:workflowdescription>
+  <s:processor name="Text_lines_separator">
+    <s:description>This string ('\n') specify that cell lines IDs are separated by a end of line character.
+It is used as a regex separator string to move more cell lines IDs from one text string into a list of strings.</s:description>
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="Substitute_blanks_with_SP">
+    <s:description>This is a trivial beanshell script that substitute all occurrences of blank spaces in a string with the substring '_SP_' .
+It is used with the aim of adapting a string including blank spaces to an SRS search made through a remote access to
+the wgetz application.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>output_str = input_str.replaceAll(" ","_SP_");</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input_str</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output_str</s:beanshelloutput>
+      </s:beanshelloutputlist>
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Regex_for_catalogue_name_extraction">
+    <s:description>This regular expression specifies the format of a cell line id in the CABRI network service.
+This regular expression - ([A-Z_]*:)([ A-Z0-9-]*) - specifies that:
+- the first part of the ID is the catalogue name and is made up of one or more uppercase letters and underscore characters
+  folowed by a semicolon (':')
+- the second part of the ID is the code of the resource and can includes letter, numbers, spaces and dashes ('-').</s:description>
+    <s:stringconstant>([A-Z_]*:)([ A-Z0-9-]*)</s:stringconstant>
+  </s:processor>
+  <s:processor name="Group_for_catalogue_name_extraction">
+    <s:description>This data specifies that the catalogue code is the second part of the ID (wrt the regular expression specified by the
+'Regex_for_catalogue_name_extraction' string.</s:description>
+    <s:stringconstant>2</s:stringconstant>
+  </s:processor>
+  <s:processor name="Separate_cell_line_ids">
+    <s:description>This processor implements the following local string elaboration.
+IDs which are returned by the getCellLineIdsByName call are included in a plain text string.
+They must be transformed in a list of strings.
+This task is implemented by using a Split_string_into_string_list_by_regular_expression local processor.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Extract_ids_by_removing_catalogues_names">
+    <s:description>This processor implements the following local string elaboration.
+IDs which are returned by the call to getCellLineIdsByName include catalogue's name and cell line code in the catalogue.
+The catalogue's code must be removed before the utilization of Ids for further processing.
+This task is implemented by using a Filter_list_of_strings_extracting_match_to_a_regex local processor.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="getCellLinesById">
+    <s:description>Get cell line descriptions by Id from CABRI human and animal cell lines catalogues (see www.cabri.org)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/cabri::getCellLinesById</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getCellLineIdsByName">
+    <s:description>Get cell lines' IDs by name from CABRI human and animal cell lines catalogues (see www.cabri.org)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/cabri::getCellLineIdsByName</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="libs" sink="getCellLineIdsByName:libs" />
+  <s:link source="name" sink="getCellLineIdsByName:name" />
+  <s:link source="libs" sink="getCellLinesById:libs" />
+  <s:link source="getCellLinesById:result" sink="cell_line_des" />
+  <s:link source="getCellLineIdsByName:result" sink="Separate_cell_line_ids:string" />
+  <s:link source="Separate_cell_line_ids:split" sink="Extract_ids_by_removing_catalogues_names:stringlist" />
+  <s:link source="Regex_for_catalogue_name_extraction:value" sink="Extract_ids_by_removing_catalogues_names:regex" />
+  <s:link source="Text_lines_separator:value" sink="Separate_cell_line_ids:regex" />
+  <s:link source="Group_for_catalogue_name_extraction:value" sink="Extract_ids_by_removing_catalogues_names:group" />
+  <s:link source="Extract_ids_by_removing_catalogues_names:filteredlist" sink="Substitute_blanks_with_SP:input_str" />
+  <s:link source="Substitute_blanks_with_SP:output_str" sink="getCellLinesById:id" />
+  <s:source name="libs">
+    <s:metadata>
+      <s:description>This input includes the name(s) of the CABRI human and animal cell lines catalogues involved in the query.
+
+Multiple values can be specified, in a unique string field, each name in a distinct text line (thus, names
+must be divided by a '\n' character)
+
+As of Feb 15, 2005, possible values are:
+- 'iclc' (i.e., the Interlab Cell Line Collection, www.iclc.it)
+- 'ecacc_cell' (i.e., the European Collection of Cell Cultures, www.ecacc.org.uk)
+- 'dsmz_mutz' (i.e., the collection of human and animal cell cultures of the DSMZ, www.dsmz.de)
+
+Catalogues can be added (or, rarely, removed) without notice. See www.cabri.org for further information.</s:description>
+      <s:semanticType>http://www.mygrid.org.uk/ontology#CABRI_cell_lines_catalogue</s:semanticType>
+    </s:metadata>
+  </s:source>
+  <s:source name="name">
+    <s:metadata>
+      <s:description>The input must specify the name of the required cell line(s). Due to the indexing rules in the CABRI network
+service (see www.cabri.org), only one word can be used in the search and no spaces are allowed in the cell
+line name.
+&lt;br&gt;
+Moreover:
+&lt;br&gt; cell lines names cannot include the following characters: '/','-' and '*',
+&lt;br&gt; cell lines names are case insensitive.
+&lt;br&gt;
+Example of valid cell lines names are:
+&lt;br&gt;vero
+&lt;br&gt;hela
+&lt;br&gt;a172
+&lt;br&gt;calu6</s:description>
+      <s:semanticType>Cell line name</s:semanticType>
+    </s:metadata>
+  </s:source>
+  <s:sink name="cell_line_des">
+    <s:metadata>
+      <s:description>The cell line description is a flat file record from the CABRI human and animal cell lines catalogues.
+&lt;br&gt;
+Within CABRI (see www.cabri.org), a standardization effort has been carried out in order to achieve common descriptions
+for biological resources from different collections (and thus different databases). Three data sets have been defined
+for each biological material (cell lines, bacteria strains, plasmids, etc...).
+&lt;br&gt;
+The Minimum Data Set (MDS) includes those information that are needed to univoquely identify the resource.
+The Recommeded Data Set (RDS) includes those information that are needed in order to achieve a good scientific description
+of the characteristics and properties of the resource.
+The Full Data Set (FDS) includes all the remaining information that can also be collection specific.
+&lt;br&gt;
+The human and animal cell lines data sets include the following information:
+
+SET Field name 
+
+MDS Accession_number
+MDS Cell_line_name
+MDS Brief_description
+MDS Description
+MDS Depositor
+MDS Bibliographic_references
+MDS Morphology
+MDS Culture_conditions
+MDS Viruses
+MDS Properties
+MDS Release_conditions
+MDS Hazard
+RDS Passage_number
+RDS Species_validation
+FDS Tumorigenicity (ICLC)
+FDS Karyology (ICLC)
+FDS Freezing_medium (ICLC)
+FDS Sterility (ICLC)
+FDS Validation_assays (ICLC)
+FDS Further_bibliography (ICLC)
+FDS Comments (ICLC)
+FDS Storage (DSMZ_MUTZ)
+FDS Doubling_time (DSMZ_MUTZ)
+FDS Mycoplasma (DSMZ_MUTZ)
+FDS Fingerprint (DSMZ_MUTZ)
+FDS Cytogenetics (DSMZ_MUTZ)
+FDS Karyotype (ECACC_CELL)
+FDS Comments (ECACC_CELL)
+FDS Research_council_deposit (ECACC_CELL)
+FDS BIOMED_1 (ECACC_CELL)
+
+&lt;br&gt;
+
+The following is an example of a cell lines description:
+
+Accession_number ICLC ATL95005
+Cell_line_name Vero
+Brief_description Species: monkey, African green; Tissue: kidney
+Description Species: monkey, African green adult; Tissue: kidney
+Depositor Obtained from ECACC.
+Bibliographic_reference Nippon Rinsho 1963;21:1209
+Morphology fibroblast, grown as monolayer
+Culture_conditions continuous culture; DMEM + 10% FBS + 2mM L-Glutamine; split confluent cultures 1:5-1:20 using trypsin/EDTA; seed at 1-3x104 cells/cm2. 37C, 5% CO2.
+Viruses Search for viruses was not performed
+Properties indicator line for mycoplasma testing; virology; virus titration; virus replication; plaque assays; bacterial cytotoxicity.; Susceptible to: poliovirus 3, echovirus, reovirus, rubella, herpes simplex, arbovirus, adenovirus 12, influenza, paramyxovirus, Getah arbovirus, orthomixovirus, African swine fever virus, bluetongue virus, bovine leucosis, orbivirus, porcine epidemic diarrhea virus
+Release_conditions Cell line available for distribution. For non-commercial investigative use only
+Hazard -
+Species_validation Validated by isoenzymes: confirmed as monkey with AST, MD, NP, PepB
+Karyology modal number 58
+Freezing_medium Culture medium + 50% FBS + 10% DMSO
+Sterility mycoplasma negative, HOECHST and PCR
+Further_bibliography Kitasato Arc Exp Med 1964;37:27-42 [PMID: 5833688] &lt;BR&gt; Nature 1967;216:271 &lt;BR&gt; Proc Soc Exp Biol Med 1967;125:602 [PMID: 4961492]</s:description>
+      <s:semanticType>http://www.mygrid.org.uk/ontology#CABRI_cell_lines_record</s:semanticType>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+
+

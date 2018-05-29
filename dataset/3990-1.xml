@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:E9TFHN0YVY0" author="" title="BiomartAndEMBOSSAnalysis">Using Biomart and EMBOSS soaplab services, This workflow retrieves a number of sequences from 3 species: mouse, human, rat; align them, and returns a plot of the alignment result. Corresponding sequence ids are also returned.</s:workflowdescription>
+  <s:processor name="FlattenImageList">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="GetUniqueHomolog">
+    <s:beanshell>
+      <s:scriptvalue>List HSOut = new ArrayList();
+List RatOut = new ArrayList();
+List MouseOut = new ArrayList();
+
+Map hsToMouse = new HashMap();
+Iterator j = MouseGeneIDs.iterator();
+for (Iterator i = HSGeneIDs.iterator(); i.hasNext();) {
+  String id = (String)i.next();
+  hsToMouse.put(id, j.next());
+}
+Map hsToRat = new HashMap();
+j = RatGeneIDs.iterator();
+for (Iterator i = HSGeneIDs.iterator(); i.hasNext();) {
+  String id = (String)i.next();
+  hsToRat.put(id, j.next());
+}
+
+// Build the unique outputs
+for (Iterator i = hsToRat.keySet().iterator(); i.hasNext();) {
+  String hsID = (String)i.next();
+  String ratID = (String)hsToRat.get(hsID);
+  // Remove version number
+  // ratID = (ratID.split("."))[0];
+  String mouseID = (String)hsToMouse.get(hsID);
+  // Remove version number
+  //mouseId = (mouseID.split("."))[0];
+  if (ratID != null &amp;&amp; mouseID != null &amp;&amp; ratID.equals("")==false &amp;&amp; mouseID.equals("")==false) {
+    HSOut.add(hsID);
+    RatOut.add(ratID.split("\\.")[0]);
+    MouseOut.add(mouseID.split("\\.")[0]);
+  }
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">HSGeneIDs</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">MouseGeneIDs</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">RatGeneIDs</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">HSOut</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">RatOut</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">MouseOut</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="CreateFasta">
+    <s:beanshell>
+      <s:scriptvalue>fasta = "&gt;Human\n"+hsSeq+"\n&gt;Mouse\n"+mmSeq+"\n&gt;Rat\n"+rnSeq;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">hsSeq</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">mmSeq</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">rnSeq</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">fasta</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="hsSeq" />
+        <i:iterator name="mmSeq" />
+        <i:iterator name="rnSeq" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="seqret" workers="5">
+    <s:description>Reads and writes (returns) sequences</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/edit.seqret</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="plot" workers="5">
+    <s:description>Displays aligned sequences, with colouring and boxing</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/alignment_multiple.prettyplot</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="emma" workers="5">
+    <s:description>Multiple alignment program - interface to ClustalW program</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/alignment_multiple.emma</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="hsapiensGeneEnsembl">
+    <s:description>Homo sapiens genes (GRCh37)</s:description>
+    <s:biomart>
+      <biomart:MartQuery xmlns:biomart="http://org.embl.ebi.escience/xscufl-biomart/0.1alpha">
+        <biomart:MartService location="http://www.biomart.org/biomart/martservice" />
+        <biomart:MartDataset displayName="Homo sapiens genes (GRCh37)" name="hsapiens_gene_ensembl" type="TableSet" initialBatchSize="200" maximumBatchSize="50000" visible="false" interface="default" modified="2009-07-15 14:24:08">
+          <biomart:MartURLLocation database="ensembl_mart_55" default="1" displayName="ENSEMBL 55 GENES (SANGER UK)" host="www.biomart.org" includeDatasets="" martUser="" name="ensembl" path="/biomart/martservice" port="80" serverVirtualSchema="default" virtualSchema="default" visible="1" redirect="0" />
+        </biomart:MartDataset>
+        <biomart:Query virtualSchemaName="default" count="0" uniqueRows="0" softwareVersion="0.7" requestId="taverna">
+          <biomart:Dataset name="hsapiens_gene_ensembl">
+            <biomart:Attribute name="ensembl_gene_id" />
+            <biomart:Attribute name="mouse_ensembl_gene" />
+            <biomart:Attribute name="rat_ensembl_gene" />
+            <biomart:Filter name="chromosome_name" value="22" />
+            <biomart:Filter name="with_mmusculus_homolog" excluded="0" />
+          </biomart:Dataset>
+        </biomart:Query>
+      </biomart:MartQuery>
+    </s:biomart>
+  </s:processor>
+  <s:processor name="getMMusSequence">
+    <s:description>Mus musculus genes (NCBIM37)</s:description>
+    <s:biomart>
+      <biomart:MartQuery xmlns:biomart="http://org.embl.ebi.escience/xscufl-biomart/0.1alpha">
+        <biomart:MartService location="http://www.biomart.org/biomart/martservice" />
+        <biomart:MartDataset displayName="Mus musculus genes (NCBIM37)" name="mmusculus_gene_ensembl" type="TableSet" initialBatchSize="200" maximumBatchSize="50000" visible="false" interface="default" modified="2009-07-15 14:45:36">
+          <biomart:MartURLLocation database="ensembl_mart_55" default="1" displayName="ENSEMBL 55 GENES (SANGER UK)" host="www.biomart.org" includeDatasets="" martUser="" name="ensembl" path="/biomart/martservice" port="80" serverVirtualSchema="default" virtualSchema="default" visible="1" redirect="0" />
+        </biomart:MartDataset>
+        <biomart:Query virtualSchemaName="default" count="0" uniqueRows="0" softwareVersion="0.7" requestId="taverna">
+          <biomart:Dataset name="mmusculus_gene_ensembl">
+            <biomart:Attribute name="coding_gene_flank" />
+            <biomart:Attribute name="ensembl_gene_id" />
+            <biomart:Filter name="ensembl_gene_id" value="" list="true" />
+            <biomart:Filter name="upstream_flank" value="100" />
+          </biomart:Dataset>
+        </biomart:Query>
+      </biomart:MartQuery>
+    </s:biomart>
+  </s:processor>
+  <s:processor name="getRNorSequence">
+    <s:description>Rattus norvegicus genes (RGSC3.4)</s:description>
+    <s:biomart>
+      <biomart:MartQuery xmlns:biomart="http://org.embl.ebi.escience/xscufl-biomart/0.1alpha">
+        <biomart:MartService location="http://www.biomart.org/biomart/martservice" />
+        <biomart:MartDataset displayName="Rattus norvegicus genes (RGSC3.4)" name="rnorvegicus_gene_ensembl" type="TableSet" initialBatchSize="200" maximumBatchSize="50000" visible="false" interface="default" modified="2009-07-15 14:36:01">
+          <biomart:MartURLLocation database="ensembl_mart_55" default="1" displayName="ENSEMBL 55 GENES (SANGER UK)" host="www.biomart.org" includeDatasets="" martUser="" name="ensembl" path="/biomart/martservice" port="80" serverVirtualSchema="default" virtualSchema="default" visible="1" redirect="0" />
+        </biomart:MartDataset>
+        <biomart:Query virtualSchemaName="default" count="0" uniqueRows="0" softwareVersion="0.7" requestId="taverna">
+          <biomart:Dataset name="rnorvegicus_gene_ensembl">
+            <biomart:Attribute name="coding_gene_flank" />
+            <biomart:Attribute name="ensembl_gene_id" />
+            <biomart:Filter name="ensembl_gene_id" value="" list="true" />
+            <biomart:Filter name="upstream_flank" value="100" />
+          </biomart:Dataset>
+        </biomart:Query>
+      </biomart:MartQuery>
+    </s:biomart>
+  </s:processor>
+  <s:processor name="getHSapSequence">
+    <s:description>Homo sapiens genes (GRCh37)</s:description>
+    <s:biomart>
+      <biomart:MartQuery xmlns:biomart="http://org.embl.ebi.escience/xscufl-biomart/0.1alpha">
+        <biomart:MartService location="http://www.biomart.org/biomart/martservice" />
+        <biomart:MartDataset displayName="Homo sapiens genes (GRCh37)" name="hsapiens_gene_ensembl" type="TableSet" initialBatchSize="200" maximumBatchSize="50000" visible="false" interface="default" modified="2009-07-15 14:24:08">
+          <biomart:MartURLLocation database="ensembl_mart_55" default="1" displayName="ENSEMBL 55 GENES (SANGER UK)" host="www.biomart.org" includeDatasets="" martUser="" name="ensembl" path="/biomart/martservice" port="80" serverVirtualSchema="default" virtualSchema="default" visible="1" redirect="0" />
+        </biomart:MartDataset>
+        <biomart:Query virtualSchemaName="default" count="0" uniqueRows="0" softwareVersion="0.7" requestId="taverna">
+          <biomart:Dataset name="hsapiens_gene_ensembl">
+            <biomart:Attribute name="coding_gene_flank" />
+            <biomart:Attribute name="ensembl_gene_id" />
+            <biomart:Filter name="ensembl_gene_id" value="" list="true" />
+            <biomart:Filter name="upstream_flank" value="100" />
+          </biomart:Dataset>
+        </biomart:Query>
+      </biomart:MartQuery>
+    </s:biomart>
+  </s:processor>
+  <s:link source="CreateFasta:fasta" sink="seqret:sequence_direct_data" />
+  <s:link source="GetUniqueHomolog:HSOut" sink="getHSapSequence:hsapiens_gene_ensembl.ensembl_gene_id_filter" />
+  <s:link source="GetUniqueHomolog:MouseOut" sink="getMMusSequence:mmusculus_gene_ensembl.ensembl_gene_id_filter" />
+  <s:link source="GetUniqueHomolog:RatOut" sink="getRNorSequence:rnorvegicus_gene_ensembl.ensembl_gene_id_filter" />
+  <s:link source="emma:outseq" sink="plot:sequences_direct_data" />
+  <s:link source="getHSapSequence:hsapiens_gene_ensembl.coding_gene_flank" sink="CreateFasta:hsSeq" />
+  <s:link source="getMMusSequence:mmusculus_gene_ensembl.coding_gene_flank" sink="CreateFasta:mmSeq" />
+  <s:link source="getRNorSequence:rnorvegicus_gene_ensembl.coding_gene_flank" sink="CreateFasta:rnSeq" />
+  <s:link source="hsapiensGeneEnsembl:hsapiens_gene_ensembl.ensembl_gene_id" sink="GetUniqueHomolog:HSGeneIDs" />
+  <s:link source="hsapiensGeneEnsembl:hsapiens_gene_ensembl.mouse_ensembl_gene" sink="GetUniqueHomolog:MouseGeneIDs" />
+  <s:link source="hsapiensGeneEnsembl:hsapiens_gene_ensembl.rat_ensembl_gene" sink="GetUniqueHomolog:RatGeneIDs" />
+  <s:link source="plot:Graphics_in_PNG" sink="FlattenImageList:inputlist" />
+  <s:link source="seqret:outseq" sink="emma:sequence_direct_data" />
+  <s:link source="FlattenImageList:outputlist" sink="outputPlot" />
+  <s:link source="GetUniqueHomolog:HSOut" sink="HSapIDs" />
+  <s:link source="GetUniqueHomolog:MouseOut" sink="MMusIDs" />
+  <s:link source="GetUniqueHomolog:RatOut" sink="RNorIDs" />
+  <s:sink name="outputPlot">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>image/png</s:mimeType>
+        <s:mimeType>application/octet-stream</s:mimeType>
+      </s:mimeTypes>
+      <s:description>The array of png images returned from the plot processor</s:description>
+      <s:semanticType>http://www.mygrid.org.uk/ontology#domain_concept</s:semanticType>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="HSapIDs" />
+  <s:sink name="MMusIDs" />
+  <s:sink name="RNorIDs" />
+</s:scufl>
+

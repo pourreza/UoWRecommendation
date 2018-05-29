@@ -1,0 +1,640 @@
+<workflow xmlns="http://taverna.sf.net/2008/xml/t2flow" version="1" producedBy="taverna-2.4.0"><dataflow id="aad45e8e-45d0-43e3-aac9-d035729a752b" role="top"><name>Create_votable_from_</name><inputPorts><port><name>FileVotablePath</name><depth>0</depth><granularDepth>0</granularDepth><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.ExampleValue">
+        <text>/home/julian/Documents/wf4ever/showcase61.2goldenExampler/2GE/workflows/cat_sex_total_noback.votable</text>
+      </annotationBean>
+      <date>2012-07-23 10:54:52.994 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain></annotations></port><port><name>Precedence</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port><port><name>ColumnNameWithConfigFile</name><depth>0</depth><granularDepth>0</granularDepth><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.ExampleValue">
+        <text>galfit_exp</text>
+      </annotationBean>
+      <date>2012-07-23 10:54:36.665 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain></annotations></port></inputPorts><outputPorts><port><name>VotableWithnewColumns</name><annotations /></port><port><name>GalfitVotable</name><annotations /></port></outputPorts><processors><processor><name>CreateVotableFromGalfitConfigFiles</name><inputPorts><port><name>columnNameWithConfigFile</name><depth>0</depth></port><port><name>FileVotablePath</name><depth>0</depth></port></inputPorts><outputPorts><port><name>resultVotable</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>Given a votable that contains a column whose values are galfit files. It opens the file, extracts information and creates a votable. </text>
+      </annotationBean>
+      <date>2012-09-07 12:46:01.280 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain></annotations><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>beanshell-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.beanshell.BeanshellActivity</class><inputMap><map from="FileVotablePath" to="FileVotablePath" /><map from="columnNameWithConfigFile" to="columnNameWithConfigFile" /></inputMap><outputMap><map from="resultVotable" to="resultVotable" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.beanshell.BeanshellActivityConfigurationBean xmlns="">
+  <inputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>columnNameWithConfigFile</name>
+      <depth>0</depth>
+      <mimeTypes>
+        <string>text/plain</string>
+      </mimeTypes>
+      <handledReferenceSchemes />
+      <translatedElementType>java.lang.String</translatedElementType>
+      <allowsLiteralValues>true</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>FileVotablePath</name>
+      <depth>0</depth>
+      <mimeTypes>
+        <string>text/plain</string>
+      </mimeTypes>
+      <handledReferenceSchemes />
+      <translatedElementType>java.lang.String</translatedElementType>
+      <allowsLiteralValues>true</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+  </inputs>
+  <outputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+      <name>resultVotable</name>
+      <depth>0</depth>
+      <mimeTypes />
+      <granularDepth>0</granularDepth>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+  </outputs>
+  <classLoaderSharing>workflow</classLoaderSharing>
+  <localDependencies>
+    <string>stil.jar</string>
+  </localDependencies>
+  <artifactDependencies />
+  <script>import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import uk.ac.starlink.table.ColumnInfo;
+import uk.ac.starlink.table.RowListStarTable;
+import uk.ac.starlink.table.RowSequence;
+import uk.ac.starlink.table.StarTable;
+import uk.ac.starlink.table.StarTableFactory;
+import uk.ac.starlink.votable.DataFormat;
+import uk.ac.starlink.votable.VOTableWriter;
+
+StarTable loadVOTable( File file ) throws IOException {
+	    return new StarTableFactory().makeStarTable( file.toString(), "votable" );
+	}
+
+void writeStringToAFile(String filepath, String content) throws IOException{
+		BufferedWriter out = new BufferedWriter(new FileWriter(filepath));
+	    out.write(content);
+	    out.close();
+	}
+
+String readFileAsString(String filePath) throws java.io.IOException{
+	    byte[] buffer = new byte[(int) new File(filePath).length()];
+	    BufferedInputStream f = null;
+	    try {
+	        f = new BufferedInputStream(new FileInputStream(filePath));
+	        f.read(buffer);
+	    } finally {
+	        if (f != null) try { f.close(); } catch (IOException ignored) { }
+	    }
+	    return new String(buffer);
+	}
+
+String starTableToString(StarTable table) throws IOException{
+
+        // Obtain a writer for inline TABLEDATA output.
+        VOTableWriter voWriter = new VOTableWriter( DataFormat.TABLEDATA, true );
+
+        // Use it to write the table to a named file.
+        StringWriter swriter = new StringWriter();
+        BufferedWriter bwriter = new BufferedWriter(swriter);
+        voWriter.writeInlineStarTable(table, bwriter);
+        String result = swriter.toString();
+        return result;
+		
+	}
+
+
+		Map mapping = new HashMap();
+		Vector mappingPos = new Vector();
+		//Map mappingIds = new HashMap();
+		int nCol;
+		try{
+			
+		   //open the table
+		   File file = new File(FileVotablePath);
+		   StarTable table = loadVOTable(file);
+		   
+		   //get the column info
+		   nCol = table.getColumnCount();
+		   for(int i =0; i&lt; nCol; i++){
+			   ColumnInfo colInfo = table.getColumnInfo(i);
+			   mapping.put(colInfo.getName(), i);  //names to positions
+			   mappingPos.add(colInfo.getName());  //positions to names
+		   }
+		   
+		   
+		   if(mapping.get(columnNameWithConfigFile)==null)
+			   throw new Exception(columnNameWithConfigFile+" is not a column on the votable");
+		   
+		   ColumnInfo [] colsInfo = new ColumnInfo [9];
+    	   colsInfo[0] = new ColumnInfo ("x_2", Float.class, "Position x");
+    	   colsInfo[1] = new ColumnInfo ("y_2", Float.class, "Position y");
+    	   colsInfo[2] = new ColumnInfo ("mauto_2", Float.class, "Integrated magnitude");
+    	   colsInfo[3] = new ColumnInfo ("flux_rad0_5_2_big", Float.class, "R_s (disk scale-length) * 1.5   [pix]");
+    	   colsInfo[4] = new ColumnInfo ("flux_rad0_5_2_small", Float.class, "R_s (disk scale-length) * 0.25   [pix]");
+    	   colsInfo[5] = new ColumnInfo ("flux_rad0_5_2_medium", Float.class, "R_s (disk scale-length) * 0.5   [pix]");
+    	   colsInfo[6] = new ColumnInfo ("axes_rate_2", Float.class, "Axis ratio (b/a)");
+    	   colsInfo[7] = new ColumnInfo ("theta_2", Float.class, "Position angle");
+    	   colsInfo[8] = new ColumnInfo ("sky_2", Float.class, "Sky background at center of fitting region");
+    	   
+    	   RowListStarTable newTable = new RowListStarTable(colsInfo);
+		   
+		   RowSequence rseq = table.getRowSequence();
+	       while ( rseq.next() ) {
+	    	   String x="", y="", mauto="", flux_rad0_5="", axes_rate="", theta="", skybackground="";
+	    	   String fileName = (String) rseq.getCell(  (int) mapping.get(columnNameWithConfigFile)  );
+	    	   String content;
+	    	   File fileTest = new File(fileName);
+	    	   Float [] values = new Float[9];
+	    	   if(fileTest.exists()){
+		    	   content = readFileAsString(fileName);
+		        	
+		    	   String [] components = content.split("# Component number:");
+		    	   //System.out.println("Iteration");
+		    	   //System.out.println("number of elements: "+components.length);
+		    	   //System.out.println("---- Component 1:\n"+components[1]);
+	
+		    	   String number = "([-0123456789.]+)";
+		        	
+		    	   //Take data from component 1
+		    	   String expression = ".*1"+Pattern.quote(")")+"\\s+"+number+"\\s+"+number+".*"; //  Position x, y
+		    	   expression += ".*3"+Pattern.quote(")")+"\\s+"+number+".*"; //  Integrated magnitude 
+		    	   expression += ".*4"+Pattern.quote(")")+"\\s+"+number+".*"; //  R_s (disk scale-length)   [pix]
+		    	   //expression += "[.\\s]+";
+		    	   expression += ".*9"+Pattern.quote(")")+"\\s+"+number+".*"; //  Axis ratio (b/a)  
+		    	   expression += ".*10"+Pattern.quote(")")+"\\s+"+number+".*"; //  Position angle
+		    	   Pattern pattern1 = Pattern.compile(expression, Pattern.DOTALL); 
+		    	   Matcher matcher1 = pattern1.matcher(components[1]);
+		    	   
+		    	   //http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html
+		        	
+		    	   //array for a row
+		    	   
+		    	   
+		    	   while (matcher1.find()) {
+		    		   
+		    		   x = matcher1.group(1);
+		    		   y = matcher1.group(2);
+		    		   mauto = matcher1.group(3);
+		    		   flux_rad0_5 = matcher1.group(4);
+		    		   axes_rate =  matcher1.group(5);
+		    		   theta = matcher1.group(6);
+		    		   
+		    		   values[0] = Float.valueOf(x);
+		    		   values[1] = Float.valueOf(y);
+		    		   values[2] = Float.valueOf(mauto);
+		    		   values[3] = Float.valueOf(flux_rad0_5) * new Float(1.5);
+		    		   values[4] = Float.valueOf(flux_rad0_5) * new Float(0.25);
+		    		   values[5] = Float.valueOf(flux_rad0_5) * new Float(0.5);
+		    		   values[6] = Float.valueOf(axes_rate);
+		    		   values[7] = Float.valueOf(theta);
+		    		   
+		 		   		//System.out.println("-"+x+"-");
+		 		   		//System.out.println(y);
+		 		   		//System.out.println(mauto);
+		 		   		//System.out.println(flux_rad0_5);
+		 		   		//System.out.println(axes_rate);
+		 		   		//System.out.println(theta);
+		 		   		//System.out.println(skybackground);
+		 		   	}
+		    	   
+		    	   //System.out.println("---- Component 2:\n"+components[2]);
+		    	   
+		    	   //take data from  component 2: sky
+		    	   expression = ".*1"+Pattern.quote(")")+"\\s+"+number+".*"; //  Position x, y
+		    	   pattern1 = Pattern.compile(expression, Pattern.DOTALL); 
+		    	   matcher1 = pattern1.matcher(components[2]);
+		    	   
+		    	   while (matcher1.find()) {
+		    		   skybackground = matcher1.group(1);
+		    		   values[8] = Float.valueOf(skybackground);
+		    		   //System.out.println(skybackground);
+		    	   }
+		    	   
+	    	   }else{
+	    		   values[0] = new Float(-999.0);
+	    		   values[1] = new Float(-999.0);
+	    		   values[2] = new Float(-999.0);
+	    		   values[3] = new Float(-999.0);
+	    		   values[4] = new Float(-999.0);
+	    		   values[5] = new Float(-999.0);
+	    		   values[6] = new Float(-999.0);
+	    		   values[7] = new Float(-999.0);
+	    		   values[8] = new Float(-999.0);
+	       		}
+	
+	    	   newTable.addRow(values);
+	    	   
+	    	   //modify the vo-table, but how? --&gt; instead of this, create a new one and then do a join
+	       		
+	       }
+	       rseq.close();
+	       
+	      
+	       resultVotable = starTableToString(newTable);
+	       
+	       //System.out.println(resultVoTable);
+	       
+		   
+	        
+		}catch (Exception ex){
+		   String error = "Exception during the process: \n"+ ex.getMessage();
+		   throw new Exception(error);
+		}</script>
+  <dependencies />
+</net.sf.taverna.t2.activities.beanshell.BeanshellActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="columnNameWithConfigFile" depth="0" /><port name="FileVotablePath" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>tjoin</name><inputPorts><port><name>votable1</name><depth>0</depth></port><port><name>votable2</name><depth>0</depth></port></inputPorts><outputPorts><port><name>outputFileOut</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>org.purl.wf4ever.astrotaverna</group><artifact>stilts-activity</artifact><version>0.9</version></raven><class>org.purl.wf4ever.astrotaverna.tjoin.TjoinActivity</class><inputMap><map from="votable1" to="votable1" /><map from="votable2" to="votable2" /></inputMap><outputMap><map from="outputFileOut" to="outputFileOut" /></outputMap><configBean encoding="xstream"><org.purl.wf4ever.astrotaverna.tjoin.TjoinActivityConfigurationBean xmlns="">
+  <typeOfInput>String</typeOfInput>
+</org.purl.wf4ever.astrotaverna.tjoin.TjoinActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="votable1" depth="0" /><port name="votable2" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>Read_File</name><inputPorts><port><name>filePath</name><depth>0</depth></port></inputPorts><outputPorts><port><name>string</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>beanshell-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.beanshell.BeanshellActivity</class><inputMap><map from="filePath" to="filePath" /></inputMap><outputMap><map from="string" to="string" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.beanshell.BeanshellActivityConfigurationBean xmlns="">
+  <inputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>filePath</name>
+      <depth>0</depth>
+      <mimeTypes>
+        <string>text/plain</string>
+      </mimeTypes>
+      <handledReferenceSchemes />
+      <translatedElementType>java.lang.String</translatedElementType>
+      <allowsLiteralValues>true</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+  </inputs>
+  <outputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+      <name>string</name>
+      <depth>0</depth>
+      <mimeTypes />
+      <granularDepth>0</granularDepth>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+  </outputs>
+  <classLoaderSharing>workflow</classLoaderSharing>
+  <localDependencies />
+  <artifactDependencies />
+  <script>import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+
+String readFileAsString(String filePath) throws java.io.IOException{
+    byte[] buffer = new byte[(int) new File(filePath).length()];
+    BufferedInputStream f = null;
+    try {
+        f = new BufferedInputStream(new FileInputStream(filePath));
+        f.read(buffer);
+    } finally {
+        if (f != null) try { f.close(); } catch (IOException ignored) { }
+    }
+    return new String(buffer);
+}
+
+string = readFileAsString(filePath);</script>
+  <dependencies />
+</net.sf.taverna.t2.activities.beanshell.BeanshellActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="filePath" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor></processors><conditions /><datalinks><datalink><sink type="processor"><processor>CreateVotableFromGalfitConfigFiles</processor><port>columnNameWithConfigFile</port></sink><source type="dataflow"><port>ColumnNameWithConfigFile</port></source></datalink><datalink><sink type="processor"><processor>CreateVotableFromGalfitConfigFiles</processor><port>FileVotablePath</port></sink><source type="dataflow"><port>FileVotablePath</port></source></datalink><datalink><sink type="processor"><processor>tjoin</processor><port>votable1</port></sink><source type="processor"><processor>Read_File</processor><port>string</port></source></datalink><datalink><sink type="processor"><processor>tjoin</processor><port>votable2</port></sink><source type="processor"><processor>CreateVotableFromGalfitConfigFiles</processor><port>resultVotable</port></source></datalink><datalink><sink type="processor"><processor>Read_File</processor><port>filePath</port></sink><source type="dataflow"><port>FileVotablePath</port></source></datalink><datalink><sink type="dataflow"><port>VotableWithnewColumns</port></sink><source type="processor"><processor>tjoin</processor><port>outputFileOut</port></source></datalink><datalink><sink type="dataflow"><port>GalfitVotable</port></sink><source type="processor"><processor>CreateVotableFromGalfitConfigFiles</processor><port>resultVotable</port></source></datalink></datalinks><annotations><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>c2e12a7c-cfa9-4cff-a98a-9296b6079f67</identification>
+      </annotationBean>
+      <date>2012-08-21 10:46:20.898 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>9028041f-6581-4ba1-a8cc-dc580714d3c6</identification>
+      </annotationBean>
+      <date>2012-07-23 10:03:28.964 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>df2af2fa-e6e3-41f6-8b7d-81981d8f0204</identification>
+      </annotationBean>
+      <date>2012-07-23 10:41:24.65 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>0c7ac8ed-fd00-4cdd-897a-ff4e1805d860</identification>
+      </annotationBean>
+      <date>2012-07-23 10:01:20.585 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>602c0d95-8f35-4153-a001-2a6b316e8e6d</identification>
+      </annotationBean>
+      <date>2012-07-23 09:11:10.375 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>eaba1bd1-8b89-4b96-8293-b7807912f69c</identification>
+      </annotationBean>
+      <date>2012-08-21 09:40:25.244 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>05001173-a4c6-4e8d-a6a0-87ff08cb1854</identification>
+      </annotationBean>
+      <date>2012-07-23 11:03:32.180 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>0bfd956a-00b8-4b2e-a3ed-92fac0d04604</identification>
+      </annotationBean>
+      <date>2012-07-23 10:05:31.602 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>12c0be0d-710e-4ad8-b755-ddb83017598f</identification>
+      </annotationBean>
+      <date>2012-07-26 12:26:22.181 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>b1a215cd-9287-4b27-b68a-50e567d65e53</identification>
+      </annotationBean>
+      <date>2012-07-23 10:51:10.168 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>ca5d4e9c-c0ec-4dd9-94d9-4933a00a4efc</identification>
+      </annotationBean>
+      <date>2012-07-26 12:23:24.384 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>aad45e8e-45d0-43e3-aac9-d035729a752b</identification>
+      </annotationBean>
+      <date>2012-09-07 12:46:18.697 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>f10c999b-4267-45b1-b536-9f5f4e2dde12</identification>
+      </annotationBean>
+      <date>2012-07-23 10:39:54.643 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.DescriptiveTitle">
+        <text>Create votable from galfit results </text>
+      </annotationBean>
+      <date>2012-07-26 12:23:06.932 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>2ab3e59f-5ce4-4686-a06e-83c71fbaecb7</identification>
+      </annotationBean>
+      <date>2012-07-23 10:44:37.451 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>08afb3c6-0687-4388-8e3c-ed2e5085e05e</identification>
+      </annotationBean>
+      <date>2012-07-23 10:45:33.292 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>4a6a49fc-2c90-40f5-b2db-2be6724eaad6</identification>
+      </annotationBean>
+      <date>2012-07-23 10:54:57.683 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>0b33517d-f670-4460-ae27-34236b7c1910</identification>
+      </annotationBean>
+      <date>2012-07-30 10:46:47.455 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>caf0ebc2-8869-4f7e-89fa-4009a3270a3b</identification>
+      </annotationBean>
+      <date>2012-07-23 10:52:57.522 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>13f073e8-1524-4fc4-9421-b0ec0d605ad9</identification>
+      </annotationBean>
+      <date>2012-07-23 10:48:53.303 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.Author">
+        <text>Julian Garrido</text>
+      </annotationBean>
+      <date>2012-09-07 12:46:15.542 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>89eac41a-5d33-4ade-bde5-2b6022c61238</identification>
+      </annotationBean>
+      <date>2012-07-23 10:43:40.272 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>1f1606b2-f416-41da-bf7b-f97f937404f8</identification>
+      </annotationBean>
+      <date>2012-07-23 11:08:12.415 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>The workflow creates a votable from the results provided by galfit. It returns this table and an aditional table that is joined to the input table. It requires a votable that contains a column with the file name resulting from running galfit and such files must be accesible from taverna. It uses astrotaverna plugin (http://wf4ever.github.com/astrotaverna/) and it has a dependency on stil library (http://www.star.bris.ac.uk/~mbt/stil/). </text>
+      </annotationBean>
+      <date>2012-07-26 12:26:12.678 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>0747de1b-8027-4d37-b42a-28064d744b67</identification>
+      </annotationBean>
+      <date>2012-07-23 11:05:00.361 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>cab519f8-0cf2-49d7-8893-a42580bc7bcc</identification>
+      </annotationBean>
+      <date>2012-07-23 11:25:04.897 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>18249ea5-0878-45bb-9766-e11b2ec77418</identification>
+      </annotationBean>
+      <date>2012-07-23 10:49:55.51 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>b53c75a1-54ac-422f-bf73-0d666fe76d04</identification>
+      </annotationBean>
+      <date>2012-07-23 10:46:44.268 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2></annotations></dataflow></workflow>

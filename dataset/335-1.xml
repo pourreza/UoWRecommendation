@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:c2120790-396f-4a61-85ee-58fc67c5f74f" author="" title="simple_xcms_pipeline" />
+  <s:processor name="MetwareGetExperimentRaw">
+    <s:description>Get the raw data from a metware experiment</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>MetwareGetExperimentRaw</s:serviceName>
+      <s:authorityName>ab.wur.nl</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="String">
+    <s:description>a string</s:description>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>String</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="MetwareExperimentId">
+    <s:description>A LSID pointing out a metware experiment</s:description>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>MetwareExperimentId</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="abwur_test_xcms">
+    <s:description>Test implementation of XCMS</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>abwur_test_xcms</s:serviceName>
+      <s:authorityName>www.ab.wur.nl</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:link source="MetwareExperimentId:mobyData" sink="MetwareGetExperimentRaw:MetwareExperimentId(MetwareExperimentId)" />
+  <s:link source="String:mobyData" sink="MetwareExperimentId:String(ExperimentId)" />
+  <s:link source="experimentid" sink="String:value" />
+  <s:link source="MetwareGetExperimentRaw:MSRawCdfUrlSet(MSRawCdfUrlSet)" sink="abwur_test_xcms:MSRawCdfUrlSet(MSRawCdfUrlSet)" />
+  <s:link source="abwur_test_xcms:output" sink="output" />
+  <s:source name="experimentid">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:source>
+  <s:sink name="output" />
+</s:scufl>
+

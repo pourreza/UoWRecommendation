@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:RTE7A0GDUO0" author="" title="Get TP53 Mutations By Intron">This workflow takes the intron and the TP53 somatic mutation database as input and retrieve the full TP53 somatic mutation description(s) by first retrieving the TP53 somatic mutation database unique IDs associated with the input (done via a call to the getP53MutationIdsByIntron web service) and then using IDs for retrieving the full TP53 somatic mutations descriptions (done via a call to the getP53MutationsByIds web service).
+Special requirements on input data are:
+- The intron range of numbers is 2-11,
+- when specifying more than one intron, they must be in a unique input string but on distinct text lines</s:workflowdescription>
+  <s:processor name="Filter_list_of_strings_extracting_match_to_a_regex">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="regex_entry_list_separator" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="regex_id_separator" boring="true">
+    <s:stringconstant>([A-Z0-9]*:)([0-9]*)</s:stringconstant>
+  </s:processor>
+  <s:processor name="Split_string_into_string_list_by_regular_expression">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="id_position" boring="true">
+    <s:stringconstant>2</s:stringconstant>
+  </s:processor>
+  <s:processor name="getP53MutationsByIds">
+    <s:description>Get tp53 gene mutations by ids from TP53 IARC database (see http://srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getP53MutationsByIds</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53MutationIdsByIntron">
+    <s:description>Get tp53 gene mutation ids by intron from IARC TP53 Database catalogue (see srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getP53MutationIdsByIntron</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="intron" sink="getP53MutationIdsByIntron:intron" />
+  <s:link source="lib" sink="getP53MutationIdsByIntron:libs" />
+  <s:link source="Filter_list_of_strings_extracting_match_to_a_regex:filteredlist" sink="getP53MutationsByIds:id" />
+  <s:link source="Split_string_into_string_list_by_regular_expression:split" sink="Filter_list_of_strings_extracting_match_to_a_regex:stringlist" />
+  <s:link source="Split_string_into_string_list_by_regular_expression:split" sink="ids" />
+  <s:link source="getP53MutationIdsByIntron:result" sink="Split_string_into_string_list_by_regular_expression:string" />
+  <s:link source="getP53MutationsByIds:result" sink="mutations" />
+  <s:link source="id_position:value" sink="Filter_list_of_strings_extracting_match_to_a_regex:group" />
+  <s:link source="regex_entry_list_separator:value" sink="Split_string_into_string_list_by_regular_expression:regex" />
+  <s:link source="regex_id_separator:value" sink="Filter_list_of_strings_extracting_match_to_a_regex:regex" />
+  <s:source name="lib" />
+  <s:source name="intron" />
+  <s:sink name="ids" />
+  <s:sink name="mutations" />
+</s:scufl>
+

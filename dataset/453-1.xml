@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:e76467e0-81f5-4732-805f-bc9f3d7da30f" author="Alan R Williams" title="Read text file - several lines">The beanshell write the string 'hello' four times separated by a new lineto a temporary file.  The filepath to the temporary file is then passed to the Read_text_file service which reads the file and outputs the string 'hello
+hello
+hello
+hello'.</s:workflowdescription>
+  <s:processor name="Read_Text_File">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="Create_and_populate_temporary_file">
+    <s:defaults>
+      <s:default name="content">hello</s:default>
+      <s:default name="count">4</s:default>
+    </s:defaults>
+    <s:beanshell>
+      <s:scriptvalue>File temp = File.createTempFile("taverna", "txt");
+
+temp.deleteOnExit();
+BufferedWriter writer = new BufferedWriter(new FileWriter(temp));
+String newline = System.getProperty("line.separator");
+for (int i = 0; i &lt; Integer.parseInt(count); i++) {
+writer.write(content + newline);
+}
+writer.close();
+
+out = temp.getCanonicalPath();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">content</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">count</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">out</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="Create_and_populate_temporary_file:out" sink="Read_Text_File:fileurl" />
+  <s:link source="Read_Text_File:filecontents" sink="out" />
+  <s:sink name="out" />
+</s:scufl>
+

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:VI9FMF5HBQ11" author="Peter Li" title="Affymetrix probe based data mining workflow">An example of how a more complex workflow can federate multiple resources to perform data mining. In this case a single input data item in the form of a probe set identifier is cross referenced to data sets in multiple locations to answer a kind of 'show me everything about this data' question.</s:workflowdescription>
+  <s:processor name="REGEX_GROUP" boring="true">
+    <s:stringconstant>1</s:stringconstant>
+  </s:processor>
+  <s:processor name="INTERPRO_REGEX" boring="true">
+    <s:stringconstant>INTERPRO:(\S+)</s:stringconstant>
+  </s:processor>
+  <s:processor name="INTERPRO_URL" boring="true">
+    <s:stringconstant>http://www.ebi.ac.uk/interpro/DisplayIproEntry?ac=</s:stringconstant>
+  </s:processor>
+  <s:processor name="INTERPRO_RESULT_FILTER">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="interpro_ids" boring="true">
+    <s:stringconstant>IPR000555</s:stringconstant>
+  </s:processor>
+  <s:processor name="CONCAT_INTERPRO_URL">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:link source="INTERPRO_REGEX:value" sink="INTERPRO_RESULT_FILTER:regex" />
+  <s:link source="INTERPRO_RESULT_FILTER:filteredlist" sink="CONCAT_INTERPRO_URL:string2" />
+  <s:link source="INTERPRO_URL:value" sink="CONCAT_INTERPRO_URL:string1" />
+  <s:link source="REGEX_GROUP:value" sink="INTERPRO_RESULT_FILTER:group" />
+  <s:link source="interpro_ids:value" sink="INTERPRO_RESULT_FILTER:stringlist" />
+  <s:link source="CONCAT_INTERPRO_URL:output" sink="interproIDs" />
+  <s:sink name="interproIDs">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/x-taverna-web-url</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+
+

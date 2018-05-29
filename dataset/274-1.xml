@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P308SQKWX847" author="" title="" />
+  <s:processor name="parse_embl_id">
+    <s:beanshell>
+      <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++) 
+{		
+	String trimmed = split[i].trim();
+	String[] trimmedSplit = trimmed.split("=");
+//	System.out.println(trimmedSplit.length);
+	if (trimmedSplit.length &gt;= 2)
+	{
+	    if(trimmedSplit[0].equals("EMBL"))
+	    {
+//		System.out.println(trimmedSplit[1]+"\n");
+		nonEmpty.add(trimmedSplit[1].trim());
+	    }
+	    else
+	    {
+//		System.out.println(trimmedSplit[0]+"\n");
+	 	continue;
+	    }	    	
+	}
+}
+
+String output = "";
+
+for (int i = 0; i &lt; nonEmpty.size(); i++)
+{
+	output = output + (String) (nonEmpty.elementAt(i) + "\n");
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="fieldName" boring="true">
+    <s:stringconstant>Alltext</s:stringconstant>
+  </s:processor>
+  <s:processor name="parse_uniprot">
+    <s:description>Extract information from a Uniprot text file including PubMed, InterPro, Pfam and other related accession numbers</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.parse_uniprot</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="Uniprot_search">
+    <s:description>To be added</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/uniprotsequence.uniprot</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="SearchTerm" sink="Uniprot_search:searchterm" />
+  <s:link source="Uniprot_search:result" sink="parse_uniprot:file_direct_data" />
+  <s:link source="fieldName:value" sink="Uniprot_search:fieldname" />
+  <s:link source="parse_uniprot:output" sink="parse_embl_id:input" />
+  <s:link source="Uniprot_search:result" sink="uniprot_record" />
+  <s:link source="parse_embl_id:output" sink="Embl_Acc" />
+  <s:link source="parse_uniprot:output" sink="parsed_data" />
+  <s:source name="SearchTerm" />
+  <s:sink name="uniprot_record" />
+  <s:sink name="parsed_data" />
+  <s:sink name="Embl_Acc" />
+</s:scufl>
+
+

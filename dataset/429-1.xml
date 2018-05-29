@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:01517a9f-fdf4-4e52-be28-a1a1497519f1" author="Alan R Williams" title="FIlter list of strings by regex extracting the specified group in the matches">The workflow examines the five element list split from the first service.  For each element, if it contains an 'a' followed by two characters, the second character after the 'a' is included in the output.  Thus, for the input  ['a','b','abcde','cdef','axy'], only 'abcde' and 'axy' contain a match and so ['c', 'y'] is output.</s:workflowdescription>
+  <s:processor name="Split_string_into_string_list_by_regular_expression">
+    <s:defaults>
+      <s:default name="string">a,b,abcde,cdef,axy</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Filter_list_of_strings_extracting_match_to_a_regex">
+    <s:defaults>
+      <s:default name="regex">a(.(.))</s:default>
+      <s:default name="group">2</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:link source="Filter_list_of_strings_extracting_match_to_a_regex:filteredlist" sink="out" />
+  <s:link source="Split_string_into_string_list_by_regular_expression:split" sink="Filter_list_of_strings_extracting_match_to_a_regex:stringlist" />
+  <s:sink name="out" />
+</s:scufl>
+

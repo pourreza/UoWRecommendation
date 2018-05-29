@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:87d77d84-8c38-4bce-9c70-18a0001e13c3" author="Mikołaj Rybiński" title="Simulate SBML-derived ODEs" />
+  <s:processor name="modelUrl" boring="true">
+    <s:stringconstant>http://bioputer.mimuw.edu.pl/tav4sb/models/enzyme.xml</s:stringconstant>
+  </s:processor>
+  <s:processor name="getModel">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="simTime" boring="true">
+    <s:stringconstant>30</s:stringconstant>
+  </s:processor>
+  <s:processor name="simTimepointsNr" boring="true">
+    <s:stringconstant>100</s:stringconstant>
+  </s:processor>
+  <s:processor name="string2List">
+    <s:beanshell>
+      <s:scriptvalue>list = Arrays.asList(new String[]{str});</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">str</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">list</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="timeStrListApend">
+    <s:beanshell>
+      <s:scriptvalue>list = new LinkedList();
+list.add("time");
+list.add(str);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">str</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">list</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="concentrationStr" boring="true">
+    <s:stringconstant>concentration</s:stringconstant>
+  </s:processor>
+  <s:processor name="renameCoordinate">
+    <s:beanshell>
+      <s:scriptvalue>renamed = dataXml.replaceAll("(&lt;coordinate[^&gt;]*name=)\""+oldName+"\"", "$1\""+newName+"\"");
+if (!renamed.equals(dataXml)) {
+    renamed = renamed.replaceFirst("&lt;data([^&gt;]*)&gt;", "&lt;data$1 name=\""+oldName+"\"&gt;");
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/xml'">dataXml</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">oldName</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">newName</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/xml'">renamed</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:dot>
+          <i:iterator name="dataXml" />
+          <i:iterator name="oldName" />
+        </i:dot>
+        <i:iterator name="newName" />
+      </i:cross>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="OdeSolver">
+    <s:defaults>
+      <s:default name="atol">1e-12</s:default>
+      <s:default name="rtol">1e-6</s:default>
+      <s:default name="sensitivityAnalysis">false</s:default>
+    </s:defaults>
+    <s:workflow>
+      <s:xscufllocation>http://bioputer.mimuw.edu.pl/tav4sb/workflows/ws_odeSolver.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="MathPlot">
+    <s:workflow>
+      <s:xscufllocation>http://bioputer.mimuw.edu.pl/tav4sb/workflows/ws_mathPlot.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="timepointsXml2dataXmlList">
+    <s:defaults>
+      <s:default name="argNameList">time</s:default>
+    </s:defaults>
+    <s:workflow>
+      <s:xscufllocation>http://bioputer.mimuw.edu.pl/tav4sb/workflows/elementXml2dataXmlList.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="filterVariables">
+    <s:defaults>
+      <s:default name="regex">m\d+</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.FilterStringList</s:local>
+  </s:processor>
+  <s:processor name="plotMarkersOpt" boring="true">
+    <s:stringconstant>PlotMarkers -&gt; None</s:stringconstant>
+  </s:processor>
+  <s:link source="OdeSolver:timepointsXml" sink="timepointsXml2dataXmlList:elementXml" />
+  <s:link source="OdeSolver:variablesList" sink="filterVariables:stringlist" />
+  <s:link source="concentrationStr:value" sink="renameCoordinate:newName" />
+  <s:link source="concentrationStr:value" sink="timeStrListApend:str" />
+  <s:link source="filterVariables:filteredlist" sink="renameCoordinate:oldName" />
+  <s:link source="filterVariables:filteredlist" sink="string2List:str" />
+  <s:link source="getModel:filecontents" sink="OdeSolver:model" />
+  <s:link source="modelUrl:value" sink="getModel:fileurl" />
+  <s:link source="plotMarkersOpt:value" sink="MathPlot:optionList" />
+  <s:link source="string2List:list" sink="timepointsXml2dataXmlList:valNameListList" />
+  <s:link source="timepointsXml2dataXmlList:dataXmlList" sink="renameCoordinate:dataXml" />
+  <s:link source="MathPlot:plots" sink="plot" />
+  <s:link source="OdeSolver:error" sink="error" />
+  <s:link source="OdeSolver:timepointsXml" sink="timepointsXml" />
+  <s:link source="renameCoordinate:renamed" sink="MathPlot:dataXmlList" />
+  <s:link source="simTime:value" sink="OdeSolver:simt" />
+  <s:link source="simTimepointsNr:value" sink="OdeSolver:simtp" />
+  <s:link source="timeStrListApend:list" sink="MathPlot:axisList" />
+  <s:sink name="timepointsXml" />
+  <s:sink name="error" />
+  <s:sink name="plot" />
+</s:scufl>
+

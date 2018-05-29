@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:8703a10e-f268-421a-bb4a-910eb92339a8" author="" title="IndexAllOfMyExperimentWorkflow" />
+  <s:processor name="Select_temp_location">
+    <s:defaults>
+      <s:default name="title">Type a folder to store temporary files</s:default>
+      <s:default name="message">Type a folder to store the temporary files. Add a trailing slash!</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.AskWorker</s:local>
+  </s:processor>
+  <s:processor name="pages" boring="true">
+    <s:stringconstant>1 ,2 ,3 ,4 ,5 ,6</s:stringconstant>
+  </s:processor>
+  <s:processor name="page_iterator">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="create_url">
+    <s:defaults>
+      <s:default name="string1">workflows.xml?num=100&amp;page=</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+    <s:iterationstrategy>
+      <i:iterator xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10" name="string2" />
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="Ask_index_name">
+    <s:defaults>
+      <s:default name="title">What should be the name of the index?</s:default>
+      <s:default name="message">Please enter a name to use</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.AskWorker</s:local>
+  </s:processor>
+  <s:processor name="Nested_Workflow">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:8703a10e-f268-421a-bb4a-910eb92339a8" author="" title="IndexMyExperiment" />
+        <s:processor name="create_all_worksflows_location">
+          <s:defaults>
+            <s:default name="string2">workflows.xml</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+        </s:processor>
+        <s:processor name="append_extension">
+          <s:defaults>
+            <s:default name="string2">.txt</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+        </s:processor>
+        <s:processor name="sandbox_myexperiment_org" boring="true">
+          <s:stringconstant>http://sandbox.myexperiment.org/</s:stringconstant>
+        </s:processor>
+        <s:processor name="getTargetURL">
+          <s:defaults>
+            <s:default name="regex">http://(.+)/(.+)</s:default>
+            <s:default name="group">2</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+        </s:processor>
+        <s:processor name="indexconfig" boring="true">
+          <s:stringconstant>&lt;?xml version="1.0" encoding="UTF-8"?&gt; &lt;config xmlns='http://aid.org/'         xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'         xsi:schemaLocation='http://aid.org/ file:config.xsd'         &gt;   &lt;Name&gt;My Experiment2&lt;/Name&gt;   &lt;IndexOverwrite&gt;true&lt;/IndexOverwrite&gt;   &lt;IndexAnalyzer&gt;STANDARD&lt;/IndexAnalyzer&gt;    &lt;SRBused&gt;false&lt;/SRBused&gt;   &lt;MergeFactor&gt;300&lt;/MergeFactor&gt;   &lt;MaxBufferedDocs&gt;30&lt;/MaxBufferedDocs&gt;    &lt;DocType FileType="medline"&gt;     &lt;FileExtension&gt;med&lt;/FileExtension&gt;     &lt;DocTypeAnalyzer&gt;STANDARD&lt;/DocTypeAnalyzer&gt;     &lt;Field Name="AU"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;NO&lt;/Termvector&gt;       &lt;Description&gt;"Author field of Medline"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="TI"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;YES&lt;/Termvector&gt;       &lt;Description&gt;"Title field of Medline"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="AB"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;YES&lt;/Termvector&gt;       &lt;Description&gt;"Abstract field of Medline"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="FAU"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;NO&lt;/Termvector&gt;       &lt;Description&gt;"First Author field of Medline"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="MH"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;NO&lt;/Termvector&gt;       &lt;Description&gt;"MESH Heading field of Medline"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="PMID"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;NO&lt;/Termvector&gt;       &lt;Description&gt;"PMID field of Medline"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="SO"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;NO&lt;/Termvector&gt;       &lt;Description&gt;"SO field of Medline"&lt;/Description&gt;     &lt;/Field&gt;   &lt;/DocType&gt;    &lt;DocType FileType="txt"&gt;     &lt;FileExtension&gt;txt&lt;/FileExtension&gt;  &lt;FileExtension&gt;xml&lt;/FileExtension&gt;     &lt;DocTypeAnalyzer&gt;STANDARD&lt;/DocTypeAnalyzer&gt;     &lt;Field Name="path"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;NO&lt;/Termvector&gt;       &lt;Description&gt;"path"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="content"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;YES&lt;/Termvector&gt;       &lt;Description&gt;"content"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="title"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;YES&lt;/Termvector&gt;       &lt;Description&gt;"title"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="summary"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;false&lt;/Store&gt;       &lt;Termvector&gt;NO&lt;/Termvector&gt;       &lt;Description&gt;"summary"&lt;/Description&gt;     &lt;/Field&gt;   &lt;/DocType&gt;    &lt;DocType FileType="pdf"&gt;     &lt;FileExtension&gt;pdf&lt;/FileExtension&gt;     &lt;DocTypeAnalyzer&gt;STANDARD&lt;/DocTypeAnalyzer&gt;     &lt;Field Name="path"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;NO&lt;/Termvector&gt;       &lt;Description&gt;"path"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="content"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;YES&lt;/Termvector&gt;       &lt;Description&gt;"content"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="title"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;YES&lt;/Termvector&gt;       &lt;Description&gt;"title"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="summary"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;false&lt;/Store&gt;       &lt;Termvector&gt;NO&lt;/Termvector&gt;       &lt;Description&gt;"summary"&lt;/Description&gt;     &lt;/Field&gt;   &lt;/DocType&gt;    &lt;DocType FileType="msword"&gt;     &lt;DocTypeAnalyzer&gt;STANDARD&lt;/DocTypeAnalyzer&gt;     &lt;FileExtension&gt;doc&lt;/FileExtension&gt;     &lt;Field Name="path"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;NO&lt;/Termvector&gt;       &lt;Description&gt;"path"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="content"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;true&lt;/Store&gt;       &lt;Termvector&gt;YES&lt;/Termvector&gt;       &lt;Description&gt;"content"&lt;/Description&gt;     &lt;/Field&gt;     &lt;Field Name="summary"&gt;       &lt;Index&gt;TOKENIZED&lt;/Index&gt;       &lt;Store&gt;false&lt;/Store&gt;       &lt;Termvector&gt;NO&lt;/Termvector&gt;       &lt;Description&gt;"summary"&lt;/Description&gt;     &lt;/Field&gt;   &lt;/DocType&gt;  &lt;/config&gt;</s:stringconstant>
+        </s:processor>
+        <s:processor name="Get_workflow">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+          <s:iterationstrategy>
+            <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="base" />
+              <i:iterator name="url" />
+            </i:cross>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:processor name="Get_all_workflows">
+          <s:defaults>
+            <s:default name="base">http://sandbox.myexperiment.org/</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+        </s:processor>
+        <s:processor name="Write_Text_File">
+          <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileWriter</s:local>
+        </s:processor>
+        <s:processor name="save_extract_workflow_XSLT">
+          <s:defaults>
+            <s:default name="outputFile">/tmp/workflows.xsl</s:default>
+          </s:defaults>
+          <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileWriter</s:local>
+        </s:processor>
+        <s:processor name="Extract_Workflows">
+          <s:defaults>
+            <s:default name="xslFileURL">/tmp/workflows.xsl</s:default>
+            <s:default name="outFileURL">/tmp/bla</s:default>
+            <s:default name="inFileURL">/tmp/workflows.xml</s:default>
+            <s:default name="outputExt">html</s:default>
+          </s:defaults>
+          <s:local>net.sourceforge.taverna.scuflworkers.xml.XSLTWorker</s:local>
+          <s:iterationstrategy>
+            <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="inFileURL" />
+              <i:iterator name="xslFileURL" />
+            </i:dot>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:processor name="Split_string_into_string_list_by_regular_expression">
+          <s:defaults>
+            <s:default name="regex">--</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+          <s:iterationstrategy>
+            <i:iterator xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10" name="string" />
+          </s:iterationstrategy>
+        </s:processor>
+        <s:processor name="make_XSLTlocation">
+          <s:defaults>
+            <s:default name="string2">workflows.xsl</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+        </s:processor>
+        <s:processor name="extract_workflow_URIs" boring="true">
+          <s:stringconstant>&lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;&lt;xsl:template match="workflow"&gt;&lt;xsl:value-of select="@uri"/&gt; -- &lt;/xsl:template&gt;&lt;/xsl:stylesheet&gt;</s:stringconstant>
+        </s:processor>
+        <s:processor name="merge_title_description">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+          <s:iterationstrategy>
+            <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="string2" />
+              <i:iterator name="string1" />
+            </i:dot>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:processor name="save_workflow">
+          <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileWriter</s:local>
+          <s:iterationstrategy>
+            <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="filecontents" />
+              <i:iterator name="outputFile" />
+            </i:dot>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:processor name="add_prefix">
+          <s:defaults>
+            <s:default name="string1">/tmp/</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+        </s:processor>
+        <s:processor name="addToIndexWithConfig">
+          <s:description>Use this method to add a single file to a named index using a specified config. The indexName in the argument will override that in the configfile</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://aida.science.uva.nl:9999/axis/services/IndexWS?wsdl</s:wsdl>
+            <s:operation>addToIndexWithConfig</s:operation>
+          </s:arbitrarywsdl>
+          <s:iterationstrategy>
+            <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="config" />
+              <i:dot>
+                <i:iterator name="filedata" />
+                <i:iterator name="filename" />
+              </i:dot>
+            </i:cross>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:processor name="extractTitle">
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:cc4d7cfa-d20a-40c8-a4e8-230a7058dbae" author="" title="extractTitle" />
+              <s:processor name="make_temp_outputfilename">
+                <s:defaults>
+                  <s:default name="string2">title.out</s:default>
+                </s:defaults>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+              </s:processor>
+              <s:processor name="Write_XSL_File">
+                <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileWriter</s:local>
+              </s:processor>
+              <s:processor name="make_XSL_location">
+                <s:defaults>
+                  <s:default name="string2">getTitle.xsl</s:default>
+                </s:defaults>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+              </s:processor>
+              <s:processor name="XSL" boring="true">
+                <s:stringconstant>&lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;&lt;xsl:template match="workflow"&gt;&lt;xsl:value-of select="title"/&gt; &lt;/xsl:template&gt;&lt;/xsl:stylesheet&gt;</s:stringconstant>
+              </s:processor>
+              <s:processor name="Transform_XML">
+                <s:defaults>
+                  <s:default name="outputExt">xml</s:default>
+                </s:defaults>
+                <s:local>net.sourceforge.taverna.scuflworkers.xml.XSLTWorker</s:local>
+              </s:processor>
+              <s:processor name="Read_Text_File">
+                <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+              </s:processor>
+              <s:processor name="remove_xml">
+                <s:beanshell>
+                  <s:scriptvalue>import java.util.regex.*;
+
+String pStr = "&lt;(.*?)&gt;(.*)";
+Pattern idPattern = Pattern.compile(pStr, Pattern.UNIX_LINES | Pattern.DOTALL);
+Matcher idMatcher = idPattern.matcher(in.replaceAll("\n"," "));
+boolean matched = idMatcher.matches();
+
+if (matched) {
+out = idMatcher.group(2).trim();
+}
+else {
+print("didn't match id");
+Failure = true;
+FailureMessage = "Couldn't extract from " + in;
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">in</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">out</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="add_ID">
+                <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+              </s:processor>
+              <s:processor name="extract_ID">
+                <s:beanshell>
+                  <s:scriptvalue>out = "_(" + in.replaceAll("\n", "").trim().replaceAll(tmp+"workflow.xml\\?id=","") + ")";</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">in</s:beanshellinput>
+                    <s:beanshellinput s:syntactictype="'text/plain'">tmp</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">out</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:link source="temp_location" sink="make_XSL_location:string1" />
+              <s:link source="XSL:value" sink="Write_XSL_File:filecontents" />
+              <s:link source="make_XSL_location:output" sink="Transform_XML:xslFileURL" />
+              <s:link source="make_XSL_location:output" sink="Write_XSL_File:outputFile" />
+              <s:link source="temp_location" sink="make_temp_outputfilename:string1" />
+              <s:link source="xml_filename" sink="Transform_XML:inFileURL" />
+              <s:link source="Read_Text_File:filecontents" sink="remove_xml:in" />
+              <s:link source="make_temp_outputfilename:output" sink="Read_Text_File:fileurl" />
+              <s:link source="make_temp_outputfilename:output" sink="Transform_XML:outFileURL" />
+              <s:link source="xml_filename" sink="extract_ID:in" />
+              <s:link source="extract_ID:out" sink="add_ID:string2" />
+              <s:link source="remove_xml:out" sink="add_ID:string1" />
+              <s:link source="temp_location" sink="extract_ID:tmp" />
+              <s:link source="add_ID:output" sink="title" />
+              <s:source name="temp_location" />
+              <s:source name="xml_filename" />
+              <s:sink name="title" />
+              <s:coordination name="Transform_XML_BLOCKON_Write_Text_File">
+                <s:condition>
+                  <s:state>Completed</s:state>
+                  <s:target>Write_XSL_File</s:target>
+                </s:condition>
+                <s:action>
+                  <s:target>Transform_XML</s:target>
+                  <s:statechange>
+                    <s:from>Scheduled</s:from>
+                    <s:to>Running</s:to>
+                  </s:statechange>
+                </s:action>
+              </s:coordination>
+              <s:coordination name="Read_Text_File_BLOCKON_Transform_XML">
+                <s:condition>
+                  <s:state>Completed</s:state>
+                  <s:target>Transform_XML</s:target>
+                </s:condition>
+                <s:action>
+                  <s:target>Read_Text_File</s:target>
+                  <s:statechange>
+                    <s:from>Scheduled</s:from>
+                    <s:to>Running</s:to>
+                  </s:statechange>
+                </s:action>
+              </s:coordination>
+            </s:scufl>
+          </s:workflow>
+          <s:iterationstrategy>
+            <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="xml_filename" />
+              <i:iterator name="temp_location" />
+            </i:cross>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:processor name="extractDescription">
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:cc4d7cfa-d20a-40c8-a4e8-230a7058dbae" author="" title="extractDescription" />
+              <s:processor name="make_XSL_location">
+                <s:defaults>
+                  <s:default name="string2">getDescription.xsl</s:default>
+                </s:defaults>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+              </s:processor>
+              <s:processor name="Transform_XML">
+                <s:defaults>
+                  <s:default name="outputExt">xml</s:default>
+                </s:defaults>
+                <s:local>net.sourceforge.taverna.scuflworkers.xml.XSLTWorker</s:local>
+              </s:processor>
+              <s:processor name="XSL" boring="true">
+                <s:stringconstant>&lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;&lt;xsl:template match="workflow"&gt;&lt;xsl:value-of select="description"/&gt; &lt;/xsl:template&gt;&lt;/xsl:stylesheet&gt;</s:stringconstant>
+              </s:processor>
+              <s:processor name="Write_XSL_File">
+                <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileWriter</s:local>
+              </s:processor>
+              <s:processor name="make_temp_outputfilename">
+                <s:defaults>
+                  <s:default name="string2">description.out</s:default>
+                </s:defaults>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+              </s:processor>
+              <s:processor name="Read_Text_File">
+                <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+              </s:processor>
+              <s:processor name="remove_xml">
+                <s:beanshell>
+                  <s:scriptvalue>import java.util.regex.*;
+
+String pStr = "&lt;(.*?)&gt;(.*)";
+Pattern idPattern = Pattern.compile(pStr, Pattern.UNIX_LINES | Pattern.DOTALL);
+Matcher idMatcher = idPattern.matcher(in.replaceAll("\n"," "));
+boolean matched = idMatcher.matches();
+
+if (matched) {
+out = idMatcher.group(2);
+}
+else {
+print("didn't match id");
+Failure = true;
+FailureMessage = "Couldn't extract from " + in;
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">in</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">out</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:link source="temp_location" sink="make_XSL_location:string1" />
+              <s:link source="XSL:value" sink="Write_XSL_File:filecontents" />
+              <s:link source="make_XSL_location:output" sink="Transform_XML:xslFileURL" />
+              <s:link source="make_XSL_location:output" sink="Write_XSL_File:outputFile" />
+              <s:link source="temp_location" sink="make_temp_outputfilename:string1" />
+              <s:link source="xml_filename" sink="Transform_XML:inFileURL" />
+              <s:link source="Read_Text_File:filecontents" sink="remove_xml:in" />
+              <s:link source="make_temp_outputfilename:output" sink="Read_Text_File:fileurl" />
+              <s:link source="make_temp_outputfilename:output" sink="Transform_XML:outFileURL" />
+              <s:link source="remove_xml:out" sink="title" />
+              <s:source name="temp_location" />
+              <s:source name="xml_filename" />
+              <s:sink name="title" />
+              <s:coordination name="Transform_XML_BLOCKON_Write_Text_File">
+                <s:condition>
+                  <s:state>Completed</s:state>
+                  <s:target>Write_XSL_File</s:target>
+                </s:condition>
+                <s:action>
+                  <s:target>Transform_XML</s:target>
+                  <s:statechange>
+                    <s:from>Scheduled</s:from>
+                    <s:to>Running</s:to>
+                  </s:statechange>
+                </s:action>
+              </s:coordination>
+              <s:coordination name="Read_Text_File_BLOCKON_Transform_XML">
+                <s:condition>
+                  <s:state>Completed</s:state>
+                  <s:target>Transform_XML</s:target>
+                </s:condition>
+                <s:action>
+                  <s:target>Read_Text_File</s:target>
+                  <s:statechange>
+                    <s:from>Scheduled</s:from>
+                    <s:to>Running</s:to>
+                  </s:statechange>
+                </s:action>
+              </s:coordination>
+            </s:scufl>
+          </s:workflow>
+          <s:iterationstrategy>
+            <i:cross xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="xml_filename" />
+              <i:iterator name="temp_location" />
+            </i:cross>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:link source="Extract_Workflows:outputStr" sink="Split_string_into_string_list_by_regular_expression:string" />
+        <s:link source="Get_all_workflows:contents" sink="Write_Text_File:filecontents" />
+        <s:link source="Get_workflow:contents" sink="save_workflow:filecontents" />
+        <s:link source="Split_string_into_string_list_by_regular_expression:split" sink="getTargetURL:stringlist" />
+        <s:link source="add_prefix:output" sink="extractDescription:xml_filename" />
+        <s:link source="add_prefix:output" sink="extractTitle:xml_filename" />
+        <s:link source="add_prefix:output" sink="save_workflow:outputFile" />
+        <s:link source="append_extension:output" sink="addToIndexWithConfig:filename" />
+        <s:link source="create_all_worksflows_location:output" sink="Extract_Workflows:inFileURL" />
+        <s:link source="create_all_worksflows_location:output" sink="Write_Text_File:outputFile" />
+        <s:link source="extractDescription:title" sink="merge_title_description:string2" />
+        <s:link source="extractTitle:title" sink="append_extension:string1" />
+        <s:link source="extractTitle:title" sink="merge_title_description:string1" />
+        <s:link source="extract_workflow_URIs:value" sink="save_extract_workflow_XSLT:filecontents" />
+        <s:link source="getTargetURL:filteredlist" sink="Get_workflow:url" />
+        <s:link source="getTargetURL:filteredlist" sink="add_prefix:string2" />
+        <s:link source="make_XSLTlocation:output" sink="Extract_Workflows:xslFileURL" />
+        <s:link source="make_XSLTlocation:output" sink="save_extract_workflow_XSLT:outputFile" />
+        <s:link source="merge_title_description:output" sink="addToIndexWithConfig:filedata" />
+        <s:link source="page" sink="Get_all_workflows:url" />
+        <s:link source="temp_location" sink="add_prefix:string1" />
+        <s:link source="temp_location" sink="create_all_worksflows_location:string1" />
+        <s:link source="temp_location" sink="extractDescription:temp_location" />
+        <s:link source="temp_location" sink="extractTitle:temp_location" />
+        <s:link source="temp_location" sink="make_XSLTlocation:string1" />
+        <s:link source="indexconfig:value" sink="addToIndexWithConfig:config" />
+        <s:link source="indexname" sink="addToIndexWithConfig:indexName" />
+        <s:link source="addToIndexWithConfig:addToIndexWithConfigReturn" sink="out" />
+        <s:link source="sandbox_myexperiment_org:value" sink="Get_all_workflows:base" />
+        <s:link source="sandbox_myexperiment_org:value" sink="Get_workflow:base" />
+        <s:source name="page" />
+        <s:source name="temp_location" />
+        <s:source name="indexname" />
+        <s:sink name="out">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>text/html</s:mimeType>
+              <s:mimeType>text/xml</s:mimeType>
+            </s:mimeTypes>
+          </s:metadata>
+        </s:sink>
+        <s:coordination name="Transform_XML_BLOCKON_Write_Text_File">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Write_Text_File</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Extract_Workflows</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Extract_Workflows_BLOCKON_save_XSLT">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>save_extract_workflow_XSLT</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Extract_Workflows</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="extractTitle_BLOCKON_save_workflow">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>save_workflow</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>extractTitle</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="extractDescription_BLOCKON_save_workflow">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>save_workflow</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>extractDescription</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Ask_index_name:answer" sink="Nested_Workflow:indexname" />
+  <s:link source="Nested_Workflow:out" sink="out" />
+  <s:link source="Select_temp_location:answer" sink="Nested_Workflow:temp_location" />
+  <s:link source="create_url:output" sink="Nested_Workflow:page" />
+  <s:link source="page_iterator:split" sink="create_url:string2" />
+  <s:link source="pages:value" sink="page_iterator:string" />
+  <s:sink name="out">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/html</s:mimeType>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

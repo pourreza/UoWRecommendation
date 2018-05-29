@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:c8a1edfc-534a-47ec-a166-60067a4acd56" author="Mark Borkum (mib104@ecs.soton.ac.uk)" title="QRscufl">
+    <p>A simple workflow to create a QRCode for any given URL and Title (although at some point I will expand this to extract the &lt;title&gt; element using screen-scraping!).<br/>
+    The Byte[] to String service requires that the local machine uses Unix (to avoid line break issues).</p>
+  </s:workflowdescription>
+  <s:processor name="makeBookmark">
+    <s:defaults>
+      <s:default name="cellSize">3</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://qr.ed.st/services/QRCode?wsdl</s:wsdl>
+      <s:operation>makeBookmark</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Byte___to_String">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+  </s:processor>
+  <s:processor name="Encode_byte___to_base64">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.EncodeBase64</s:local>
+  </s:processor>
+  <s:link source="title" sink="makeBookmark:title" />
+  <s:link source="url" sink="makeBookmark:url" />
+  <s:link source="Byte___to_String:string" sink="qrcode_string" />
+  <s:link source="Encode_byte___to_base64:base64" sink="qrcode_base64" />
+  <s:link source="makeBookmark:makeBookmarkReturn" sink="Byte___to_String:bytes" />
+  <s:link source="makeBookmark:makeBookmarkReturn" sink="Encode_byte___to_base64:bytes" />
+  <s:source name="url" />
+  <s:source name="title" />
+  <s:sink name="qrcode_string" />
+  <s:sink name="qrcode_base64" />
+</s:scufl>
+

@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:8f006b15-fdb5-46e7-aacb-aa489f71941a" author="Hamish McWilliam" title="InterProScan (SOAP)">Perform an InterProScan search using the EMBL-EBI’s InterProScan (SOAP) service (see http://www.ebi.ac.uk/Tools/webservices/services/pfa/iprscan_soap). The query sequence to use is the input, the other parameters for the search are allowed to default.</s:workflowdescription>
+  <s:processor name="run">
+    <s:description>Submit an analysis job</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/services/soap/iprscan?wsdl</s:wsdl>
+      <s:operation>run</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="parametersXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="run" name="parameters" qname="{http://soap.jdispatcher.ebi.ac.uk}run">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="&gt;run&gt;email" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="title" qname="&gt;run&gt;title" />
+            <s:complextype optional="false" unbounded="false" typename="InputParameters" name="parameters" qname="&gt;run&gt;parameters">
+              <s:elements>
+                <s:basetype optional="true" unbounded="false" typename="boolean" name="nocrc" qname="InputParameters&gt;nocrc" />
+                <s:basetype optional="true" unbounded="false" typename="boolean" name="goterms" qname="InputParameters&gt;goterms" />
+                <s:arraytype optional="true" unbounded="false" wrapped="true" typename="ArrayOfString" name="appl" qname="InputParameters&gt;appl">
+                  <s:elementtype>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  </s:elementtype>
+                </s:arraytype>
+                <s:basetype optional="true" unbounded="false" typename="string" name="sequence" qname="InputParameters&gt;sequence" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersXML1">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="InputParameters" name="parameters" qname="&gt;run&gt;parameters">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="boolean" name="nocrc" qname="InputParameters&gt;nocrc" />
+            <s:basetype optional="true" unbounded="false" typename="boolean" name="goterms" qname="InputParameters&gt;goterms" />
+            <s:arraytype optional="true" unbounded="false" wrapped="true" typename="ArrayOfString" name="appl" qname="InputParameters&gt;appl">
+              <s:elementtype>
+                <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+              </s:elementtype>
+            </s:arraytype>
+            <s:basetype optional="true" unbounded="false" typename="string" name="sequence" qname="InputParameters&gt;sequence" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersXML2">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="runResponse" name="parameters" qname="{http://soap.jdispatcher.ebi.ac.uk}runResponse">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="jobId" qname="&gt;runResponse&gt;jobId" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="getResult">
+    <s:description>Get a job result formatted using a particular renderer</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/services/soap/iprscan?wsdl</s:wsdl>
+      <s:operation>getResult</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="parametersXML3">
+    <s:defaults>
+      <s:default name="type">out</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getResult" name="parameters" qname="{http://soap.jdispatcher.ebi.ac.uk}getResult">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="jobId" qname="&gt;getResult&gt;jobId" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="&gt;getResult&gt;type" />
+            <s:arraytype optional="true" unbounded="false" wrapped="false" typename="wsRawOutputParameters" name="parameters" qname="&gt;getResult&gt;parameters">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="wsRawOutputParameter" name="" qname="{http://soap.jdispatcher.ebi.ac.uk}wsRawOutputParameter">
+                  <s:elements>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="name" qname="wsRawOutputParameter&gt;name" />
+                    <s:arraytype optional="false" unbounded="false" wrapped="true" typename="ArrayOfString" name="value" qname="wsRawOutputParameter&gt;value">
+                      <s:elementtype>
+                        <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                      </s:elementtype>
+                    </s:arraytype>
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersXML4">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getResultResponse" name="parameters" qname="{http://soap.jdispatcher.ebi.ac.uk}getResultResponse">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="base64Binary" name="output" qname="&gt;getResultResponse&gt;output" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Byte___to_String">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+  </s:processor>
+  <s:processor name="Byte___to_String1">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+  </s:processor>
+  <s:processor name="getResult1">
+    <s:description>Get a job result formatted using a particular renderer</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/services/soap/iprscan?wsdl</s:wsdl>
+      <s:operation>getResult</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="parametersXML5">
+    <s:defaults>
+      <s:default name="type">xml</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getResult" name="parameters" qname="{http://soap.jdispatcher.ebi.ac.uk}getResult">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="jobId" qname="&gt;getResult&gt;jobId" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="&gt;getResult&gt;type" />
+            <s:arraytype optional="true" unbounded="false" wrapped="false" typename="wsRawOutputParameters" name="parameters" qname="&gt;getResult&gt;parameters">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="wsRawOutputParameter" name="" qname="{http://soap.jdispatcher.ebi.ac.uk}wsRawOutputParameter">
+                  <s:elements>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="name" qname="wsRawOutputParameter&gt;name" />
+                    <s:arraytype optional="false" unbounded="false" wrapped="true" typename="ArrayOfString" name="value" qname="wsRawOutputParameter&gt;value">
+                      <s:elementtype>
+                        <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                      </s:elementtype>
+                    </s:arraytype>
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersXML6">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getResultResponse" name="parameters" qname="{http://soap.jdispatcher.ebi.ac.uk}getResultResponse">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="base64Binary" name="output" qname="&gt;getResultResponse&gt;output" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Job_status">
+    <s:workflow maxretries="100" retrydelay="5000" critical="true">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:30196a87-22c0-4369-aa41-8bee2aaea945" author="Hamish McWilliam" title="Job status polling for InterProScan (SOAP)">Get job status for an InterProScan (SOAP) job and fail if job is still running.</s:workflowdescription>
+        <s:processor name="getStatus">
+          <s:description>Get the status of a submitted job</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/services/soap/iprscan?wsdl</s:wsdl>
+            <s:operation>getStatus</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="parametersXML">
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="getStatus" name="parameters" qname="{http://soap.jdispatcher.ebi.ac.uk}getStatus">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="jobId" qname="&gt;getStatus&gt;jobId" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="parametersXML1">
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="getStatusResponse" name="parameters" qname="{http://soap.jdispatcher.ebi.ac.uk}getStatusResponse">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="status" qname="&gt;getStatusResponse&gt;status" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="is_running">
+          <s:beanshell>
+            <s:scriptvalue>if(status.equals("RUNNING")) {
+	is_running = "true";
+} else {
+	is_running = "false";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">status</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">is_running</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Fail_if_true">
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+        </s:processor>
+        <s:link source="JobId" sink="parametersXML:jobId" />
+        <s:link source="getStatus:parameters" sink="parametersXML1:input" />
+        <s:link source="is_running:is_running" sink="Fail_if_true:test" />
+        <s:link source="parametersXML1:status" sink="is_running:status" />
+        <s:link source="parametersXML1:status" sink="Status" />
+        <s:link source="parametersXML:output" sink="getStatus:parameters" />
+        <s:source name="JobId" />
+        <s:sink name="Status" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Email" sink="parametersXML:email" />
+  <s:link source="Sequence" sink="parametersXML1:sequence" />
+  <s:link source="Byte___to_String1:string" sink="XML_result" />
+  <s:link source="Byte___to_String:string" sink="Tab_result" />
+  <s:link source="Job_status:Status" sink="Job_status" />
+  <s:link source="getResult1:parameters" sink="parametersXML6:input" />
+  <s:link source="getResult:parameters" sink="parametersXML4:input" />
+  <s:link source="parametersXML1:output" sink="parametersXML:parameters" />
+  <s:link source="parametersXML2:jobId" sink="Job_status:JobId" />
+  <s:link source="parametersXML2:jobId" sink="parametersXML3:jobId" />
+  <s:link source="parametersXML2:jobId" sink="parametersXML5:jobId" />
+  <s:link source="parametersXML3:output" sink="getResult:parameters" />
+  <s:link source="parametersXML4:output" sink="Byte___to_String:bytes" />
+  <s:link source="parametersXML5:output" sink="getResult1:parameters" />
+  <s:link source="parametersXML6:output" sink="Byte___to_String1:bytes" />
+  <s:link source="parametersXML2:jobId" sink="JobId" />
+  <s:link source="parametersXML:output" sink="run:parameters" />
+  <s:link source="run:parameters" sink="parametersXML2:input" />
+  <s:source name="Email">
+    <s:metadata>
+      <s:description>Valid e-mail address for submission.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Sequence">
+    <s:metadata>
+      <s:description>Query protein sequence to be processed by InterProScan. Can be either a sequence in any common format (fasta format recommended) or a database entry identifier in DB:ID format (e.g. UNIPROT:WAP_RAT).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="JobId">
+    <s:metadata>
+      <s:description>Job identifier for InterProScan job.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="Job_status">
+    <s:metadata>
+      <s:description>Job status. Indicates if job completed successfully or failed, see http://www.ebi.ac.uk/Tools/webservices/tutorials/01_intro#jdispatcher.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="Tab_result">
+    <s:metadata>
+      <s:description>Plain text tab-delimited InterProScan result.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="XML_result">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+      <s:description>XML InterProScan result.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:coordination name="getResult_BLOCKON_Job_status">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Job_status</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>getResult</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="getResult1_BLOCKON_Job_status">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Job_status</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>getResult1</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

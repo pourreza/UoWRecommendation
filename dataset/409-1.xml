@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:97d4badf-af11-48f9-87e4-469563e832a1" author="Alan R Williams" title="Concatenate files - echo results and multiple files">The workflow splits the string 'a,b,c,d,e' into its five elements and saves the individual strings to five temporary files.  The file paths to those files are then output by the create_and_populate_temporary_file beanshell.
+
+The create_temporary_file beanshell creates a file to which the concatentation can be written.
+
+The concatenate_files service concatenates the five files and writes the result to the temporary output file.  Because the displayresults port has been given a default value of 'true', the results are also copied to the results port of concatenate_files.
+
+The temporary file to which the results were written is read by the read_text_file service and its contents output.
+
+Both of the workflow outputs contain 'a
+b
+c
+d
+e' i.e. the contents of the concatenated files separated by a newline.</s:workflowdescription>
+  <s:processor name="Concatenate_Files">
+    <s:defaults>
+      <s:default name="displayresults">true</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.ConcatenateFileListWorker</s:local>
+  </s:processor>
+  <s:processor name="Create_and_populate_temporary_file">
+    <s:defaults>
+      <s:default name="content">hello</s:default>
+    </s:defaults>
+    <s:beanshell>
+      <s:scriptvalue>File f = File.createTempFile("taverna", ".tmp");
+
+BufferedWriter writer = new BufferedWriter(new FileWriter(f));
+writer.write(content);
+writer.close();
+
+filepath = f.getCanonicalPath();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">content</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">filepath</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Create_temporary_file">
+    <s:beanshell>
+      <s:scriptvalue>File f = File.createTempFile("taverna", ".tmp");
+
+filepath = f.getCanonicalPath();</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">filepath</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Read_Text_File">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="Split_string_into_string_list_by_regular_expression">
+    <s:defaults>
+      <s:default name="string">a,b,c,d,e</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:link source="Concatenate_Files:results" sink="echoed_concatenation_results" />
+  <s:link source="Create_and_populate_temporary_file:filepath" sink="Concatenate_Files:filelist" />
+  <s:link source="Create_temporary_file:filepath" sink="Concatenate_Files:outputfile" />
+  <s:link source="Create_temporary_file:filepath" sink="Read_Text_File:fileurl" />
+  <s:link source="Split_string_into_string_list_by_regular_expression:split" sink="Create_and_populate_temporary_file:content" />
+  <s:link source="Read_Text_File:filecontents" sink="content_of_outputfile" />
+  <s:sink name="content_of_outputfile">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>'text/plain'</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="echoed_concatenation_results">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>'text/plain'</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+  <s:coordination name="Read_Text_File_BLOCKON_Concatenate_Files">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Concatenate_Files</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Read_Text_File</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

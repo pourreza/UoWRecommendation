@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="Paul Fisher" title="Pathway to Pubmed">This workflow takes in a list of KEGG pathway descriptions and searches the PubMed database for corresponding articles. Any matches to the pathways are then retrieved (abstracts only). These abstracts are then returned to the user.</s:workflowdescription>
+  <s:processor name="regex" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="merge_outputs_2">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="remove_nulls">
+    <s:beanshell>
+      <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++){
+   if (!(split[i].equals("")))
+   {
+       nonEmpty.add(split[i].trim());
+   }
+}
+
+String[] non_empty = new String[nonEmpty.size()];
+
+for (int i = 0; i &lt; non_empty.length; i ++)
+{
+   non_empty[i] = nonEmpty.elementAt(i);
+}
+
+String output = "";
+
+for (int i = 0; i &lt; non_empty.length; i++)
+{
+	output = output + (String) (non_empty[i] + "\n");
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="split_search_terms">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="pathway_and_abstract">
+    <s:beanshell>
+      <s:scriptvalue>String[] split = abstracts.split("\n");
+String pathway_name = pathway;
+
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++) 
+{		
+	String trimmed = split[i].trim();
+	nonEmpty.add(trimmed);	
+}
+
+String output = "&gt;&gt; " + pathway_name + "\n";
+
+for (int i = 0; i &lt; nonEmpty.size(); i++)
+{
+	output = output + (String) (nonEmpty.elementAt(i) + "\n");
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">pathway</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">abstracts</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="pathway" />
+        <i:iterator name="abstracts" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="extract_terms">
+    <s:beanshell>
+      <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++) 
+{		
+	String mytext = split[i].substring(split[i].indexOf(" "), split[i].indexOf(" - "));
+	nonEmpty.add(mytext);
+}
+
+String output = "";
+for (int i = 0; i &lt; nonEmpty.size(); i++)
+{
+	output = output + (String) (nonEmpty.elementAt(i) + "\n");
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="add_MeSH_to_string">
+    <s:beanshell>
+      <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++) 
+{		
+	String trimmed = split[i].trim();
+	nonEmpty.add(trimmed);	
+}
+
+String output = "";
+
+for (int i = 0; i &lt; nonEmpty.size(); i++)
+{
+	output = output + (String) (nonEmpty.elementAt(i) + " AND \"Metabolic Networks and Pathways\"[MeSH Terms]" + "\n");
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Search_PubMed">
+    <s:description>This workflow takes in a list of KEGG pathway descriptions and a stop_list of KEGG pathway descriptions. These patwhays are then compared, and those in the stop list are removed. The workflow then extracts the pathway process from the KEGG formatted pathway descriptions output. It takes in a list of KEGG pathway descriptions and returns a list of pathways, without the KEGG pathway identifier or the species from which it came (e.g. - mus musculus (mouse) ). These are passed to the eSearch function and searched for in PubMed. Those abstracts found are returned to the user</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:cb167580-7e96-4651-afef-a0a16d1d2f97" author="Paul Fisher" title="Pathway to PubMed">This workflow takes in a list of KEGG pathway descriptions and a stop_list of KEGG pathway descriptions. These patwhays are then compared, and those in the stop list are removed. The workflow then extracts the pathway process from the KEGG formatted pathway descriptions output. It takes in a list of KEGG pathway descriptions and returns a list of pathways, without the KEGG pathway identifier or the species from which it came (e.g. - mus musculus (mouse) ). These are passed to the eSearch function and searched for in PubMed. Those abstracts found are returned to the user</s:workflowdescription>
+        <s:processor name="extractPMID">
+          <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+        </s:processor>
+        <s:processor name="xpath" boring="true">
+          <s:stringconstant>/*[local-name(.)='eSearchResult']/*[local-name(.)='IdList']/*[local-name(.)='Id']</s:stringconstant>
+        </s:processor>
+        <s:processor name="merge_abstract_ids">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+        </s:processor>
+        <s:processor name="pubmed_database" boring="true">
+          <s:stringconstant>pubmed</s:stringconstant>
+        </s:processor>
+        <s:processor name="concat_abstract_ids">
+          <s:beanshell>
+            <s:scriptvalue>String id = id.trim();
+String abstract_text = abstract_text.trim();
+String date_text = date_text.trim();
+
+String output = "";
+
+output = id + "\t" + date_text + "\t" + abstract_text;</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">id</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">abstract_text</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">date_text</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+          <s:iterationstrategy>
+            <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="date_text" />
+              <i:iterator name="abstract_text" />
+              <i:iterator name="id" />
+            </i:dot>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:processor name="max_return" boring="true">
+          <s:stringconstant>500</s:stringconstant>
+        </s:processor>
+        <s:processor name="merge_abstracts">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+        </s:processor>
+        <s:processor name="parametersXML_eFecth">
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="eSearchRequest" name="parameters" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/esearch}eSearchRequest">
+                <s:elements>
+                  <s:basetype optional="true" unbounded="false" typename="string" name="db" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="term" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="WebEnv" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="QueryKey" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="usehistory" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="tool" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="email" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="field" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="reldate" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="mindate" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="maxdate" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="datetype" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="RetStart" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="RetMax" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="rettype" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  <s:basetype optional="true" unbounded="false" typename="string" name="sort" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="run_eSearch">
+          <s:arbitrarywsdl>
+            <s:wsdl>http://eutils.ncbi.nlm.nih.gov/entrez/eutils/soap/eutils.wsdl</s:wsdl>
+            <s:operation>run_eSearch</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="merge_dates">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+        </s:processor>
+        <s:processor name="Retrive_abstracts">
+          <s:description>This workflow takes in a number of search terms (as used in the normal PubMed interface) and retrieves a list of PubMed ids in a list format.</s:description>
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:SOWUXPE5TJ0" author="Paul Fisher" title="XPath Pubmed Ids">This workflow takes in a number of search terms (as used in the normal PubMed interface) and retrieves a list of PubMed ids in a list format.</s:workflowdescription>
+              <s:processor name="database" boring="true">
+                <s:stringconstant>pubmed</s:stringconstant>
+              </s:processor>
+              <s:processor name="parametersXML">
+                <s:local>
+                  org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+                  <s:extensions>
+                    <s:complextype optional="false" unbounded="false" typename="eFetchRequest" name="parameters" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}eFetchRequest">
+                      <s:elements>
+                        <s:basetype optional="true" unbounded="false" typename="string" name="db" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;db" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="id" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;id" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="WebEnv" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;WebEnv" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="query_key" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;query_key" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="tool" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;tool" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="email" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;email" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="retstart" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;retstart" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="retmax" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;retmax" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="rettype" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;rettype" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="strand" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;strand" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="seq_start" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;seq_start" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="seq_stop" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;seq_stop" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="complexity" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;complexity" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="report" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequest&gt;report" />
+                      </s:elements>
+                    </s:complextype>
+                  </s:extensions>
+                </s:local>
+              </s:processor>
+              <s:processor name="extractAbstract">
+                <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+              </s:processor>
+              <s:processor name="xpath" boring="true">
+                <s:stringconstant>/*[local-name(.)='eFetchResult']/*[local-name(.)='PubmedArticleSet']/*[local-name(.)='PubmedArticle']/*[local-name(.)='MedlineCitation']/*[local-name(.)='Article']/*[local-name(.)='Abstract']/*[local-name(.)='AbstractText']</s:stringconstant>
+              </s:processor>
+              <s:processor name="xpath_2" boring="true">
+                <s:stringconstant>/*[local-name(.)='eFetchResult']/*[local-name(.)='PubmedArticleSet']/*[local-name(.)='PubmedArticle']/*[local-name(.)='MedlineCitation']/*[local-name(.)='DateCreated']/*[local-name(.)='Year']</s:stringconstant>
+              </s:processor>
+              <s:processor name="extractDates">
+                <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+              </s:processor>
+              <s:processor name="run_eFetch">
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://eutils.ncbi.nlm.nih.gov/entrez/eutils/soap/eutils.wsdl</s:wsdl>
+                  <s:operation>run_eFetch</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:link source="database:value" sink="parametersXML:db" />
+              <s:link source="extractAbstract:nodelist" sink="abstract" />
+              <s:link source="extractDates:nodelist" sink="date" />
+              <s:link source="parametersXML:output" sink="run_eFetch:parameters" />
+              <s:link source="pubmed_ids" sink="parametersXML:id" />
+              <s:link source="run_eFetch:parameters" sink="extractAbstract:xml-text" />
+              <s:link source="run_eFetch:parameters" sink="extractDates:xml-text" />
+              <s:link source="xpath:value" sink="extractAbstract:xpath" />
+              <s:link source="xpath_2:value" sink="extractDates:xpath" />
+              <s:source name="pubmed_ids" />
+              <s:sink name="abstract" />
+              <s:sink name="date" />
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:link source="Pathway_search_term" sink="parametersXML_eFecth:term" />
+        <s:link source="Retrive_abstracts:abstract" sink="merge_abstracts:stringlist" />
+        <s:link source="Retrive_abstracts:date" sink="merge_dates:stringlist" />
+        <s:link source="concat_abstract_ids:output" sink="merge_abstract_ids:stringlist" />
+        <s:link source="extractPMID:nodelist" sink="Retrive_abstracts:pubmed_ids" />
+        <s:link source="extractPMID:nodelist" sink="concat_abstract_ids:id" />
+        <s:link source="max_return:value" sink="parametersXML_eFecth:RetMax" />
+        <s:link source="merge_abstract_ids:concatenated" sink="concat_data" />
+        <s:link source="merge_abstracts:concatenated" sink="concat_abstract_ids:abstract_text" />
+        <s:link source="merge_dates:concatenated" sink="concat_abstract_ids:date_text" />
+        <s:link source="parametersXML_eFecth:output" sink="run_eSearch:parameters" />
+        <s:link source="pubmed_database:value" sink="parametersXML_eFecth:db" />
+        <s:link source="run_eSearch:parameters" sink="extractPMID:xml-text" />
+        <s:link source="xpath:value" sink="extractPMID:xpath" />
+        <s:source name="Pathway_search_term" />
+        <s:sink name="concat_data" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Search_PubMed:concat_data" sink="pathway_and_abstract:abstracts" />
+  <s:link source="add_MeSH_to_string:output" sink="split_search_terms:string" />
+  <s:link source="extract_terms:output" sink="add_MeSH_to_string:input" />
+  <s:link source="pathway_descriptions" sink="extract_terms:input" />
+  <s:link source="merge_outputs_2:concatenated" sink="pathway_abstracts" />
+  <s:link source="pathway_and_abstract:output" sink="remove_nulls:input" />
+  <s:link source="regex:value" sink="split_search_terms:regex" />
+  <s:link source="remove_nulls:output" sink="merge_outputs_2:stringlist" />
+  <s:link source="split_search_terms:split" sink="Search_PubMed:Pathway_search_term" />
+  <s:link source="split_search_terms:split" sink="pathway_and_abstract:pathway" />
+  <s:source name="pathway_descriptions" />
+  <s:sink name="pathway_abstracts" />
+</s:scufl>
+

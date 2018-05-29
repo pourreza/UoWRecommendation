@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:a10f09f0-b9e7-41c8-8506-2ff6b099acaa" author="" title="Success-Abandonment-Classification" />
+  <s:processor name="initiation_age_threshold" boring="true">
+    <s:stringconstant>12</s:stringconstant>
+  </s:processor>
+  <s:processor name="mortality_threshold" boring="true">
+    <s:stringconstant>12</s:stringconstant>
+  </s:processor>
+  <s:processor name="download_threshold" boring="true">
+    <s:stringconstant>11</s:stringconstant>
+  </s:processor>
+  <s:processor name="release_recency_threshold" boring="true">
+    <s:stringconstant>12</s:stringconstant>
+  </s:processor>
+  <s:processor name="release_lag_threshold" boring="true">
+    <s:stringconstant>6</s:stringconstant>
+  </s:processor>
+  <s:processor name="Fetch_Data">
+    <s:abstractprocessor>
+      Retrieve data from web databases - SQL queries
+SELECT downloads FROM ossmole_next.project_statistics p
+SELECT dev_count, date_registered, date_collected FROM ossmole_next.projects p
+SELECT release_dates FROM ??? (local table)
+[use proj_unixname as keyid]
+
+Potential (likely) problem - date_collected may vary by table? 
+Fewer entries for downloads than for other stats
+Want date collected w/ respect to releases/downloads...
+
+SAMPLING - bigger problem
+how to select with stratification by developer counts?
+flagging exceptions - those w/o downloads or (?some other var?) which may be viable but can't tell
+      <s:inputPortList>
+        <s:inputPort s:syntacticType="'text/plain'">projects</s:inputPort>
+      </s:inputPortList>
+      <s:outputPortList>
+        <s:outputPort s:syntacticType="'text/plain'">release_dates</s:outputPort>
+        <s:outputPort s:syntacticType="'text/plain'">registration date</s:outputPort>
+        <s:outputPort s:syntacticType="'text/plain'">data_collxn_date</s:outputPort>
+        <s:outputPort s:syntacticType="'text/plain'">downloads</s:outputPort>
+      </s:outputPortList>
+    </s:abstractprocessor>
+  </s:processor>
+  <s:processor name="Assemble_Data">
+    <s:abstractprocessor>
+      makes a CSV of project info
+      <s:inputPortList>
+        <s:inputPort s:syntacticType="'text/plain'">time_since_reg</s:inputPort>
+        <s:inputPort s:syntacticType="'text/plain'">number_releases</s:inputPort>
+        <s:inputPort s:syntacticType="'text/plain'">time_since_last_release</s:inputPort>
+        <s:inputPort s:syntacticType="'text/plain'">downloads</s:inputPort>
+        <s:inputPort s:syntacticType="'text/plain'">time_between_releases</s:inputPort>
+      </s:inputPortList>
+      <s:outputPortList>
+        <s:outputPort s:syntacticType="'text/plain'">data_for_classification</s:outputPort>
+      </s:outputPortList>
+    </s:abstractprocessor>
+  </s:processor>
+  <s:processor name="Classification">
+    <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+      # A. Wiggins 2/6/08
+# script will use nested if-then statements for classification
+# have to turn strings into integers for value comparisons
+      <s:rshellInputPortList>
+        <s:rshellInputPort s:syntacticType="l('text/plain')" s:symanticType="STRING_LIST">data_for_classification</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">download_threshold</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">mortality_threshold</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">release_recency_threshold</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">intiation_age_threshold</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">release_lag_threshold</s:rshellInputPort>
+      </s:rshellInputPortList>
+      <s:rshellOutputPortList>
+        <s:rshellOutputPort s:syntacticType="l('text/plain')" s:symanticType="STRING_LIST">classified_data</s:rshellOutputPort>
+      </s:rshellOutputPortList>
+    </s:rshell>
+  </s:processor>
+  <s:processor name="Compute_Project_Stats">
+    <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+      # A. Wiggins 2/6/08
+# computes date-based metrics for classification
+
+# may need to do a "for i in..." for release.dates as this is an array (determine in debug)
+release.dates &lt;- as.POSIXct(release_dates)
+# also need error handling for cases with no releases (empty) CRITICAL
+registration.date &lt;- as.POSIXct(registration_date)
+data.collxn &lt;- as.POSIXct(data_collxn_date)
+
+#first take list of release dates, count them
+number_releases &lt;- nrow(release.dates)
+
+# sort releases in ascending order and then label the last one as most recent (validate sort order)
+sort(release.dates, decreasing=FALSE)
+most.recent.release &lt;- .Last.value
+
+#subtract most recent release date from data collection date
+time_since_last_release &lt;- (data.collxn - most.recent.release)
+
+#subtract registration date from data collection date
+time_since_reg &lt;- (data.collxn - registration.date)
+      <s:rshellInputPortList>
+        <s:rshellInputPort s:syntacticType="l('text/plain')" s:symanticType="STRING_LIST">release_dates</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">registration_date</s:rshellInputPort>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">data_collxn_date</s:rshellInputPort>
+      </s:rshellInputPortList>
+      <s:rshellOutputPortList>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">time_since_reg</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">number_releases</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">time_since_last_release</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">time_between_releases</s:rshellOutputPort>
+      </s:rshellOutputPortList>
+    </s:rshell>
+  </s:processor>
+  <s:link source="Project_Names" sink="Fetch_Data:projects" />
+  <s:link source="Assemble_Data:data_for_classification" sink="Classification:data_for_classification" />
+  <s:link source="Compute_Project_Stats:number_releases" sink="Assemble_Data:number_releases" />
+  <s:link source="Compute_Project_Stats:time_between_releases" sink="Assemble_Data:time_between_releases" />
+  <s:link source="Compute_Project_Stats:time_since_last_release" sink="Assemble_Data:time_since_last_release" />
+  <s:link source="Compute_Project_Stats:time_since_reg" sink="Assemble_Data:time_since_reg" />
+  <s:link source="Fetch_Data:data_collxn_date" sink="Compute_Project_Stats:data_collxn_date" />
+  <s:link source="Fetch_Data:downloads" sink="Assemble_Data:downloads" />
+  <s:link source="Fetch_Data:registration date" sink="Compute_Project_Stats:registration_date" />
+  <s:link source="Fetch_Data:release_dates" sink="Compute_Project_Stats:release_dates" />
+  <s:link source="download_threshold:value" sink="Classification:download_threshold" />
+  <s:link source="initiation_age_threshold:value" sink="Classification:intiation_age_threshold" />
+  <s:link source="mortality_threshold:value" sink="Classification:mortality_threshold" />
+  <s:link source="release_lag_threshold:value" sink="Classification:release_lag_threshold" />
+  <s:link source="release_recency_threshold:value" sink="Classification:release_recency_threshold" />
+  <s:link source="Classification:classified_data" sink="Classification_Output" />
+  <s:source name="Project_Names" />
+  <s:sink name="Classification_Output" />
+</s:scufl>
+

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:0d1a9f64-13a1-4227-87a9-fe10f2b69132" author="Lebreton" title="retrieve protein sequence and do a BLAST from DDBJ Web services" />
+  <s:processor name="getFASTA_UNIPROTEntry">
+    <s:description>Get UNIPROT entry of FASTA Format by Accession Number</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/GetEntry.wsdl</s:wsdl>
+      <s:operation>getFASTA_UNIPROTEntry</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="searchSimple">
+    <s:description>Execute Blast</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/Blast.wsdl</s:wsdl>
+      <s:operation>searchSimple</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="UniProt_accession" sink="getFASTA_UNIPROTEntry:accession" />
+  <s:source name="UniProt_accession" />
+  <s:link source="searchSimple:Result" sink="blast_report_ddbj" />
+  <s:sink name="blast_report_ddbj" />
+  <s:link source="getFASTA_UNIPROTEntry:Result" sink="searchSimple:query" />
+  <s:link source="biological_sequence_database" sink="searchSimple:database" />
+  <s:source name="biological_sequence_database" />
+  <s:link source="bioinformatics_program" sink="searchSimple:program" />
+  <s:source name="bioinformatics_program" />
+</s:scufl>

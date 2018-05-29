@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:0d1a9f64-13a1-4227-87a9-fe10f2b69132" author="" title="workflowsemanticm" />
+  <s:processor name="getFASTA_DDBJEntry">
+    <s:description>Get DDBJ entry of FASTA Format by Accession Number</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/GetEntry.wsdl</s:wsdl>
+      <s:operation>getFASTA_DDBJEntry</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="searchParallel">
+    <s:description>Auto generated from http://xml.nig.ac.jp/wsdl/Blast.wsdl</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/Blast.wsdl</s:wsdl>
+      <s:operation>searchParallel</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="getFASTA_DDBJEntry:Result" sink="searchParallel:arg2" />
+  <s:link source="bioinformatics_program" sink="searchParallel:arg0" />
+  <s:source name="bioinformatics_program" />
+  <s:link source="sequence_database" sink="searchParallel:arg1" />
+  <s:source name="sequence_database" />
+  <s:link source="bioinformatics_parameter" sink="searchParallel:arg3" />
+  <s:source name="bioinformatics_parameter" />
+  <s:link source="DDBJ_accession" sink="getFASTA_DDBJEntry:accession" />
+  <s:source name="DDBJ_accession" />
+  <s:link source="searchParallel:Result" sink="extractPosition:result" />
+
+  <s:processor name="extractPosition">
+    <s:description>get position information from BLAST</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/Blast.wsdl</s:wsdl>
+      <s:operation>extractPosition</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="extractPosition:Result" sink="position_blast_report_ddbj" />
+  <s:sink name="position_blast_report_ddbj" />
+</s:scufl>

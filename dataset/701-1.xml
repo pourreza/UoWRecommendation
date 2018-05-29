@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:10bf39b8-709e-40dd-bf6f-a8d81a753e56" author="Paul Fisher" title="Get CVs">This workflow lets users retrive all controlled vocabularies for a given Ondex graph</s:workflowdescription>
+  <s:processor name="getCVs">
+    <s:arbitrarywsdl>
+<s:wsdl>http://rpc274.cs.man.ac.uk:8080/ondex/services/ondex-graph?wsdl</s:wsdl>
+      <s:operation>getCVs</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="parametersXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getCVs" name="parameters" qname="{http://webservice.ondex.sourceforge.net/}getCVs">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="long" name="graphId" qname="getCVs&gt;graphId" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersXML1">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getCVsResponse" name="parameters" qname="{http://webservice.ondex.sourceforge.net/}getCVsResponse">
+          <s:elements>
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="wscv" name="cvs" qname="getCVsResponse&gt;cvs">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="wscv" name="" qname="{http://webservice.ondex.sourceforge.net/}wscv">
+                  <s:elements>
+                    <s:basetype optional="true" unbounded="false" typename="string" name="description" qname="wscv&gt;description" />
+                    <s:basetype optional="true" unbounded="false" typename="string" name="fullname" qname="wscv&gt;fullname" />
+                    <s:basetype optional="true" unbounded="false" typename="string" name="id" qname="wscv&gt;id" />
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="getCVs:parameters" sink="parametersXML1:input" />
+  <s:link source="graphId" sink="parametersXML:graphId" />
+  <s:link source="parametersXML1:cvs" sink="cv_s" />
+  <s:link source="parametersXML:output" sink="getCVs:parameters" />
+  <s:source name="graphId" />
+  <s:sink name="cv_s" />
+</s:scufl>
+

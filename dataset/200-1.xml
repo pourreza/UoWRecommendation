@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:edc552fb-32b2-45c0-8ccc-7e0095846a2a" author="Hamish McWilliam" title="EBI FASTA with prompts">Run a FASTA analysis using the EBI’s WSFasta service (see http://www.ebi.ac.uk/Tools/webservices/services/fasta). This workflow wraps the EBI_FASTA workflow to provide a basic user interface which prompts for the required inputs: sequence, database, FASTA program and user e-mail. Other parameters (e.g. matrix, gap penalties, etc.) are allowed to default.</s:workflowdescription>
+  <s:processor name="EBI_FASTA">
+    <s:description>Run a FASTA job using the EBI's WSFasta service.</s:description>
+    <s:workflow>
+      <s:xscufllocation>file:/C:/Documents%20and%20Settings/hamish/My%20Documents/My%20Downloads/EBI_FASTA.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Ask_for_email">
+    <s:description>Prompt for the user's e-mail address.</s:description>
+    <s:defaults>
+      <s:default name="title">E-mail</s:default>
+      <s:default name="message">Your e-mail</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.AskWorker</s:local>
+  </s:processor>
+  <s:processor name="Ask_for_sequence">
+    <s:description>Prompt for the query sequence.</s:description>
+    <s:defaults>
+      <s:default name="title">Sequence or ID</s:default>
+      <s:default name="message">Sequence or ID</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.AskWorker</s:local>
+  </s:processor>
+  <s:processor name="Select_FASTA_program">
+    <s:description>Select a program to perform the search.</s:description>
+    <s:defaults>
+      <s:default name="message">FASTA Progam</s:default>
+      <s:default name="title">Program</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.SelectWorker</s:local>
+  </s:processor>
+  <s:processor name="Make_FASTA_program_list">
+    <s:description>Create the list of programs.</s:description>
+    <s:defaults>
+      <s:default name="string">fasta3,fastf3,fasts3,fastx3,fasty3,tfastx3,tfasty3,ssearch</s:default>
+      <s:default name="regex">,</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Make_database_list">
+    <s:description>Create a list of databases.</s:description>
+    <s:defaults>
+      <s:default name="string">embl,uniprot</s:default>
+      <s:default name="regex">,</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Select_database">
+    <s:description>Select the database to search.</s:description>
+    <s:defaults>
+      <s:default name="message">Database</s:default>
+      <s:default name="title">Database</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.ui.SelectWorker</s:local>
+  </s:processor>
+  <s:link source="Ask_for_email:answer" sink="EBI_FASTA:E-mail" />
+  <s:link source="Ask_for_sequence:answer" sink="EBI_FASTA:Sequence_or_ID" />
+  <s:link source="Make_FASTA_program_list:split" sink="Select_FASTA_program:valueList" />
+  <s:link source="Make_database_list:split" sink="Select_database:valueList" />
+  <s:link source="Select_FASTA_program:answer" sink="EBI_FASTA:FASTA_Program" />
+  <s:link source="Select_database:answer" sink="EBI_FASTA:Database" />
+  <s:link source="EBI_FASTA:FASTA_Text_Result" sink="FASTA_report" />
+  <s:sink name="FASTA_report">
+    <s:metadata>
+      <s:description>Plain text FASTA output.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

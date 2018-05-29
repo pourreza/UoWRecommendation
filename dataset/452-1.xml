@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:e76467e0-81f5-4732-805f-bc9f3d7da30f" author="Alan R Williams" title="Read text file">The beanshell write the string 'hello' to a temporary file.  The filepath to the temporary file is then passed to the Read_text_file service which reads the file and outputs the string 'hello'.</s:workflowdescription>
+  <s:processor name="Create_and_populate_temporary_file">
+    <s:defaults>
+      <s:default name="content">hello</s:default>
+    </s:defaults>
+    <s:beanshell>
+      <s:scriptvalue>File temp = File.createTempFile("taverna", "txt");
+
+temp.deleteOnExit();
+BufferedWriter writer = new BufferedWriter(new FileWriter(temp));
+writer.write(content);
+writer.close();
+
+out = temp.getCanonicalPath();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">content</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">out</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Read_Text_File">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:link source="Create_and_populate_temporary_file:out" sink="Read_Text_File:fileurl" />
+  <s:link source="Read_Text_File:filecontents" sink="out" />
+  <s:sink name="out" />
+</s:scufl>
+

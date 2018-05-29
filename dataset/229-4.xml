@@ -1,0 +1,907 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f30606ae-6e79-4658-b803-73514a5bd5a9" author="Hamish McWilliam" title="Nucleotide_InterProScan">Run InterProScan using a nucleotide sequence as input.
+
+The InterProScan tool (http://www.ebi.ac.uk/Tools/InterProScan/) searches a protein sequence against a selection of protein domain, feature and family signature databases, and integrates the results giving potential assignments to InterPro entries and Gene Ontology terms. Since InterProScan is a protein search tool to use it with a nucleotide sequence, the sequence must be translated into a protein sequence. There are a number of ways of doing this, depending on the properties of the nucleotide sequence, in this case a simple open reading frame (ORF) model is used to obtain the candidate translations. These translations are filtered for length (&gt;80aa) and a search against UniProtKB (http://www.uniprot.org/) is performed to ensure that only sequences which have some relationship with known protein space, on which the signatures used are based, are passed to InterProScan. Once the set of translations has been filtered the remaining sequences as passed on to InterProScan for analysis.
+
+Note: the coordinates in the InterProScan output are in protein coordinates relative to the input translated sequence, to map these on to the input nucleotide sequence see the fasta header of the corresponding translated ORF where the nucleotide coordinates are shown.
+
+This implementation uses:
+
+1. EBI's WSDbfetch web service (http://www.ebi.ac.uk/Tools/webservices/services/dbfetch) to retreive enties specified by database identifer.
+
+2. EMBOSS seqret tool  (http://emboss.sourceforge.net/apps/release/5.0/emboss/apps/getorf.html) via Soaplab (http://www.ebi.ac.uk/Tools/webservices/soaplab/overview) to ensure input sequences are in an appropriate format (i.e. fasta format).
+
+3. EMBOSS getorf tool (http://emboss.sourceforge.net/apps/release/5.0/emboss/apps/getorf.html) via Soaplab (http://www.ebi.ac.uk/Tools/webservices/soaplab/overview) to find the ORFs, perform the translation and filter the translations for length.
+
+4. EBI's WSNCBIBlast web service (http://www.ebi.ac.uk/Tools/webservices/services/ncbiblast) to perform the filtering BLAST search against UniProtKB.
+
+5. EBI's WSInterProScan web service (http://www.ebi.ac.uk/Tools/webservices/services/interproscan) to access InterProScan for the final search.
+
+and is based on the proceedure described for nucleotide InterProScan searches described on the WSInterProScan web pages (see http://www.ebi.ac.uk/Tools/webservices/services/interproscan).</s:workflowdescription>
+  <s:processor name="EBI_InterProScan">
+    <s:description>Perform an InterProScan analysis of a protein sequence using the EBI’s WSInterProScan service (see http://www.ebi.ac.uk/Tools/webservices/services/interproscan). The input sequence to use and the user e-mail address are inputs, the other parameters for the analysis (see Job_params) are allowed to default.
+
+InterProScan searches a protein sequence against the protein family and domain signature databases integrated into InterPro (see http://www.ebi.ac.uk/interpro/). InterProScan returns a set of InterPro and InterPro member matches with your sequence, along with GO term assignments.</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f930f2fc-7b4b-48f9-abb0-e336b76e0ea0" author="Hamish McWilliam" title="EBI_InterProScan">Perform an InterProScan analysis of a protein sequence using the EBI’s WSInterProScan service (see http://www.ebi.ac.uk/Tools/webservices/services/interproscan). The input sequence to use and the user e-mail address are inputs, the other parameters for the analysis (see Job_params) are allowed to default.
+
+InterProScan searches a protein sequence against the protein family and domain signature databases integrated into InterPro (see http://www.ebi.ac.uk/interpro/). InterProScan returns a set of InterPro and InterPro member matches with your sequence, along with GO term assignments.</s:workflowdescription>
+        <s:processor name="Unpack_XML_result">
+          <s:description>Unpack byte[] version of result into a string.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="Unpack_text_result">
+          <s:description>Unpack byte[] version of result into a string.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="Content_list">
+          <s:description>Wrap input data in a list.</s:description>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:arraytype optional="false" unbounded="false" wrapped="false" typename="WSArrayofData" name="content" qname="{http://www.ebi.ac.uk/WSInterProScan}WSArrayofData">
+                <s:elementtype>
+                  <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSInterProScan}data">
+                    <s:elements>
+                      <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                      <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                    </s:elements>
+                  </s:complextype>
+                </s:elementtype>
+              </s:arraytype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Input_data">
+          <s:description>Populate input data structure with input sequence and data type.</s:description>
+          <s:defaults>
+            <s:default name="type">sequence</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSInterProScan}data">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Job_params">
+          <s:description>InterProScan job parameters.</s:description>
+          <s:defaults>
+            <s:default name="crc">1</s:default>
+            <s:default name="seqtype">p</s:default>
+            <s:default name="goterms">1</s:default>
+            <s:default name="async">1</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="inputParams" name="params" qname="{http://www.ebi.ac.uk/WSInterProScan}inputParams">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="app" qname="inputParams&gt;app" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="crc" qname="inputParams&gt;crc" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="seqtype" qname="inputParams&gt;seqtype" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="trlen" qname="inputParams&gt;trlen" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="trtable" qname="inputParams&gt;trtable" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="goterms" qname="inputParams&gt;goterms" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="async" qname="inputParams&gt;async" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="outformat" qname="inputParams&gt;outformat" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="inputParams&gt;email" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Format_as_GFF">
+          <s:description>Using the text output of InterProScan generate GFF format (see http://www.sanger.ac.uk/Software/formats/GFF/) output.</s:description>
+          <s:beanshell>
+            <s:scriptvalue>import java.util.StringTokenizer;
+
+interproscan_gff = "";
+
+// Split into lines
+StringTokenizer tok1 = new StringTokenizer(interproscan_text, "\n");
+while(tok1.hasMoreElements()) {
+  feat1 = tok1.nextElement();
+  // Split into fields
+  StringTokenizer tok2 = new StringTokenizer(feat1, "\t");
+  fieldCount = 0;
+  attributeStr = "";
+  while(tok2.hasMoreElements()) {
+    fieldCount++;
+    fieldStr = tok2.nextElement();
+    if(fieldCount &lt; 2) { // First field is the ID
+      interproscan_gff += fieldStr;
+    }
+    // The tool, feature, start and stop
+    else if(fieldCount == 4 || (fieldCount &gt; 5 &amp;&amp; fieldCount &lt; 9)) {
+      interproscan_gff += "\t" + fieldStr;
+    }
+    // Score
+    else if(fieldCount == 9) {
+      if(fieldStr.equals("NA")) {
+        interproscan_gff += "\t.";
+      } else {
+        interproscan_gff += "\t" + fieldStr;
+      }
+    }
+    // Matching InterPro entry
+    else if(fieldCount == 12 &amp;&amp; !fieldStr.equals("NULL")) {
+      attributeStr += fieldStr;
+    }
+    // Matching InterPro entry name
+    else if(fieldCount == 13 &amp;&amp; !fieldStr.equals("NULL")) {
+      attributeStr += " " + fieldStr;
+    }
+  }
+  interproscan_gff += "\t.\t.\tInterProScan";
+  if(attributeStr.length() &gt; 0) {
+    interproscan_gff += " ; " + attributeStr;
+  }
+  interproscan_gff += "\n";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">interproscan_text</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">interproscan_gff</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Get_XML_result">
+          <s:description>Get the XML format result.</s:description>
+          <s:defaults>
+            <s:default name="type">toolxml</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSInterProScan.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="runInterProScan">
+          <s:description>Submit the InterProScan job.</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSInterProScan.wsdl</s:wsdl>
+            <s:operation>runInterProScan</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Get_text_result">
+          <s:description>Get the plain text format result.</s:description>
+          <s:defaults>
+            <s:default name="type">toolraw</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSInterProScan.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="EBI_InterProScan_poll_job" boring="true">
+          <s:description>Wait for the job to complete.</s:description>
+          <s:workflow maxretries="100" retrydelay="30000">
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:e3e01aab-c09b-4006-8fc1-31696b6c727d" author="" title="EBI_InterProScan_poll_job" />
+              <s:processor name="Success">
+                <s:description>If job has not finished fail the workflow.</s:description>
+                <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+              </s:processor>
+              <s:processor name="Is_done">
+                <s:description>Map status codes into true/false is done flag.</s:description>
+                <s:beanshell>
+                  <s:scriptvalue>if(job_status.equals("DONE")) {
+  is_done = "true";
+} else {
+  is_done = "false";
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">job_status</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">is_done</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="checkStatus">
+                <s:description>Get the status of a submited job (see
+				http://www.ebi.ac.uk/Tools/webservices/services/interproscan#checkstatus_jobid)</s:description>
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSInterProScan.wsdl</s:wsdl>
+                  <s:operation>checkStatus</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:link source="Job_ID" sink="checkStatus:jobid" />
+              <s:link source="Is_done:is_done" sink="Success:test" />
+              <s:link source="checkStatus:status" sink="Is_done:job_status" />
+              <s:link source="checkStatus:status" sink="Job_status" />
+              <s:source name="Job_ID">
+                <s:metadata>
+                  <s:description>EBI job identifer</s:description>
+                </s:metadata>
+              </s:source>
+              <s:sink name="Job_status">
+                <s:metadata>
+                  <s:description>Status of job</s:description>
+                </s:metadata>
+              </s:sink>
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:link source="Content_list:output" sink="runInterProScan:content" />
+        <s:link source="Email_address" sink="Job_params:email" />
+        <s:link source="Get_XML_result:result" sink="Unpack_XML_result:bytes" />
+        <s:link source="Get_text_result:result" sink="Unpack_text_result:bytes" />
+        <s:link source="Input_data:output" sink="Content_list:WSArrayofData" />
+        <s:link source="Job_params:output" sink="runInterProScan:params" />
+        <s:link source="Sequence_or_ID" sink="Input_data:content" />
+        <s:link source="Format_as_GFF:interproscan_gff" sink="InterProScan_GFF" />
+        <s:link source="Unpack_XML_result:string" sink="InterProScan_XML_result" />
+        <s:link source="Unpack_text_result:string" sink="Format_as_GFF:interproscan_text" />
+        <s:link source="runInterProScan:jobid" sink="Get_text_result:jobid" />
+        <s:link source="Unpack_text_result:string" sink="InterProScan_text_result" />
+        <s:link source="runInterProScan:jobid" sink="EBI_InterProScan_poll_job:Job_ID" />
+        <s:link source="runInterProScan:jobid" sink="Get_XML_result:jobid" />
+        <s:link source="runInterProScan:jobid" sink="Job_ID" />
+        <s:source name="Email_address">
+          <s:metadata>
+            <s:description>User e-mail address</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Sequence_or_ID">
+          <s:metadata>
+            <s:description>Input protein sequence for analysis. This can either be the actual sequence (fasta format recommended) or a database identifier in database:identifer format (e.g. uniprot:wap_rat).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="InterProScan_text_result">
+          <s:metadata>
+            <s:description>InterProScan result in tab delimited plain text format.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="InterProScan_XML_result">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>application/xml</s:mimeType>
+            </s:mimeTypes>
+            <s:description>InterProScan result in XML format.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Job_ID">
+          <s:metadata>
+            <s:description>EBI job identifier.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="InterProScan_GFF" />
+        <s:coordination name="Get_text_result_BLOCKON_EBI_InterProScan_poll_job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>EBI_InterProScan_poll_job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_text_result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Get_XML_result_BLOCKON_EBI_InterProScan_poll_job">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>EBI_InterProScan_poll_job</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_XML_result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="EBI_NCBI_BLAST">
+    <s:description>Perform a BLAST search using the EBI’s WSNCBIBlast service (see http://www.ebi.ac.uk/Tools/webservices/services/ncbiblast). The query sequence, database to search and BLAST program to use are inputs, the other parameters for the search (see Job_params) are allowed to default.
+
+For use with InterProScan the expectation threshold (exp) has been set to 0.00001 and the maximum number of hits to report has been set to 10. The input sequences which find hits are returned via the "Sequences" output.</s:description>
+    <s:defaults>
+      <s:default name="Search_database">uniprot</s:default>
+      <s:default name="BLAST_program">blastp</s:default>
+    </s:defaults>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:2b0cdeff-f3fa-42c8-b405-6eb959544437" author="Hamish McWilliam" title="EBI_NCBI_BLAST_for_InterProScan">Perform a BLAST search using the EBI’s WSNCBIBlast service (see http://www.ebi.ac.uk/Tools/webservices/services/ncbiblast). The query sequence, database to search and BLAST program to use are inputs, the other parameters for the search (see Job_params) are allowed to default.
+
+Modifed for use as a prefiltering step for InterProScan:
+
+1. Default expectation threshold lowered to 0.00001.
+
+2. Maximum number of hits reported decreased to 10.
+
+3. Input sequences which find hits are passed throuh to the "Sequence" output.</s:workflowdescription>
+        <s:processor name="Unpack_XML_result">
+          <s:description>Covert byte[] to string for XML BLAST output.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="Unpack_text_result">
+          <s:description>Covert byte[] to string for plain text BLAST output.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+        </s:processor>
+        <s:processor name="Fail_if_false">
+          <s:description>If no hits are found fail, so input sequence not passed to the output.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="List_to_string">
+          <s:description>Collapse the list of hits found to a string.</s:description>
+          <s:defaults>
+            <s:default name="seperator">\n</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+        </s:processor>
+        <s:processor name="Job_params">
+          <s:description>Parameters for the NCBI BLAST job.</s:description>
+          <s:defaults>
+            <s:default name="exp">0.00001</s:default>
+            <s:default name="numal">10</s:default>
+            <s:default name="scores">10</s:default>
+            <s:default name="async">1</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="inputParams" name="params" qname="{http://www.ebi.ac.uk/WSNCBIBlast}inputParams">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="program" qname="inputParams&gt;program" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="database" qname="inputParams&gt;database" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="matrix" qname="inputParams&gt;matrix" />
+                  <s:basetype optional="false" unbounded="false" typename="float" name="exp" qname="inputParams&gt;exp" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="filter" qname="inputParams&gt;filter" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="numal" qname="inputParams&gt;numal" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="scores" qname="inputParams&gt;scores" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="align" qname="inputParams&gt;align" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="gapalign" qname="inputParams&gt;gapalign" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="extendgap" qname="inputParams&gt;extendgap" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="opengap" qname="inputParams&gt;opengap" />
+                  <s:basetype optional="false" unbounded="false" typename="int" name="dropoff" qname="inputParams&gt;dropoff" />
+                  <s:basetype optional="false" unbounded="false" typename="boolean" name="async" qname="inputParams&gt;async" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="inputParams&gt;email" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Content_list">
+          <s:description>Wrap the input data in a list.</s:description>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:arraytype optional="false" unbounded="false" wrapped="false" typename="WSArrayofData" name="content" qname="{http://www.ebi.ac.uk/WSNCBIBlast}WSArrayofData">
+                <s:elementtype>
+                  <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSNCBIBlast}data">
+                    <s:elements>
+                      <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                      <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                    </s:elements>
+                  </s:complextype>
+                </s:elementtype>
+              </s:arraytype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Input_data">
+          <s:description>Add a type to the input sequence/identifer.</s:description>
+          <s:defaults>
+            <s:default name="type">sequence</s:default>
+          </s:defaults>
+          <s:local>
+            org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+            <s:extensions>
+              <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSNCBIBlast}data">
+                <s:elements>
+                  <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                  <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+                </s:elements>
+              </s:complextype>
+            </s:extensions>
+          </s:local>
+        </s:processor>
+        <s:processor name="Found_hits">
+          <s:description>Return true if hits were found.</s:description>
+          <s:beanshell>
+            <s:scriptvalue>if(hit_list_str.length() &gt; 2) {
+  found_hits = "true";
+} else {
+  found_hits = "false";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">hit_list_str</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">found_hits</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Coordinate">
+          <s:description>Simple passthough used to coordinate with "Found_hits".</s:description>
+          <s:beanshell>
+            <s:scriptvalue>output = input;</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Get_XML_result">
+          <s:description>Get the results of a job (see http://www.ebi.ac.uk/Tools/webservices/services/ncbiblast#poll_jobid_type)</s:description>
+          <s:defaults>
+            <s:default name="type">toolxml</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSNCBIBlast.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="runNCBIBlast">
+          <s:description>Submit a NCBI BLAST analysis job (see http://www.ebi.ac.uk/Tools/webservices/services/ncbiblast#runncbiblast_params_content)</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSNCBIBlast.wsdl</s:wsdl>
+            <s:operation>runNCBIBlast</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Get_text_result">
+          <s:description>Get the results of a job (see http://www.ebi.ac.uk/Tools/webservices/services/ncbiblast#poll_jobid_type)</s:description>
+          <s:defaults>
+            <s:default name="type">tooloutput</s:default>
+          </s:defaults>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSNCBIBlast.wsdl</s:wsdl>
+            <s:operation>poll</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="getIds">
+          <s:description>Get the hit identifiers from the analysis result (see http://www.ebi.ac.uk/Tools/webservices/services/ncbiblast#getids_jobid)</s:description>
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSNCBIBlast.wsdl</s:wsdl>
+            <s:operation>getIds</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="EBI_NCBI_BLAST_job_poll">
+          <s:description>Check if job has completed.</s:description>
+          <s:workflow maxretries="100" retrydelay="3000">
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:aeb95118-4217-4c84-a118-20750508d47d" author="Hamish McWilliam" title="EBI_NCBI_BLAST_job_poll">Check the status of a EBI WSNCBIBlast job, and fail if not completed.</s:workflowdescription>
+              <s:processor name="Success">
+                <s:description>Fail workflow if job not complete.</s:description>
+                <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+              </s:processor>
+              <s:processor name="Is_done">
+                <s:description>Convert job status to true/false.</s:description>
+                <s:beanshell>
+                  <s:scriptvalue>if(job_status.equals("DONE")) {
+  is_done = "true";
+} else {
+  is_done = "false";
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">job_status</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">is_done</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="checkStatus">
+                <s:description>Get the status of a submited job (see http://www.ebi.ac.uk/Tools/webservices/services/ncbiblast#checkstatus_jobid)</s:description>
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSNCBIBlast.wsdl</s:wsdl>
+                  <s:operation>checkStatus</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:link source="Job_ID" sink="checkStatus:jobid" />
+              <s:link source="Is_done:is_done" sink="Success:test" />
+              <s:link source="checkStatus:status" sink="Is_done:job_status" />
+              <s:link source="checkStatus:status" sink="Job_status" />
+              <s:source name="Job_ID">
+                <s:metadata>
+                  <s:description>Identifier for the job to check.</s:description>
+                </s:metadata>
+              </s:source>
+              <s:sink name="Job_status">
+                <s:metadata>
+                  <s:description>Status of the job checked.</s:description>
+                </s:metadata>
+              </s:sink>
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:link source="BLAST_program" sink="Job_params:program" />
+        <s:link source="Content_list:output" sink="runNCBIBlast:content" />
+        <s:link source="Email_address" sink="Job_params:email" />
+        <s:link source="Found_hits:found_hits" sink="Fail_if_false:test" />
+        <s:link source="Get_XML_result:output" sink="Unpack_XML_result:bytes" />
+        <s:link source="Get_text_result:output" sink="Unpack_text_result:bytes" />
+        <s:link source="Input_data:output" sink="Content_list:WSArrayofData" />
+        <s:link source="Job_params:output" sink="runNCBIBlast:params" />
+        <s:link source="Search_database" sink="Job_params:database" />
+        <s:link source="Sequence_or_ID" sink="Input_data:content" />
+        <s:link source="List_to_string:concatenated" sink="Found_hits:hit_list_str" />
+        <s:link source="Sequence_or_ID" sink="Coordinate:input" />
+        <s:link source="Coordinate:output" sink="Sequence" />
+        <s:link source="Unpack_XML_result:string" sink="XML_result" />
+        <s:link source="Unpack_text_result:string" sink="Text_result" />
+        <s:link source="getIds:result" sink="Hit_ID_List" />
+        <s:link source="getIds:result" sink="List_to_string:stringlist" />
+        <s:link source="runNCBIBlast:jobid" sink="EBI_NCBI_BLAST_job_poll:Job_ID" />
+        <s:link source="runNCBIBlast:jobid" sink="Get_XML_result:jobid" />
+        <s:link source="runNCBIBlast:jobid" sink="Get_text_result:jobid" />
+        <s:link source="runNCBIBlast:jobid" sink="Job_ID" />
+        <s:link source="runNCBIBlast:jobid" sink="getIds:jobid" />
+        <s:source name="Sequence_or_ID">
+          <s:metadata>
+            <s:description>Query seqeunce. Either the actual sequence (fasta format recommended) or a database identifer in database:identifier format (e.g. uniprot:wap_rat).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Search_database">
+          <s:metadata>
+            <s:description>The database to search (e.g. uniprot).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="BLAST_program">
+          <s:metadata>
+            <s:description>The BLAST program to use for the search (e.g. blastn, blastp or blastx).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Email_address">
+          <s:metadata>
+            <s:description>Your e-mail address.</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="Job_ID">
+          <s:metadata>
+            <s:description>Identifer fot the job at EBI.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Text_result">
+          <s:metadata>
+            <s:description>The BLAST report output in plain text.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="XML_result">
+          <s:metadata>
+            <s:description>The BLAST report output in XML.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Hit_ID_List">
+          <s:metadata>
+            <s:description>List of identifiers of the hits.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Sequence">
+          <s:metadata>
+            <s:description>Input sequence if it finds hits.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:coordination name="getIds_BLOCKON_NCBI_BLAST_job_poll">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>EBI_NCBI_BLAST_job_poll</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>getIds</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Get_text_result_BLOCKON_EBI_NCBI_BLAST_job_poll">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>EBI_NCBI_BLAST_job_poll</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_text_result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Get_XML_result_BLOCKON_EBI_NCBI_BLAST_job_poll">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>EBI_NCBI_BLAST_job_poll</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_XML_result</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Coordinate_BLOCKON_Fail_if_false">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_false</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Coordinate</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Nucleotide_ORF_translation">
+    <s:description>From a nucleotide sequence get the protein translations of the open reading frames (stop to stop) that are longer than a specifed minimum length.
+
+EMBOSS getorf is used to find the ORFs and perform the translations. The getorf tool is accessed via Soaplab (see http://www.ebi.ac.uk/Tools/webservices/soaplab/overview).</s:description>
+    <s:defaults>
+      <s:default name="Translation_table">1</s:default>
+      <s:default name="Minimum_ORF_length">240</s:default>
+    </s:defaults>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:29efbfca-ecfa-44f4-81e7-f6c1df5ea544" author="Hamish McWilliam" title="Nucleotide_ORF_translation">From a nucleotide sequence get the protein translations of the open reading frames (stop to stop) that are longer than a specifed minimum length.
+
+EMBOSS getorf is used to find the ORFs and perform the translations. The getorf tool is accessed via Soaplab (see http://www.ebi.ac.uk/Tools/webservices/soaplab/overview).</s:workflowdescription>
+        <s:processor name="Fasta_String_to_fasta_list">
+          <s:description>Split a string containing a set of sequences in fasta format into a list for fasta formated sequences.</s:description>
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:be87921d-4da7-42fd-a7b0-86dbc47d6579" author="Hamish McWilliam" title="Fasta_string_to_fasta_list">Split a string containing a set of sequences in fasta format into a list for fasta formated sequences.</s:workflowdescription>
+              <s:processor name="Split_into_sequences">
+                <s:description>Split string using a regular expression, to get the individual sequences.</s:description>
+                <s:defaults>
+                  <s:default name="regex">\n&gt;</s:default>
+                </s:defaults>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+              </s:processor>
+              <s:processor name="Add_angle">
+                <s:description>For sequences where the angle bracket (&gt;), denoting the start of the fasta formated sequence, was removed during the split, prepend it.</s:description>
+                <s:beanshell>
+                  <s:scriptvalue>if(!stripped_fasta.startsWith("&gt;")) {
+  full_fasta = "&gt;" + stripped_fasta;
+} else {
+  full_fasta = stripped_fasta;
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">stripped_fasta</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">full_fasta</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:link source="fasta_string" sink="Split_into_sequences:string" />
+              <s:link source="Add_angle:full_fasta" sink="fasta_list" />
+              <s:link source="Split_into_sequences:split" sink="Add_angle:stripped_fasta" />
+              <s:source name="fasta_string">
+                <s:metadata>
+                  <s:description>String containing one or more fasta sequences.</s:description>
+                </s:metadata>
+              </s:source>
+              <s:sink name="fasta_list">
+                <s:metadata>
+                  <s:description>List of fasta sequences.</s:description>
+                </s:metadata>
+              </s:sink>
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:processor name="Sequence_or_ID">
+          <s:description>Ensure the sequence is in fasta format.</s:description>
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:70d8a2a8-a369-4824-879d-dbfa36fcecc8" author="Hamish McWilliam" title="Sequence_or_ID">Given a sequence or sequence entry identifer (e.g. uniprot:wap_rat), return the sequence in fasta format.
+
+If a sequence identifier, in database:identifier format, is input the EBI's WSDbfetch web service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch) is used to retrive the sequence in fasta format. Otherwise the input is assumed to be a sequence and if passed through the Soaplab EMBOSS seqret service to force the sequence into fasta format.</s:workflowdescription>
+              <s:processor name="Fail_if_sequence">
+                <s:description>Fails if the workflow input was a sequence (i.e. is an identifer).</s:description>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+              </s:processor>
+              <s:processor name="Fail_if_identifer">
+                <s:description>Fails if the workflow input is an identifier (i.e. is an actual sequence).</s:description>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+              </s:processor>
+              <s:processor name="Is_sequence">
+                <s:description>Return true if the input is a sequence or false if the input is a sequence identifer (e.g. uniprot:wap_rat).</s:description>
+                <s:beanshell>
+                  <s:scriptvalue>lineLen = sequence.indexOf("\n");
+if(lineLen &lt; 1) {
+  lineLen = sequence.length();
+}
+if(!sequence.startsWith("&gt;") &amp;&amp;
+   sequence.indexOf(":") &gt; 0 &amp;&amp;
+   sequence.indexOf(":") &lt; lineLen) {
+  is_sequence = "false";
+} else {
+  is_sequence = "true";
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">sequence</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">is_sequence</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="fetchData">
+                <s:description>Fetch the sequence in fasta format from the identifer using EBI's WSDbfetch service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch).</s:description>
+                <s:defaults>
+                  <s:default name="format">fasta</s:default>
+                  <s:default name="style">raw</s:default>
+                </s:defaults>
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSDbfetch.wsdl</s:wsdl>
+                  <s:operation>fetchData</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:processor name="seqret">
+                <s:description>Format sequence into fasta format.</s:description>
+                <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/edit.seqret</s:soaplabwsdl>
+              </s:processor>
+              <s:link source="Sequence_or_ID" sink="Is_sequence:sequence" />
+              <s:link source="Is_sequence:is_sequence" sink="Fail_if_identifer:test" />
+              <s:link source="Is_sequence:is_sequence" sink="Fail_if_sequence:test" />
+              <s:link source="Sequence_or_ID" sink="fetchData:query" />
+              <s:link source="Sequence_or_ID" sink="seqret:sequence_direct_data" />
+              <s:link source="fetchData:fetchDataReturn" sink="Sequence" />
+              <s:link source="seqret:outseq" sink="Sequence" />
+              <s:source name="Sequence_or_ID">
+                <s:metadata>
+                  <s:description>Either an actual sequence or an entry identifer in database:identifier format (e.g. uniprot:wap_rat).</s:description>
+                </s:metadata>
+              </s:source>
+              <s:sink name="Sequence">
+                <s:metadata>
+                  <s:description>Sequence in fasta format.</s:description>
+                </s:metadata>
+              </s:sink>
+              <s:coordination name="fetchData_BLOCKON_Fail_if_sequence">
+                <s:condition>
+                  <s:state>Completed</s:state>
+                  <s:target>Fail_if_sequence</s:target>
+                </s:condition>
+                <s:action>
+                  <s:target>fetchData</s:target>
+                  <s:statechange>
+                    <s:from>Scheduled</s:from>
+                    <s:to>Running</s:to>
+                  </s:statechange>
+                </s:action>
+              </s:coordination>
+              <s:coordination name="seqret_BLOCKON_Fail_if_identifer">
+                <s:condition>
+                  <s:state>Completed</s:state>
+                  <s:target>Fail_if_identifer</s:target>
+                </s:condition>
+                <s:action>
+                  <s:target>seqret</s:target>
+                  <s:statechange>
+                    <s:from>Scheduled</s:from>
+                    <s:to>Running</s:to>
+                  </s:statechange>
+                </s:action>
+              </s:coordination>
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:processor name="getorf">
+          <s:description>Finds and extracts open reading frames
+                  (ORFs)</s:description>
+          <s:defaults>
+            <s:default name="find">0</s:default>
+          </s:defaults>
+          <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/nucleic_gene_finding.getorf</s:soaplabwsdl>
+        </s:processor>
+        <s:link source="Minimum_ORF_length" sink="getorf:minsize" />
+        <s:link source="Sequence_or_ID" sink="Sequence_or_ID:Sequence_or_ID" />
+        <s:link source="Sequence_or_ID:Sequence" sink="getorf:sequence_direct_data" />
+        <s:link source="Translation_table" sink="getorf:table" />
+        <s:link source="Fasta_String_to_fasta_list:fasta_list" sink="Translated_ORF_list" />
+        <s:link source="getorf:outseq" sink="Fasta_String_to_fasta_list:fasta_string" />
+        <s:link source="getorf:outseq" sink="Translated_ORFs" />
+        <s:source name="Sequence_or_ID">
+          <s:metadata>
+            <s:description>Input nucleotide sequence. Either the actual sequence (fasta format) or an entry identifier in database:identifer format (e.g. embl:x01153).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Translation_table">
+          <s:metadata>
+            <s:description>The ID of the codon translation table to be used (e.g. 1).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Minimum_ORF_length">
+          <s:metadata>
+            <s:description>Minimum ORF length to report in base pairs (e.g. 240).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="Translated_ORFs">
+          <s:metadata>
+            <s:description>Translations of the ORFs found.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="Translated_ORF_list" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Email_address" sink="EBI_InterProScan:Email_address" />
+  <s:link source="Email_address" sink="EBI_NCBI_BLAST:Email_address" />
+  <s:link source="Sequence_or_ID" sink="Nucleotide_ORF_translation:Sequence_or_ID" />
+  <s:link source="EBI_NCBI_BLAST:Sequence" sink="EBI_InterProScan:Sequence_or_ID" />
+  <s:link source="Nucleotide_ORF_translation:Translated_ORF_list" sink="EBI_NCBI_BLAST:Sequence_or_ID" />
+  <s:link source="EBI_InterProScan:InterProScan_GFF" sink="InterProScan_result_GFF" />
+  <s:link source="EBI_InterProScan:InterProScan_XML_result" sink="InterProScan_result_XML" />
+  <s:link source="EBI_InterProScan:InterProScan_text_result" sink="InterProScan_result_text" />
+  <s:link source="EBI_InterProScan:Job_ID" sink="InterProScan_job_ID" />
+  <s:link source="EBI_NCBI_BLAST:Job_ID" sink="NCBI_BLAST_job_ID" />
+  <s:link source="EBI_NCBI_BLAST:Text_result" sink="NCBI_BLAST_result_text" />
+  <s:link source="Nucleotide_ORF_translation:Translated_ORF_list" sink="Translated_ORF_list" />
+  <s:source name="Sequence_or_ID">
+    <s:metadata>
+      <s:description>Input nucleotide sequence. Either the actual sequence (fasta format) or an entry identifier in database:identifer format (e.g. embl:x01153).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Email_address">
+    <s:metadata>
+      <s:description>User e-mail address.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="InterProScan_result_text">
+    <s:metadata>
+      <s:description>InterProScan result in tab-delimited format.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="InterProScan_result_XML">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+      <s:description>InterProScan result in XML format.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="Translated_ORF_list">
+    <s:metadata>
+      <s:description>List of the translated open reading frame (ORF) sequences which are longer than 80aa, which were passed to the BLAST.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="InterProScan_job_ID">
+    <s:metadata>
+      <s:description>EBI job identifer for the InterProScan job.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="NCBI_BLAST_job_ID">
+    <s:metadata>
+      <s:description>EBI job identifer for the NCBI BLAST job.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="NCBI_BLAST_result_text">
+    <s:metadata>
+      <s:description>The NCBI BLAST ouput for each of the translated open reading frame (ORF) input sequences.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="InterProScan_result_GFF">
+    <s:metadata>
+      <s:description>InterProScan result in GFF format.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

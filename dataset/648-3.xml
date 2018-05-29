@@ -1,0 +1,705 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:128de0a2-4f77-49eb-99cf-954e95b32260" author="Ingo Wassink, Paul van der Vet" title="Analysing workflows">This workflows analyses workflows stored at the myExperiment site. It is used in the paper submitted to the Workshop on Scientific Workflow 2009.
+
+The workflow shows the task usage in the Taverna workflows stored at the myExperiment site
+* The amount of services used
+* The amount of local processors used
+* The amount of scripting tasks
+* The amount of sub workflows</s:workflowdescription>
+  <s:processor name="Create_R_Table">
+    <s:beanshell>
+      <s:scriptvalue>class IdComparator implements Comparator{
+  public int compare(Object o1, Object o2){
+    return Integer.parseInt(o1.toString()) - Integer.parseInt(o2.toString());
+  }
+}
+
+
+
+
+String SEPARATOR = ",";
+
+Iterator iteratorID = workflowIDs.iterator();
+Iterator processorListsIterator = processorsPerWorkflows.iterator();
+
+emptyWorkflows = new ArrayList();
+
+Map workflowProcessorMap = new HashMap();
+Set processorSet = new HashSet();
+while(iteratorID.hasNext()){
+  String id = iteratorID.next().toString();
+
+  List procesorList = processorListsIterator.next();
+  if(procesorList.size() == 0){
+    emptyWorkflows.add(id);
+    continue;
+  }
+
+  Map workflowProcessorSet = new HashMap();  
+  for(String processorName : procesorList){
+    processorSet.add(processorName);     
+    if(workflowProcessorSet.containsKey(processorName)){
+      workflowProcessorSet.put(processorName, workflowProcessorSet.get(processorName) + 1);
+    } else{
+      workflowProcessorSet.put(processorName, new Integer(1));
+    }
+  }   
+  workflowProcessorMap.put(id, workflowProcessorSet);
+}
+
+
+StringBuffer buffer = new StringBuffer();
+Object[] sortedSet = processorSet.toArray();
+
+buffer.append("WorkflowId");
+for(Object processorName : sortedSet){
+  buffer.append(SEPARATOR).append(processorName);
+}
+buffer.append("\n");
+
+Object[] workflowIds = workflowProcessorMap.keySet().toArray();
+Arrays.sort(workflowIds, new IdComparator());
+for(String workflowId : workflowIds){
+  Map workflowProcessorSet = workflowProcessorMap.get(workflowId);
+
+  buffer.append(workflowId);
+  for(Object processorName : sortedSet){
+    int amount = (workflowProcessorSet.containsKey(processorName)) ?workflowProcessorSet.get(processorName) :0;  
+    buffer.append(SEPARATOR).append(amount);
+  }
+  buffer.append("\n");
+}
+
+rTable = buffer.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">workflowIDs</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l(l('text/plain'))">processorsPerWorkflows</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">rTable</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">emptyWorkflows</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="processorsPerWorkflows" />
+        <i:iterator name="workflowIDs" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="Generate_URLs">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:3daf607d-d5b7-44b5-94f9-4dc16ca777bb" author="" title="Untitled workflow #144" />
+        <s:processor name="Generate_IDs">
+          <s:beanshell>
+            <s:scriptvalue>workflowIDs = new ArrayList();
+
+int firstIndex = Integer.parseInt(firstID);
+int lastIndex = Integer.parseInt(lastID);
+
+for(int i = firstIndex; i&lt;=lastIndex; i++){
+  workflowIDs.add(i);
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">firstID</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">lastID</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">workflowIDs</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Generate_URL">
+          <s:beanshell>
+            <s:scriptvalue>url = "http://sandbox.myexperiment.org/workflows/" + id + "/download";</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">id</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:link source="FirstID" sink="Generate_IDs:firstID" />
+        <s:link source="LastID" sink="Generate_IDs:lastID" />
+        <s:link source="Generate_IDs:workflowIDs" sink="Generate_URL:id" />
+        <s:link source="Generate_IDs:workflowIDs" sink="WorkflowIDs" />
+        <s:link source="Generate_URL:url" sink="WorkflowURLs" />
+        <s:source name="FirstID" />
+        <s:source name="LastID" />
+        <s:sink name="WorkflowURLs" />
+        <s:sink name="WorkflowIDs" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Analyse_Workflows">
+    <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+      graphics.device &lt;- pdf
+
+#my.palette &lt;- colorRampPalette(c("#EEEEEE", "gray", "111111"),space = "grey")
+my.palette &lt;- function (n){
+  grey(seq(from=0,to=1.0,by=1/max(1,(n-1))))
+}
+
+
+
+# Function for selecting multiple table columns based on names
+select.columns &lt;- function (t, n){
+  indices &lt;- c()
+  for(i in 1:length(n)){
+    indices &lt;- c(indices, which(names(t) == n[i]))
+  }  
+  st &lt;- as.data.frame(t[,indices])
+  names(st) &lt;- names(t)[indices]
+  st
+}
+
+# Function for selecting multiple table columns based on names
+remove.columns &lt;- function (t, n){
+  indices &lt;- c()
+  for(i in 1:length(n)){
+    indices &lt;- c(indices, which(names(t) == n[i]))
+  } 
+  st &lt;- as.data.frame(t[,-indices])
+  names(st) &lt;- names(t)[-indices]
+  st
+}
+
+# select workflows based on lower and upper size
+select.workflow &lt;- function(t, l, u){
+  t[intersect(which(apply(t[-1], 1, sum) &gt;= l), which(apply(t[-1], 1, sum) &lt;= u)),]
+}
+
+# partially based on http://www.cs.man.ac.uk/~hulld/shims.html
+categories.service &lt;- c("arbitrarywsdl", "soaplabwsdl", "biomobywsdl", "biomart", "seqhound");
+categories.cdk &lt;- c("cdk");
+categories.scripting &lt;- c("rshell", "beanshell")
+categories.conditional &lt;- c("FailIfTrue", "FailIfFalse")
+categories.data_conversion &lt;- c("GenBankParserWorker", "XMLInputSplitter","StringConcat", "FlattenList","XMLOutputSplitter",
+    "SplitByRegex", "XPathTextWorker", "biomobyobject", "DecodeBase64", "biomobyparser","XSLTWorker","ExtractMobyData","StringStripDuplicates",
+    "StringSetIntersection", "RegularExpressionStringList","SliceList","EncodeBase64","FilterStringList",
+    "StringListMerge", "StringSetDifference", "StringSetUnion", "ByteArrayToString", "PadNumber")
+categories.retrieval &lt;- c("PubMedEFetchWorker",
+    "ProteinINSDSeqXMLWorker", "NucleotideTinySeqXMLWorker", "NucleotideINSDSeqXMLWorker", "ProteinGBSeqWorker", "NucleotideFastaWorker", 
+    "ProteinTinySeqXMLWorker", "NucleotideGBSeqWorker", "ProteinFastaWorker", "SwissProtParserWorker")
+categories.operation &lt;- c("ReverseCompWorker","TranscribeWorker")
+categories.interaction &lt;- c("AskWorker", "SelectWorker", "WarnWorker", "TellWorker", "ChooseWorker")
+categories.util &lt;- c("FileListByRegexTask", "EchoList", "WebImageFetcher","ConcatenateFileListWorker","FileListByExtTask",
+    "apiconsumer","TextFileReader","WebPageFetcher","TextFileWriter","LocalCommand","ExtractImageLinks","SQLQueryWorker")
+categories.constant &lt;- c("stringconstant")
+categories.workflow &lt;- c("workflow")
+categories.testing &lt;- c("EmitLotsOfStrings", "TestSometimesFails","TestAlwaysFailingProcessor")
+categories.unknown &lt;- c("alternate", "knowarcjanitor", "arbitrarygt4", "helpurl")
+# not categorised elements
+categories.uncategorised &lt;- function(t){
+  nc &lt;- names(remove.columns(t, c("WorkflowId", categories.service, categories.scripting, categories.cdk,
+    categories.conditional, categories.data_conversion, categories.interaction, categories.retrieval,
+    categories.operation, categories.util, categories.constant, categories.workflow, categories.testing, 
+    categories.unknown)))
+  nc
+}
+
+
+# Funciton for selecting a single category
+select.category &lt;- function(t, cat){
+  theCat &lt;- select.columns(t, c("WorkflowId", cat))
+  theCat
+}
+
+# Function for categorising the table
+cat_table &lt;- function(t){
+  # create sorted table
+  ct &lt;- data.frame(t[1], 
+    apply(select.columns(t, categories.service), 1, sum),
+    apply(select.columns(t, categories.cdk), 1, sum),
+    apply(select.columns(t, categories.operation), 1, sum),
+    apply(select.columns(t, categories.scripting), 1, sum),
+    apply(select.columns(t, categories.interaction), 1, sum),
+
+    apply(select.columns(t, categories.data_conversion), 1, sum),
+    apply(select.columns(t, categories.util), 1, sum),
+    apply(select.columns(t, categories.constant), 1, sum),
+    apply(select.columns(t, categories.testing), 1, sum),
+
+    apply(select.columns(t, categories.workflow), 1, sum),
+    apply(select.columns(t, categories.retrieval), 1, sum),
+    apply(select.columns(t, categories.conditional), 1, sum),
+    apply(select.columns(t, categories.unknown), 1, sum),
+    apply(select.columns(t, categories.uncategorised(t)), 1, sum)
+  )
+  names(ct) &lt;- c(names(t)[1], "web service", "CDK", "operation", "scripting", "user interaction",  
+                 "data conversion", "util", "constant", "testing", 
+                 "workflow", "database access", "conditional", "unknown", "uncategorised")
+
+  ct
+}
+
+
+# generate pie chart of categorised table
+pie.category &lt;- function(t, c, main="Task distribution of category"){
+  ct &lt;- apply(select.columns(t, c), 2, sum)
+
+  ct_vals &lt;- as.vector(ct, mode="numeric")
+  ct_vals_rel &lt;- round(100 * ct_vals/sum(ct_vals), digits=0)
+  lbls &lt;- paste(names(ct), "\n", ct_vals_rel, "%")
+  pie(ct_vals, labels=lbls, main=paste(main, "\n(", sum(ct), " tasks)", sep=""), col=my.palette(length(ct_vals)))
+}
+
+# generate a pie chart of a workflow table
+pie.workflows &lt;- function(wf_table, main="Task usage in worklfows"){
+  ct_table &lt;- apply(cat_table(wf_table)[-1], 2, sum)
+  ct_table &lt;- ct_table[which(ct_table &gt; 0)]
+  ct_vals &lt;- as.vector(ct_table, mode="numeric")
+  ct_vals_rel &lt;- round(100 * ct_vals/sum(ct_vals), digits=1)
+
+  lbls &lt;- paste(names(ct_table), "\n", ct_vals_rel, "%")
+
+  pie(ct_vals, labels=lbls, main=paste(main, "\n(", sum(ct_table), " tasks)", sep=""), col=my.palette(length(ct_vals)))
+}
+
+# creates a bar plot a worklfow table
+barplot.workfows &lt;- function(wf_table, main="Task usage in workflows"){
+  ct &lt;- cat_table(wf_table);
+  cnt &lt;- data.frame(names(ct )[-1], as.vector(apply(ct [-1], 2, sum), mode="numeric"))
+  cnt &lt;- cnt[which(cnt[,2] &gt; 0),]
+  cnt &lt;- cnt[order(cnt[,2],decreasing=TRUE),]
+
+  values &lt;- round(100*cnt[,2]/sum(cnt[,2]), digits=2)  
+  barplot(values, names=c(1:length(cnt[,1])), main=main,
+          legend.text=paste(c(1:length(cnt[,1])),"=", cnt[,1]), col=my.palette(length(cnt[,1])),
+          ylab="Amount of tasks (%)", las=1)
+}
+
+# creates a bar plot of a category
+barplot.category &lt;- function(t, c, main="Task distribution of category", names=NULL){
+  ct &lt;- apply(select.columns(t, c), 2, sum)
+
+
+  ct_vals &lt;- as.vector(ct, mode="numeric")
+  ct_vals &lt;- 100*ct_vals/sum(ct_vals)
+  if(is.null(names) || length(names) != length(names(ct))){
+    names &lt;- names(ct)
+  }
+  barplot(ct_vals, names=c(1:length(ct_vals)), legend.text=paste(c(1:length(ct_vals)), "=", names), 
+          main=paste(main, "\n(", sum(ct), " tasks)", sep=""), col=my.palette(length(ct_vals)), ylab="Amount of tasks (%)")
+}
+
+
+# calculate the relative number of task per workflow size
+# t is a table of workflowid, total_processors, total_processors in category
+#calc.taskcount &lt;- function(t, service="Service"){
+#  u &lt;- unique(sort(t[,2]))
+#  rl &lt;- rle(sort(t[,2]))
+#  n &lt;- function(v, t,rl) {100*sum(t[which(t[,2] == v), 3])/(rl$length[which(rl$values==v)]*v)}
+#  df &lt;- data.frame(u, sapply(u, n, t,rl))
+#  names(df) &lt;- c("Workflow Size", paste("Cumulative task count of", service))
+#
+#  df
+#}
+
+# calculate the relative number of task per workflow size
+# t is a table of workflowid, total_processors, total_processors in category
+calc.taskcount &lt;- function(t, service="Service"){
+  u &lt;- unique(sort(t[,2]))
+  n &lt;- function(v, t) {sum(t[which(t[,2] &lt;= v), 3])}
+  df &lt;- data.frame(u, round(sapply(u, n, t)))
+  names(df) &lt;- c("Workflow Size", paste("Cumulative task count of", service))
+
+  df
+}
+
+##################################### Script ################################################
+
+wf_table &lt;- read.table(rTable, header=TRUE, sep=",")
+wf_sums &lt;- data.frame(wf_table[,1], apply(wf_table[,-1], 1, sum))
+names(wf_sums) &lt;- c(names(wf_table)[1], "NumProcessors")
+
+# calculate some statistics
+numWorklfows &lt;- length(wf_table[,1])
+print(paste("Number of workflows", numWorklfows ))
+totalNumberOfWorkflows &lt;- numWorklfows
+numProcessors &lt;-sum(wf_table[,-1])
+print(paste("Number of processors", numProcessors ))
+totalNumberOfTasks &lt;-  numProcessors
+print(paste("Average number of processors", mean(wf_sums[,2])))
+averageNumberOfTasks &lt;-  mean(wf_sums[,2])
+print(paste("Standard deviation of # processors", sd(wf_sums[,2])))
+standardDeviationOfTasks &lt;-  sd(wf_sums[,2])
+minNumProcessors &lt;- min(wf_sums[,2])
+minNumProcessorWorkflows &lt;-  length(which(wf_sums[,2] == min(wf_sums[,2])))
+print(paste("Minimum processor ", minNumProcessors , "; number of workflows",minNumProcessorWorkflows ))
+maxNumProcessors &lt;- max(wf_sums[,2])
+maxNumProcessorWorkflows &lt;-  length(which(wf_sums[,2] == max(wf_sums[,2])))
+print(paste("Maximum processor ", maxNumProcessors , "; number of workflows", maxNumProcessorWorkflows ))
+
+# analyse per worklfow type
+wf_service &lt;- select.category(wf_table, categories.service)
+wf_scripting &lt;- select.category(wf_table, categories.scripting)
+wf_workflow &lt;- select.category(wf_table, categories.workflow)
+wf_local &lt;- select.category(wf_table, c(categories.conditional, 
+              categories.data_conversion, categories.retrieval, 
+              categories.operation, categories.interaction, 
+              categories.util, categories.constant, categories.cdk, categories.testing, 
+              categories.unknown, categories.uncategorised))
+wf_uncategorised &lt;- select.category(wf_table, categories.uncategorised (wf_table))
+
+wf_service_s &lt;- cbind(wf_service[1], apply(wf_service[-1], 1, sum))
+wf_scripting_s &lt;- cbind(wf_scripting[1], apply(wf_scripting[-1], 1, sum))
+wf_workflow_s &lt;- cbind(wf_workflow[1], apply(wf_workflow[-1], 1, sum))
+wf_local_s &lt;- cbind(wf_local[1], apply(wf_local[-1], 1, sum))
+wf_uncategorised_s &lt;- cbind(wf_uncategorised[1], apply(wf_uncategorised[-1], 1, sum))
+
+wf_total &lt;- cbind(wf_service_s, wf_scripting_s[,2], wf_workflow_s[,2], wf_local_s[,2], wf_uncategorised_s[,2])
+names(wf_total)[2:6] &lt;- c("Web service", "Scripting", "Sub-workflow", "Local service", "Unknown")
+wf_total_rel = round(100* apply(wf_total[-1], 2, sum)/sum(wf_total[-1]))
+
+
+# calculate statistics when taking hierarchical workflows into account
+num_hierachical &lt;-  sum(select.columns(wf_table, "workflow"))
+swf_table &lt;-wf_table[which(select.category(wf_table, categories.workflow)[2] &gt; 0),]
+num_other &lt;- sum(remove.columns(swf_table, c("WorkflowId", "workflow")))
+sum_other &lt;- data.frame(cbind(swf_table[,1], apply(remove.columns(swf_table, c("WorkflowId", "workflow")), 1, sum)))
+names(sum_other) &lt;- names(wf_sums)
+# fake avarage by adding new, but empty rows
+wf_sums_inc &lt;- data.frame(matrix(0, num_hierachical, 2))
+names(wf_sums_inc) &lt;- names(wf_sums)
+wf_sums_inc &lt;- rbind(sum_other, wf_sums_inc);
+print(paste("Average number of processors when sub workflows are taken into account", mean(wf_sums_inc[,2])))
+print(paste("Standard deviation of # processors", sd(wf_sums_inc[,2])))
+
+
+################# Generate plots #########################
+
+# histogram of task sizes
+graphics.device(workflowSizes)
+rl &lt;- rle(sort(wf_sums[,2]))
+plot(rl$values, rl$length, type="l",
+     main=paste("Workflow sizes\n(", length(wf_table[,1]), " workflows)", sep=""),
+     xlab="Workflow size (#tasks)", 
+     ylab="Number of workflows", col=grey(0.2))
+points(rl$values, rl$length, pch=19, col="black")
+dev.off()
+
+
+# plot of relative number of task-type per workflow size
+wf_service_cumsum &lt;- calc.taskcount(merge(wf_sums, wf_service_s, by="WorkflowId"))
+wf_scripting_cumsum &lt;- calc.taskcount(merge(wf_sums, wf_scripting_s, by="WorkflowId"))
+wf_workflow_cumsum &lt;- calc.taskcount(merge(wf_sums, wf_workflow_s, by="WorkflowId"))
+wf_local_cumsum &lt;- calc.taskcount(merge(wf_sums, wf_local_s, by="WorkflowId"))
+
+
+
+#graphics.device(taskUsage)
+#cols &lt;- grey(c(0.0, 0.2, 0.4, 0.6))
+#plot(wf_local_cumsum, col=cols[1], type="l", xlab="Workflow size (#tasks)", ylab="Cumulative task count", main="Occurrence of task", lty=1)
+#points(wf_local_cumsum, col=cols[1], pch=21)
+#lines(wf_service_cumsum, col=cols[2], lty=6)
+#points(wf_service_cumsum, col=cols[2], pch=24)
+#lines(wf_scripting_cumsum, col=cols[3], lty=2)
+#points(wf_scripting_cumsum, col=cols[3], pch=22)
+#lines(wf_workflow_cumsum, col=cols[4], lty=3)
+#points(wf_workflow_cumsum, col=cols[4], pch=23)
+
+#legend(x=0, y=max(wf_local_cumsum) -10, c("Local service", "Web service", "Scripting", "Sub-workflow"), lty=c(1,6,2,3), col=cols, text.col=cols )
+#dev.off()
+
+numTasks &lt;- rl$values * rl$lengths
+n &lt;- function(s,v){sum(v[1:s])}
+wf_size_cumsum &lt;- cbind(rl$values, sapply(c(1:length(numTasks)), n, numTasks))
+
+wf_local_cumsum_rel &lt;- cbind(rl$values, round(100* wf_local_cumsum[,2] / wf_size_cumsum[,2], digits=2))
+wf_service_cumsum_rel &lt;- cbind(rl$values, round(100* wf_service_cumsum[,2] / wf_size_cumsum[,2], digits=2))
+wf_scripting_cumsum_rel &lt;- cbind(rl$values, round(100* wf_scripting_cumsum[,2] / wf_size_cumsum[,2], digits=2))
+wf_workflow_cumsum_rel &lt;- cbind(rl$values, round(100* wf_workflow_cumsum[,2] / wf_size_cumsum[,2], digits=2))
+
+maxVal &lt;- max(wf_local_cumsum_rel, wf_service_cumsum_rel, wf_scripting_cumsum_rel, wf_workflow_cumsum_rel)
+
+graphics.device(taskUsageRelative)
+cols &lt;- grey(c(0.0, 0.2, 0.4, 0.6))
+plot(wf_local_cumsum_rel, ylim=c(0,100 ), col=cols[1], type="l", xlab="Workflow size (#tasks)", 
+ ylab="Relative cumulative task count (%)", main="Trends in task usage based on service type and workflow size", lty=1)
+#points(wf_local_cumsum_rel, col=cols[1], pch=21)
+lines(wf_service_cumsum_rel, col=cols[2], lty=6)
+#points(wf_service_cumsum_rel, col=cols[2], pch=24)
+lines(wf_scripting_cumsum_rel, col=cols[3], lty=2)
+#points(wf_scripting_cumsum_rel, col=cols[3], pch=22)
+lines(wf_workflow_cumsum_rel, col=cols[4], lty=5)
+#points(wf_workflow_cumsum_rel, col=cols[4], pch=23)
+
+legend(x="topright", inset=.05, c("Local service", "Web service", "Scripting", "Sub-workflow"), lty=c(1,6,2,5), 
+  col=cols, text.col=cols )
+dev.off()
+
+# plot of total task usage
+wf_total_plot &lt;- apply(wf_total[-1], 2, sum)
+wf_total_plot &lt;- wf_total_plot[which(wf_total_plot != 0)]
+wf_total_plot_rel &lt;- sort(round(100*wf_total_plot/sum(wf_total_plot), digits=0), decreasing=TRUE)
+graphics.device(totalTaskUsage)
+barplot(wf_total_plot_rel, names.arg=names(wf_total_plot_rel), col=my.palette(length(wf_total_plot_rel)), 
+    ylab="Amount of tasks (%)", main=paste("Total task usage based on service type\n(",sum(wf_total_plot), " tasks)", 
+    sep=""))
+dev.off() 
+
+
+########## other plots
+wf_table_sub &lt;- select.workflow(wf_table, 2, max(apply(wf_table[,-1], 1, sum)))
+
+# Task usage of local processors, workflows of size &gt;1
+graphics.device(localUsage)
+barplot.workfows(select.category(wf_table, c(categories.conditional, categories.unknown,
+              categories.data_conversion, categories.retrieval, categories.cdk,
+              categories.operation, categories.interaction, 
+              categories.util, categories.constant, categories.testing, 
+              categories.uncategorised)), main=paste("Local services\n(", sum(wf_local_s[-1]), " tasks)", sep=""))
+dev.off()
+
+# Task usage in web services, workflows of size &gt; 1
+graphics.device(serviceUsage)
+barplot.category(wf_table, categories.service, names=c("SOAP/WSDL", "SoapLab", "MOBY-S", "BioMart", "SeqHound"))
+dev.off()
+
+# Task usage in scripting
+scripting_df &lt;- apply(wf_scripting[-1], 2, sum)
+scripting_df &lt;- round(100*scripting_df/sum(scripting_df), digits=2)
+write.table(scripting_df, file=scriptingUsage, col.names=FALSE)
+      <s:rshellInputPortList>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="TEXT_FILE">rTable</s:rshellInputPort>
+      </s:rshellInputPortList>
+      <s:rshellOutputPortList>
+        <s:rshellOutputPort s:syntacticType="'application/pdf'" s:symanticType="PDF_FILE">workflowSizes</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'application/pdf'" s:symanticType="PDF_FILE">taskUsageRelative</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'application/pdf'" s:symanticType="PDF_FILE">totalTaskUsage</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'application/pdf'" s:symanticType="PDF_FILE">localUsage</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'application/pdf'" s:symanticType="PDF_FILE">serviceUsage</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="TEXT_FILE">scriptingUsage</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="DOUBLE">totalNumberOfTasks</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="DOUBLE">averageNumberOfTasks</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="DOUBLE">standardDeviationOfTasks</s:rshellOutputPort>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="DOUBLE">totalNumberOfWorkflows</s:rshellOutputPort>
+      </s:rshellOutputPortList>
+    </s:rshell>
+  </s:processor>
+  <s:processor name="Analyse_Single_Workflow" workers="20">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:2e6f49f6-b166-4780-9a30-55c5514075ea" author="" title="analyseWFS" />
+        <s:processor name="echoWorkflowContent">
+          <s:beanshell>
+            <s:scriptvalue>output = input;</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="getElementName">
+          <s:beanshell>
+            <s:scriptvalue>import org.jdom.*;
+import org.jdom.input.*;
+
+SAXBuilder builder = new SAXBuilder();
+Document document = builder.build(new StringReader(element));
+
+Element xmlElement = document.getRootElement();
+if(xmlElement.getName().equals("local")){
+  String[] parts = xmlElement.getText().split("\\.");
+  processorName = parts[parts.length-1].trim();
+} else{
+  processorName = xmlElement.getName();
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">element</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">processorName</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Fail_if_true">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+        </s:processor>
+        <s:processor name="emptyList">
+          <s:beanshell>
+            <s:scriptvalue>list = new ArrayList();</s:scriptvalue>
+            <s:beanshellinputlist />
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="l('text/plain')">list</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="isScufl">
+          <s:beanshell>
+            <s:scriptvalue>import javax.swing.*;
+
+isEmpty = new Boolean(input.indexOf("s:scufl") &gt;= 0).toString();</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">isEmpty</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="filterElementNames">
+          <s:beanshell>
+            <s:scriptvalue>List toSkip = Arrays.asList(new Object[]{"description", 
+                                         "defaults", 
+                                         "iterationstrategy",
+                                         "template"});
+
+
+filtered = new ArrayList();
+for(String name : elementNames){
+  if(toSkip.contains(name)){
+    continue;
+  }
+  filtered.add(name);
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="l('text/plain')">elementNames</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="l('text/plain')">filtered</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="emptyString" boring="true">
+          <s:stringconstant />
+        </s:processor>
+        <s:processor name="Fail_if_false">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="getProcessors">
+          <s:defaults>
+            <s:default name="xpath">//s:processor/*</s:default>
+          </s:defaults>
+          <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+        </s:processor>
+        <s:processor name="readWorkflowFromNet">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+          <s:alternate>
+            <s:stringconstant />
+          </s:alternate>
+        </s:processor>
+        <s:link source="getProcessors:nodelistAsXML" sink="getElementName:element" />
+        <s:link source="isScufl:isEmpty" sink="Fail_if_false:test" />
+        <s:link source="isScufl:isEmpty" sink="Fail_if_true:test" />
+        <s:link source="readWorkflowFromNet:contents" sink="echoWorkflowContent:input" />
+        <s:link source="readWorkflowFromNet:contents" sink="getProcessors:xml-text" />
+        <s:link source="workflowUrl" sink="readWorkflowFromNet:url" />
+        <s:link source="getElementName:processorName" sink="filterElementNames:elementNames" />
+        <s:link source="readWorkflowFromNet:contents" sink="isScufl:input" />
+        <s:link source="echoWorkflowContent:output" sink="scufl" />
+        <s:link source="emptyList:list" sink="processors" />
+        <s:link source="emptyString:value" sink="scufl" />
+        <s:link source="filterElementNames:filtered" sink="processors" />
+        <s:source name="workflowUrl" />
+        <s:sink name="processors" />
+        <s:sink name="scufl" />
+        <s:coordination name="emptyString_BLOCKON_Fail_if_true">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_true</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>emptyString</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="getProcessors_BLOCKON_Fail_if_false">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_false</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>getProcessors</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="echoScufl_BLOCKON_Fail_if_false">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_false</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>echoWorkflowContent</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="emptyList_BLOCKON_Fail_if_true">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_true</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>emptyList</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Analyse_Single_Workflow:processors" sink="Create_R_Table:processorsPerWorkflows" />
+  <s:link source="Analyse_Workflows:scriptingUsage" sink="scriptingUsage" />
+  <s:link source="Analyse_Workflows:serviceUsage" sink="serviceUsage" />
+  <s:link source="Analyse_Workflows:standardDeviationOfTasks" sink="sdNumberOfTasks" />
+  <s:link source="Analyse_Workflows:taskUsageRelative" sink="taskUsageRelative" />
+  <s:link source="Analyse_Workflows:totalNumberOfTasks" sink="totalNumberOfTasks" />
+  <s:link source="Analyse_Workflows:totalNumberOfWorkflows" sink="totalNumberOfWorkflows" />
+  <s:link source="Analyse_Workflows:totalTaskUsage" sink="taskUsageTotal" />
+  <s:link source="Analyse_Workflows:workflowSizes" sink="workflowSizes" />
+  <s:link source="Create_R_Table:emptyWorkflows" sink="emptyWorkflows" />
+  <s:link source="Create_R_Table:rTable" sink="Analyse_Workflows:rTable" />
+  <s:link source="FirstID" sink="Generate_URLs:FirstID" />
+  <s:link source="LastID" sink="Generate_URLs:LastID" />
+  <s:link source="Analyse_Workflows:averageNumberOfTasks" sink="averageNumberOfTasks" />
+  <s:link source="Analyse_Workflows:localUsage" sink="localUsage" />
+  <s:link source="Generate_URLs:WorkflowIDs" sink="Create_R_Table:workflowIDs" />
+  <s:link source="Generate_URLs:WorkflowURLs" sink="Analyse_Single_Workflow:workflowUrl" />
+  <s:source name="FirstID">
+    <s:metadata>
+      <s:description>First ID, for example 0 (URL's are generated automatically)</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="LastID">
+    <s:metadata>
+      <s:description>ID of last workflow to analyse (for example, in the test case, the last valid ID was 603)</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="emptyWorkflows" />
+  <s:sink name="totalNumberOfTasks" />
+  <s:sink name="averageNumberOfTasks" />
+  <s:sink name="sdNumberOfTasks" />
+  <s:sink name="totalNumberOfWorkflows" />
+  <s:sink name="workflowSizes" />
+  <s:sink name="taskUsageRelative" />
+  <s:sink name="taskUsageTotal" />
+  <s:sink name="localUsage" />
+  <s:sink name="serviceUsage" />
+  <s:sink name="scriptingUsage" />
+</s:scufl>
+

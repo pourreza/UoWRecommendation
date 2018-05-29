@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:ecb927cc-a200-4290-9342-302d5fc836ca" author="Marco Roos (AID) and Martijn Schuemie (ErasmusMC)" title="ProteinSynonymsToQuery">This workflow creates a query string from the query term using Martijn Schuemie's synonym service. The service is limited to proteins, enzymes and genes. An input query that is a boolean string will be split and processed, but the boolean logic of the input query will be lost.</s:workflowdescription>
+  <s:processor name="Flatten_list">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Flatten_list2">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Concat_synonyms">
+    <s:beanshell>
+      <s:scriptvalue>import java.util.*;
+String synstring="\"" + query_term + "\"";
+String syn;
+Iterator iterator = synonymlist.iterator();
+while ( iterator.hasNext() ) 
+	{
+	synstring = synstring + " OR ";
+	syn = ((String) iterator.next());
+	synstring = synstring + "\"" + syn + "\"";
+}
+new_query = synstring;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">synonymlist</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">query_term</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">new_query</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:mergemode input="synonymlist" mode="merge" />
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="query_term" />
+        <i:iterator name="synonymlist" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="SplitQuery">
+    <s:workflow>
+      <s:xscufllocation>file:/D:/Marco/adaptivedisclosure.org/public_html/BioAID/Preliminary/Workflows/Archive/Split_query_string_MR3.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="getSynsets">
+    <s:description>Protein synonym service by Martijn Schuemie, Erasmus Medical Centre, University of Rotterdam, The Netherlands.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://aida.science.uva.nl:8888/axis/SynsetServer.jws?wsdl</s:wsdl>
+      <s:operation>getSynsets</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="Concat_synonyms:new_query" sink="new_query" />
+  <s:link source="Flatten_list:outputlist" sink="Flatten_list2:inputlist" />
+  <s:link source="SplitQuery:queryList" sink="getSynsets:term" />
+  <s:link source="Flatten_list2:outputlist" sink="synonyms" />
+  <s:link source="getSynsets:getSynsetsReturn" sink="Flatten_list:inputlist" />
+  <s:link source="query_term" sink="Concat_synonyms:query_term" />
+  <s:link source="query_term" sink="SplitQuery:queryString" />
+  <s:link source="Flatten_list2:outputlist" sink="Concat_synonyms:synonymlist" />
+  <s:source name="query_term">
+    <s:metadata>
+      <s:description>Query term without quotes, only synonyms of proteins, enzymes and genes will be returned. Boolean queries will be processed, but the input boolean logic will be lost.
+E.g. 'EZH2'</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="synonyms" />
+  <s:sink name="new_query" />
+</s:scufl>
+

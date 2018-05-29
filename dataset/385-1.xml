@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:b4096cd1-8aea-4b8c-960d-e383d7e2078d" author="Thomas Kuhn" title="Insert Molecules into Database">This workflow reads the molecules form the an MDL SD File and stores them into a database.</s:workflowdescription>
+  <s:processor name="IteratingFileReader">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.io.iterative.IteratingFileReader
+      <s:extensions>
+        <s:filereader s:filename="" />
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Nested_Workflow">
+    <s:workflow maxretries="1000000">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:ebd3656a-a93a-4bcc-9132-da63a52ad75c" author="" title="sub" />
+        <s:processor name="ORIGIN" boring="true">
+          <s:description>This constant string contains the name for the data origin. This is stored within the database</s:description>
+          <s:stringconstant>TestData</s:stringconstant>
+        </s:processor>
+        <s:processor name="Insert_Molecule_into_database">
+          <s:cdk>
+            org.openscience.cdk.applications.taverna.database.pgchem.InsertMoleculeIntoDB
+            <s:extensions>
+              <s:InsertMoleculeIntoDB>
+                <DBConnectionPostgres>
+                  <DBURL>jdbc:postgresql://localhost/mol</DBURL>
+                  <DBUserName>testuser</DBUserName>
+                  <DBUserPassword>testpwd</DBUserPassword>
+                  <SQLQuery>INSERT INTO molecules (molecule,originalid,origin,comment) VALUES(migrate_molecule(?),?,?,?)</SQLQuery>
+                </DBConnectionPostgres>
+              </s:InsertMoleculeIntoDB>
+            </s:extensions>
+          </s:cdk>
+        </s:processor>
+        <s:processor name="GetContent">
+          <s:cdk>org.openscience.cdk.applications.taverna.io.iterative.IteratingFileReaderGetContent</s:cdk>
+        </s:processor>
+        <s:processor name="Remove_MOL_Files_without_Structures_from_List">
+          <s:cdk>org.openscience.cdk.applications.taverna.tools.RemoveMOLFilesWithoutStructureFromList</s:cdk>
+        </s:processor>
+        <s:processor name="HasNext">
+          <s:cdk>org.openscience.cdk.applications.taverna.io.iterative.IteratingFileReaderHasNext</s:cdk>
+        </s:processor>
+        <s:processor name="Iterative_File_Writer">
+          <s:cdk>
+            org.openscience.cdk.applications.taverna.io.iterative.IterativeFileWriter
+            <s:extensions>
+              <s:filewriter s:filename="log_InsertComments.txt" />
+            </s:extensions>
+          </s:cdk>
+        </s:processor>
+        <s:processor name="Iterative_File_Writer_Molecules_Without_Structures">
+          <s:cdk>
+            org.openscience.cdk.applications.taverna.io.iterative.IterativeFileWriter
+            <s:extensions>
+              <s:filewriter s:filename="log_molecules_without_structures.txt" />
+            </s:extensions>
+          </s:cdk>
+        </s:processor>
+        <s:processor name="Extract_org__IDs_from_MOL_File__EXNO">
+          <s:cdk>org.openscience.cdk.applications.taverna.tools.ExtractIDFromMolFile</s:cdk>
+        </s:processor>
+        <s:processor name="Fail_if_true">
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+        </s:processor>
+        <s:link source="inReaderID" sink="GetContent:readerID" />
+        <s:link source="inReaderID" sink="HasNext:ReaderID" />
+        <s:link source="Extract_org__IDs_from_MOL_File__EXNO:IDList" sink="Insert_Molecule_into_database:orginalIDs" />
+        <s:link source="Extract_org__IDs_from_MOL_File__EXNO:Origin" sink="Insert_Molecule_into_database:Origon" />
+        <s:link source="Extract_org__IDs_from_MOL_File__EXNO:outputMOLFileList" sink="Insert_Molecule_into_database:inputStructures" />
+        <s:link source="GetContent:content" sink="Remove_MOL_Files_without_Structures_from_List:inputStructuresList" />
+        <s:link source="HasNext:hasNext" sink="Fail_if_true:test" />
+        <s:link source="Insert_Molecule_into_database:comment" sink="Iterative_File_Writer:content" />
+        <s:link source="ORIGIN:value" sink="Extract_org__IDs_from_MOL_File__EXNO:Origin" />
+        <s:link source="Remove_MOL_Files_without_Structures_from_List:MOLFileStringListWithStructures" sink="Extract_org__IDs_from_MOL_File__EXNO:inputMOLFileList" />
+        <s:link source="Remove_MOL_Files_without_Structures_from_List:MOLFileStringListWithoutStructures" sink="Iterative_File_Writer_Molecules_Without_Structures:content" />
+        <s:source name="inReaderID" />
+        <s:coordination name="HasNext_BLOCKON_Insert_Molecule_into_database">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Insert_Molecule_into_database</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>HasNext</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="HasNext_BLOCKON_Iterative_File_Writer">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Iterative_File_Writer</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>HasNext</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="HasNext_BLOCKON_Iterative_File_Writer_Molecules_Without_Structures">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Iterative_File_Writer_Molecules_Without_Structures</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>HasNext</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="IteratingFileReader:readerID" sink="Nested_Workflow:inReaderID" />
+</s:scufl>
+

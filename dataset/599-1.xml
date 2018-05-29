@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f1c374c1-670d-4282-9dbd-b189d4b65673" author="" title="cagrid-sample2" />
+  <s:processor name="Extract_elements_from_a_list">
+    <s:defaults>
+      <s:default name="fromindex">10</s:default>
+      <s:default name="toindex">200</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.SliceList
+      <s:extensions>
+        <s:slicelist s:depth="1" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Merge_string_list_to_string">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="Beanshell_scripting_host">
+    <s:beanshell>
+      <s:scriptvalue>String old1="&lt;ExecuteResponse xmlns=\"http://caarray.geworkbench.columbia.edu/CaArrayScrub\"&gt;";
+		String old2="&lt;/ExecuteResponse&gt;";
+		String new1="&lt;m:bioAssay xmlns:m=\"http://mage.preprocessdataset.service.cagrid.genepattern.org/PreprocessDatasetMAGEService\"&gt;";
+		String new2=" &lt;/m:bioAssay&gt;";
+		String output2 = input.replaceFirst(old1, new1);
+		output = output2.replaceAll(old2, new2);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Beanshell_scripting_host1">
+    <s:beanshell>
+      <s:scriptvalue>//String old1="&lt;PerformAnalysisResponse xmlns=\"http://mage.preprocessdataset.service.cagrid.genepattern.org/PreprocessDatasetMAGEService\"&gt;";
+		//String old2="&lt;/PerformAnalysisResponse&gt;";
+		String new1="&lt;m:bioAssay xmlns:m=\"http://mage.preprocessdataset.service.cagrid.genepattern.org/PreprocessDatasetMAGEService\"&gt;";
+		String new2="&lt;/m:bioAssay&gt;";
+		//String output2 = input.replaceFirst(old1, new1);
+		//output = output2.replaceAll(old2, new2);
+
+output = new1+input+new2;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="parametersXML1">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="PerformAnalysisResponse" name="parameters" qname="{http://mage.preprocessdataset.service.cagrid.genepattern.org/PreprocessDatasetMAGEService}PerformAnalysisResponse">
+          <s:elements>
+            <s:arraytype optional="false" unbounded="true" wrapped="false" typename="BioAssay" name="BioAssay" qname="{gme://caArray.caBIG/1.1/gov.nih.nci.mageom.domain.BioAssay}&gt;PerformAnalysisResponse&gt;BioAssay">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="BioAssay" name="" qname="{gme://caArray.caBIG/1.1/gov.nih.nci.mageom.domain.BioAssay}BioAssay">
+                  <s:elements />
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersXML">
+    <s:defaults>
+      <s:default name="cqlFile">test.cql</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="ExecuteRequest" name="parameters" qname="{http://caarray.geworkbench.columbia.edu/CaArrayScrub}ExecuteRequest">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="cqlFile" qname="{http://caarray.geworkbench.columbia.edu/CaArrayScrub}&gt;ExecuteRequest&gt;cqlFile" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="HierarchicalClusteringParameterXML1">
+    <s:defaults>
+      <s:default name="dim">both</s:default>
+      <s:default name="distance">euclidean</s:default>
+      <s:default name="method">complete</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="HierarchicalClusteringParameter" name="HierarchicalClusteringParameter" qname="{gme://cagrid.geworkbench.columbia.edu/1/edu.columbia.geworkbench.cagrid.cluster.hierarchical}&gt;&gt;ExecuteRequest&gt;hierarchicalClusteringParameter&gt;HierarchicalClusteringParameter">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="dim" qname="{gme://cagrid.geworkbench.columbia.edu/1/edu.columbia.geworkbench.cagrid.cluster.hierarchical}HierarchicalClusteringParameter&gt;dim" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="distance" qname="{gme://cagrid.geworkbench.columbia.edu/1/edu.columbia.geworkbench.cagrid.cluster.hierarchical}HierarchicalClusteringParameter&gt;distance" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="method" qname="{gme://cagrid.geworkbench.columbia.edu/1/edu.columbia.geworkbench.cagrid.cluster.hierarchical}HierarchicalClusteringParameter&gt;method" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="PreprocessDatasetParameterSetXML1">
+    <s:defaults>
+      <s:default name="ceiling">2.1f</s:default>
+      <s:default name="columnThreshold">3.14159E0</s:default>
+      <s:default name="filterFlag">false</s:default>
+      <s:default name="logBaseTwo">true</s:default>
+      <s:default name="maxSigmaBinning">1</s:default>
+      <s:default name="minChange">3f</s:default>
+      <s:default name="minDelta">100f</s:default>
+      <s:default name="numberOfColumnsAboveThreshold">1</s:default>
+      <s:default name="numExclude">0</s:default>
+      <s:default name="preprocessingFlag">discretize</s:default>
+      <s:default name="probabilityThreshold">1f</s:default>
+      <s:default name="threshold">20f</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="PreprocessDatasetParameterSet" name="PreprocessDatasetParameterSet" qname="{gme://GenePattern.caBIG/1/gridExtensions}&gt;&gt;PerformAnalysisRequest&gt;preprocessDatasetParameterSet&gt;PreprocessDatasetParameterSet">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="float" name="ceiling" qname="PreprocessDatasetParameterSet&gt;ceiling" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="columnThreshold" qname="PreprocessDatasetParameterSet&gt;columnThreshold" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="filterFlag" qname="PreprocessDatasetParameterSet&gt;filterFlag" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="logBaseTwo" qname="PreprocessDatasetParameterSet&gt;logBaseTwo" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="maxSigmaBinning" qname="PreprocessDatasetParameterSet&gt;maxSigmaBinning" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="minChange" qname="PreprocessDatasetParameterSet&gt;minChange" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="minDelta" qname="PreprocessDatasetParameterSet&gt;minDelta" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="numberOfColumnsAboveThreshold" qname="PreprocessDatasetParameterSet&gt;numberOfColumnsAboveThreshold" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="numExclude" qname="PreprocessDatasetParameterSet&gt;numExclude" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="preprocessingFlag" qname="PreprocessDatasetParameterSet&gt;preprocessingFlag" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="probabilityThreshold" qname="PreprocessDatasetParameterSet&gt;probabilityThreshold" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="threshold" qname="PreprocessDatasetParameterSet&gt;threshold" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="preprocessDatasetParameterSetXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="&gt;&gt;PerformAnalysisRequest&gt;preprocessDatasetParameterSet" name="preprocessDatasetParameterSet" qname="{http://mage.preprocessdataset.service.cagrid.genepattern.org/PreprocessDatasetMAGEService}&gt;PerformAnalysisRequest&gt;preprocessDatasetParameterSet">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="PreprocessDatasetParameterSet" name="PreprocessDatasetParameterSet" qname="{gme://GenePattern.caBIG/1/gridExtensions}&gt;&gt;PerformAnalysisRequest&gt;preprocessDatasetParameterSet&gt;PreprocessDatasetParameterSet">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="float" name="ceiling" qname="PreprocessDatasetParameterSet&gt;ceiling" />
+                <s:basetype optional="false" unbounded="false" typename="float" name="columnThreshold" qname="PreprocessDatasetParameterSet&gt;columnThreshold" />
+                <s:basetype optional="false" unbounded="false" typename="boolean" name="filterFlag" qname="PreprocessDatasetParameterSet&gt;filterFlag" />
+                <s:basetype optional="false" unbounded="false" typename="boolean" name="logBaseTwo" qname="PreprocessDatasetParameterSet&gt;logBaseTwo" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="maxSigmaBinning" qname="PreprocessDatasetParameterSet&gt;maxSigmaBinning" />
+                <s:basetype optional="false" unbounded="false" typename="float" name="minChange" qname="PreprocessDatasetParameterSet&gt;minChange" />
+                <s:basetype optional="false" unbounded="false" typename="float" name="minDelta" qname="PreprocessDatasetParameterSet&gt;minDelta" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="numberOfColumnsAboveThreshold" qname="PreprocessDatasetParameterSet&gt;numberOfColumnsAboveThreshold" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="numExclude" qname="PreprocessDatasetParameterSet&gt;numExclude" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="preprocessingFlag" qname="PreprocessDatasetParameterSet&gt;preprocessingFlag" />
+                <s:basetype optional="false" unbounded="false" typename="float" name="probabilityThreshold" qname="PreprocessDatasetParameterSet&gt;probabilityThreshold" />
+                <s:basetype optional="false" unbounded="false" typename="float" name="threshold" qname="PreprocessDatasetParameterSet&gt;threshold" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="hierarchicalClusteringParameterXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="&gt;&gt;ExecuteRequest&gt;hierarchicalClusteringParameter" name="hierarchicalClusteringParameter" qname="{http://mage.hierarchical.cagrid.geworkbench.columbia.edu/HierarchicalClusteringMage}&gt;ExecuteRequest&gt;hierarchicalClusteringParameter">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="HierarchicalClusteringParameter" name="HierarchicalClusteringParameter" qname="{gme://cagrid.geworkbench.columbia.edu/1/edu.columbia.geworkbench.cagrid.cluster.hierarchical}&gt;&gt;ExecuteRequest&gt;hierarchicalClusteringParameter&gt;HierarchicalClusteringParameter">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="dim" qname="{gme://cagrid.geworkbench.columbia.edu/1/edu.columbia.geworkbench.cagrid.cluster.hierarchical}HierarchicalClusteringParameter&gt;dim" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="distance" qname="{gme://cagrid.geworkbench.columbia.edu/1/edu.columbia.geworkbench.cagrid.cluster.hierarchical}HierarchicalClusteringParameter&gt;distance" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="method" qname="{gme://cagrid.geworkbench.columbia.edu/1/edu.columbia.geworkbench.cagrid.cluster.hierarchical}HierarchicalClusteringParameter&gt;method" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersXML4">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="PerformAnalysisRequest" name="parameters" qname="{http://mage.preprocessdataset.service.cagrid.genepattern.org/PreprocessDatasetMAGEService}PerformAnalysisRequest">
+          <s:elements>
+            <s:arraytype optional="false" unbounded="false" wrapped="false" typename="&gt;&gt;PerformAnalysisRequest&gt;bioAssay" name="bioAssay" qname="{http://mage.preprocessdataset.service.cagrid.genepattern.org/PreprocessDatasetMAGEService}&gt;PerformAnalysisRequest&gt;bioAssay">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="BioAssay" name="" qname="{gme://caArray.caBIG/1.1/gov.nih.nci.mageom.domain.BioAssay}BioAssay">
+                  <s:elements />
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+            <s:complextype optional="false" unbounded="false" typename="&gt;&gt;PerformAnalysisRequest&gt;preprocessDatasetParameterSet" name="preprocessDatasetParameterSet" qname="{http://mage.preprocessdataset.service.cagrid.genepattern.org/PreprocessDatasetMAGEService}&gt;PerformAnalysisRequest&gt;preprocessDatasetParameterSet">
+              <s:elements>
+                <s:complextype optional="false" unbounded="false" typename="PreprocessDatasetParameterSet" name="PreprocessDatasetParameterSet" qname="{gme://GenePattern.caBIG/1/gridExtensions}&gt;&gt;PerformAnalysisRequest&gt;preprocessDatasetParameterSet&gt;PreprocessDatasetParameterSet">
+                  <s:elements>
+                    <s:basetype optional="false" unbounded="false" typename="float" name="ceiling" qname="PreprocessDatasetParameterSet&gt;ceiling" />
+                    <s:basetype optional="false" unbounded="false" typename="float" name="columnThreshold" qname="PreprocessDatasetParameterSet&gt;columnThreshold" />
+                    <s:basetype optional="false" unbounded="false" typename="boolean" name="filterFlag" qname="PreprocessDatasetParameterSet&gt;filterFlag" />
+                    <s:basetype optional="false" unbounded="false" typename="boolean" name="logBaseTwo" qname="PreprocessDatasetParameterSet&gt;logBaseTwo" />
+                    <s:basetype optional="false" unbounded="false" typename="int" name="maxSigmaBinning" qname="PreprocessDatasetParameterSet&gt;maxSigmaBinning" />
+                    <s:basetype optional="false" unbounded="false" typename="float" name="minChange" qname="PreprocessDatasetParameterSet&gt;minChange" />
+                    <s:basetype optional="false" unbounded="false" typename="float" name="minDelta" qname="PreprocessDatasetParameterSet&gt;minDelta" />
+                    <s:basetype optional="false" unbounded="false" typename="int" name="numberOfColumnsAboveThreshold" qname="PreprocessDatasetParameterSet&gt;numberOfColumnsAboveThreshold" />
+                    <s:basetype optional="false" unbounded="false" typename="int" name="numExclude" qname="PreprocessDatasetParameterSet&gt;numExclude" />
+                    <s:basetype optional="false" unbounded="false" typename="string" name="preprocessingFlag" qname="PreprocessDatasetParameterSet&gt;preprocessingFlag" />
+                    <s:basetype optional="false" unbounded="false" typename="float" name="probabilityThreshold" qname="PreprocessDatasetParameterSet&gt;probabilityThreshold" />
+                    <s:basetype optional="false" unbounded="false" typename="float" name="threshold" qname="PreprocessDatasetParameterSet&gt;threshold" />
+                  </s:elements>
+                </s:complextype>
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersXML3">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="ExecuteRequest" name="parameters" qname="{http://mage.hierarchical.cagrid.geworkbench.columbia.edu/HierarchicalClusteringMage}ExecuteRequest">
+          <s:elements>
+            <s:arraytype optional="false" unbounded="false" wrapped="false" typename="&gt;&gt;ExecuteRequest&gt;bioAssay" name="bioAssay" qname="{http://mage.hierarchical.cagrid.geworkbench.columbia.edu/HierarchicalClusteringMage}&gt;ExecuteRequest&gt;bioAssay">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="BioAssay" name="" qname="{gme://caArray.caBIG/1.1/gov.nih.nci.mageom.domain.BioAssay}BioAssay">
+                  <s:elements />
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+            <s:complextype optional="false" unbounded="false" typename="&gt;&gt;ExecuteRequest&gt;hierarchicalClusteringParameter" name="hierarchicalClusteringParameter" qname="{http://mage.hierarchical.cagrid.geworkbench.columbia.edu/HierarchicalClusteringMage}&gt;ExecuteRequest&gt;hierarchicalClusteringParameter">
+              <s:elements>
+                <s:complextype optional="false" unbounded="false" typename="HierarchicalClusteringParameter" name="HierarchicalClusteringParameter" qname="{gme://cagrid.geworkbench.columbia.edu/1/edu.columbia.geworkbench.cagrid.cluster.hierarchical}&gt;&gt;ExecuteRequest&gt;hierarchicalClusteringParameter&gt;HierarchicalClusteringParameter">
+                  <s:elements>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="dim" qname="{gme://cagrid.geworkbench.columbia.edu/1/edu.columbia.geworkbench.cagrid.cluster.hierarchical}HierarchicalClusteringParameter&gt;dim" />
+                    <s:basetype optional="false" unbounded="false" typename="string" name="distance" qname="{gme://cagrid.geworkbench.columbia.edu/1/edu.columbia.geworkbench.cagrid.cluster.hierarchical}HierarchicalClusteringParameter&gt;distance" />
+                    <s:basetype optional="false" unbounded="false" typename="string" name="method" qname="{gme://cagrid.geworkbench.columbia.edu/1/edu.columbia.geworkbench.cagrid.cluster.hierarchical}HierarchicalClusteringParameter&gt;method" />
+                  </s:elements>
+                </s:complextype>
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="execute">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://cagridnode.c2b2.columbia.edu:8080/wsrf/services/cagrid/CaArrayScrub?wsdl</s:wsdl>
+      <s:operation>execute</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="execute2">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://cagridnode.c2b2.columbia.edu:8080/wsrf/services/cagrid/HierarchicalClusteringMage?wsdl</s:wsdl>
+      <s:operation>execute</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="performAnalysis">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://node255.broad.mit.edu:6060/wsrf/services/cagrid/PreprocessDatasetMAGEService?wsdl</s:wsdl>
+      <s:operation>performAnalysis</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="Beanshell_scripting_host1:output" sink="parametersXML3:bioAssay" />
+  <s:link source="Beanshell_scripting_host:output" sink="parametersXML4:bioAssay" />
+  <s:link source="CQL File Name" sink="parametersXML:cqlFile" />
+  <s:link source="Extract_elements_from_a_list:outputlist" sink="Merge_string_list_to_string:stringlist" />
+  <s:link source="HierarchicalClusteringParameterXML1:output" sink="hierarchicalClusteringParameterXML:HierarchicalClusteringParameter" />
+  <s:link source="Merge_string_list_to_string:concatenated" sink="Beanshell_scripting_host1:input" />
+  <s:link source="PreprocessDatasetParameterSetXML1:output" sink="preprocessDatasetParameterSetXML:PreprocessDatasetParameterSet" />
+  <s:link source="execute:parameters" sink="Beanshell_scripting_host:input" />
+  <s:link source="hierarchicalClusteringParameterXML:output" sink="parametersXML3:hierarchicalClusteringParameter" />
+  <s:link source="parametersXML1:BioAssay" sink="Extract_elements_from_a_list:inputlist" />
+  <s:link source="parametersXML3:output" sink="execute2:parameters" />
+  <s:link source="parametersXML4:output" sink="performAnalysis:parameters" />
+  <s:link source="parametersXML:output" sink="execute:parameters" />
+  <s:link source="performAnalysis:parameters" sink="parametersXML1:input" />
+  <s:link source="preprocessDatasetParameterSetXML:output" sink="parametersXML4:preprocessDatasetParameterSet" />
+  <s:link source="execute2:parameters" sink="output" />
+  <s:source name="CQL File Name" />
+  <s:sink name="output" />
+</s:scufl>
+

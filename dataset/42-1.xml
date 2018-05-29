@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:809f3728-8933-4ffb-9a7d-bde2d64f142d" author="" title="getFragWithClosure" />
+  <s:processor name="group" boring="true">
+    <s:stringconstant>C([Oh1])=O</s:stringconstant>
+  </s:processor>
+  <s:processor name="smilesURL" boring="true">
+    <s:stringconstant>http://www.cs.man.ac.uk/~hulld/smiles.txt</s:stringconstant>
+  </s:processor>
+  <s:processor name="closure" boring="true">
+    <s:stringconstant>90</s:stringconstant>
+  </s:processor>
+  <s:processor name="getFragmentWithClosure">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://rguha.ath.cx:8080/cdkws/services/Utility?wsdl</s:wsdl>
+      <s:operation>getFragmentWithClosure</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Get_web_page_from_URL">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:link source="Get_web_page_from_URL:contents" sink="getFragmentWithClosure:smiles" />
+  <s:link source="closure:value" sink="getFragmentWithClosure:closureNumber" />
+  <s:link source="group:value" sink="getFragmentWithClosure:group" />
+  <s:link source="smilesURL:value" sink="Get_web_page_from_URL:url" />
+  <s:link source="getFragmentWithClosure:getFragmentWithClosureReturn" sink="output" />
+  <s:sink name="output" />
+</s:scufl>
+

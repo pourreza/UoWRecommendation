@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:e76467e0-81f5-4732-805f-bc9f3d7da30f" author="Alan R Williams" title="Write text file - specified value">The beanshell creates an empty temporary file.  The filepath to the temporary file is then passed to the Write_text_file service which writes 'hello' into the file.  'hello' is also output by the service.</s:workflowdescription>
+  <s:processor name="Create_temporary_file">
+    <s:beanshell>
+      <s:scriptvalue>File temp = File.createTempFile("taverna", "txt");
+
+temp.deleteOnExit();
+
+out = temp.getCanonicalPath();</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">out</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Write_Text_File">
+    <s:defaults>
+      <s:default name="filecontents">hello</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileWriter</s:local>
+  </s:processor>
+  <s:link source="Create_temporary_file:out" sink="Write_Text_File:outputFile" />
+  <s:link source="Write_Text_File:outputFile" sink="out" />
+  <s:sink name="out" />
+</s:scufl>
+

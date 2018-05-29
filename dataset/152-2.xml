@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:eac7446d-bddb-4643-b4e5-8d964c01ae42" author="Pieter B.T. Neerincx, Blaise T.F. Alako and Jack A.M. Leunissen." title="GeneIlluminator_GetPubMedQuery">Example workflow demonstrating how to use GeneIlluminator_GetPubMedQuery, a synchronous BioMOBY service for gene symbol disambiguation. If a gene symbol is ambiguous this service uses GeneIlluminator to create clusters describing which different genes, sharing the same symbol, exist in different parts of the tree of life. GeneIlluminator provides also aliases associated to the input gene symbol. Finally, using the cluster characteristics it creates a boolean PubMed query that could be used to unambiguously retrieve documents related to the gene from the cluster the input gene symbol was assigned to.
+
+Please note that GeneIlluminator_GetPubMedQuery provides a query string that can be used to query PubMed, but it does not query PubMed itself. You'll have to do that by other means. When you do query PubMed at the NCBI using some automated procedure, make sure to throttle your queries! Otherwise you'll have your university/institute/company disconnected from the NCBI servers in no time. Visit http://www.ncbi.nlm.nih.gov/ for guidelines for automated/scripted acces to NCBI resources like PubMed.   
+
+Visit http://www.bioinformatics.nl/gi/ for more info about GeneIlluminator.
+
+GeneIlluminator services use a secure connection over HTTPS. To make this work you *must* import our SSL certificates in your local Java keystores. More information can be found on https://www.bioinformatics.nl/phenolink/home/
+  </s:workflowdescription>
+  <s:processor name="GeneIlluminator_GetPubMedQuery">
+    <s:description>Synchronous BioMOBY service for gene symbol disambiguation. If a gene symbol is ambiguous this service uses GeneIlluminator to create clusters describing which different genes sharing the same symbol exist in different parts of the tree of life. It then assigns the gene input symbol for the given input organism to one of the clusters. Finally, using the cluster characteristics it creates a boolean PubMed query that could be used to unambiguously retrieve documents related to the gene from the cluster the input gene symbol was assigned to.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>GeneIlluminator_GetPubMedQuery</s:serviceName>
+      <s:authorityName>www.bioinformatics.nl</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Organism">
+    <s:description>An organism object.</s:description>
+    <s:defaults>
+      <s:default name="article name">organism</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Organism</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="Object">
+    <s:description>an object</s:description>
+    <s:defaults>
+      <s:default name="article name">gene_symbol</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Object</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_BooleanQueryString">
+    <s:description>Processor to parse the datatype BooleanQueryString</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>BooleanQueryString</s:datatype>
+      <s:articleName>query</s:articleName>
+      <s:description>Processor to parse the datatype BooleanQueryString</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:link source="GeneIlluminator_GetPubMedQuery:BooleanQueryString(query)" sink="Parse_Moby_Data_BooleanQueryString:mobyData('BooleanQueryString')" />
+  <s:link source="GeneSymbol" sink="Object:id" />
+  <s:link source="Object:mobyData" sink="GeneIlluminator_GetPubMedQuery:Object(gene_symbol)" />
+  <s:link source="Organism" sink="Organism:id" />
+  <s:link source="Organism:mobyData" sink="GeneIlluminator_GetPubMedQuery:Organism(organism)" />
+  <s:link source="Parse_Moby_Data_BooleanQueryString:query_'query'" sink="PubMedQuery" />
+  <s:source name="GeneSymbol">
+    <s:metadata>
+      <s:description>Your potentially ambiguous gene symbol of interest or one of it's aliases.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Organism">
+    <s:metadata>
+      <s:description>Species in scientific latin notation. For example: Home sapiens.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="PubMedQuery">
+    <s:metadata>
+      <s:description>A boolean query string that could be used to retrieve documents related to the gene of interest unambiguously from PubMed. Hence, not the results of a PubMed query.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:PYYNXDR0LZ0" author="" title="" />
+  <s:processor name="GOIDFromGiList">
+    <s:description>retrieves an array of goid for a specified array of gi's</s:description>
+    <s:seqhound>
+      <s:method>SHoundGOIDFromGiList</s:method>
+      <s:server>seqhound.blueprint.org</s:server>
+      <s:jseqremserver>skinner.blueprint.org:8080</s:jseqremserver>
+      <s:path>/cgi-bin/seqrem</s:path>
+      <s:jseqrempath>/jseqhound/jseqrem</s:jseqrempath>
+    </s:seqhound>
+  </s:processor>
+  <s:processor name="gi_number" boring="true">
+    <s:stringconstant>gi</s:stringconstant>
+  </s:processor>
+  <s:processor name="Merge_string_list_to_string">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="separator" boring="true">
+    <s:stringconstant>,</s:stringconstant>
+  </s:processor>
+  <s:processor name="blastsimplifier">
+    <s:description>Simplifies BLAST output for later use</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.blastsimplifier</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="split_by_regex">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="regex" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:link source="GOIDFromGiList:result" sink="GO_id" />
+  <s:link source="Merge_string_list_to_string:concatenated" sink="GOIDFromGiList:giList" />
+  <s:link source="blast_report" sink="blastsimplifier:new_direct_data" />
+  <s:link source="blastsimplifier:output" sink="Gi_numbers" />
+  <s:link source="blastsimplifier:output" sink="split_by_regex:string" />
+  <s:link source="gi_number:value" sink="blastsimplifier:gi" />
+  <s:link source="regex:value" sink="split_by_regex:regex" />
+  <s:link source="separator:value" sink="Merge_string_list_to_string:seperator" />
+  <s:link source="split_by_regex:split" sink="Merge_string_list_to_string:stringlist" />
+  <s:source name="blast_report" />
+  <s:sink name="Gi_numbers" />
+  <s:sink name="GO_id" />
+</s:scufl>
+
+

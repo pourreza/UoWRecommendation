@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:b153ba75-0a05-4ed1-a7ce-5fc3ed950aa7" author="" title="sffToFasta_PatternMatch_Blat" />
+  <s:processor name="BlatConfigFile" boring="true">
+    <s:stringconstant>lfn://lfc.grid.sara.nl/grid/lsgrid/angela/Sequence_WF/Michel_28_10_2008/GasW_Desc_Files/Blat.xml</s:stringconstant>
+  </s:processor>
+  <s:processor name="sff2fasta_configfile" boring="true">
+    <s:stringconstant>lfn://lfc.grid.sara.nl/grid/lsgrid/angela/Sequence_WF/Michel_28_10_2008/GasW_Desc_Files/sff_2_Fasta_Perl.xml</s:stringconstant>
+  </s:processor>
+  <s:processor name="empty" boring="true">
+    <s:stringconstant>""</s:stringconstant>
+  </s:processor>
+  <s:processor name="patternMatch_configfile" boring="true">
+    <s:stringconstant>lfn://lfc.grid.sara.nl/grid/lsgrid/angela/Sequence_WF/Michel_28_10_2008/GasW_Desc_Files/patternMatching_description.xml</s:stringconstant>
+  </s:processor>
+  <s:processor name="patternMatch">
+    <s:description>Service definition of function ns__GASWexecution</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://egee1.unice.fr/wsdl/gasw_service.wsdl</s:wsdl>
+      <s:operation>GASWexecution</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="sffToFasta">
+    <s:description>Service definition of function ns__GASWexecution</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://egee1.unice.fr/wsdl/gasw_service.wsdl</s:wsdl>
+      <s:operation>GASWexecution</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Blat">
+    <s:description>Service definition of function ns__GASWexecution</s:description>
+    <s:arbitrarywsdl critical="true">
+      <s:wsdl>http://egee1.unice.fr/wsdl/gasw_service.wsdl</s:wsdl>
+      <s:operation>GASWexecution</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="sffExecutable" boring="true">
+    <s:stringconstant>lfn://lfc.grid.sara.nl/grid/lsgrid/AMC-e-BioScience/Sequence_WF/bin/sffinfo</s:stringconstant>
+  </s:processor>
+  <s:processor name="blatExe" boring="true">
+    <s:stringconstant>lfn://lfc.grid.sara.nl/grid/lsgrid/AMC-e-BioScience/Sequence_WF/bin/blat</s:stringconstant>
+  </s:processor>
+  <s:link source="patternFile" sink="patternMatch:input2" />
+  <s:link source="empty:value" sink="sffToFasta:command-line" />
+  <s:link source="sff2fasta_configfile:value" sink="sffToFasta:config-file" />
+  <s:link source="sffTar" sink="sffToFasta:input0" />
+  <s:link source="BlatConfigFile:value" sink="Blat:config-file" />
+  <s:link source="patternMatch:result0" sink="Blat:input0" />
+  <s:link source="patternMatch_configfile:value" sink="patternMatch:config-file" />
+  <s:link source="referenceTar" sink="Blat:input2" />
+  <s:link source="blatExe:value" sink="Blat:input1" />
+  <s:link source="sffExecutable:value" sink="sffToFasta:input1" />
+  <s:link source="patternMatch:result1" sink="qualOutputTarFile" />
+  <s:link source="patternMatch:result2" sink="txtOutputTarFile" />
+  <s:link source="sffToFasta:result0" sink="patternMatch:input0" />
+  <s:link source="sffToFasta:result1" sink="patternMatch:input1" />
+  <s:link source="Blat:result0" sink="BlatTarFile" />
+  <s:source name="sffTar" />
+  <s:source name="patternFile" />
+  <s:source name="referenceTar" />
+  <s:sink name="BlatTarFile" />
+  <s:sink name="qualOutputTarFile" />
+  <s:sink name="txtOutputTarFile" />
+</s:scufl>
+

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:c5593f74-d3d9-48b1-abc2-78279c9fc966" author="" title="Search InChI in ChemSpider" />
+  <s:processor name="SimpleSearch">
+    <s:description>Try to find whatever is entered. Return the list of found IDs. Security token is required to get access to this service.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.chemspider.com/Search.asmx?WSDL</s:wsdl>
+      <s:operation>SimpleSearch</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="SimpleSearch_in">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="SimpleSearch" name="parameters" qname="{http://www.chemspider.com/}SimpleSearch">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="query" qname="{http://www.chemspider.com/}&gt;SimpleSearch&gt;query" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="token" qname="{http://www.chemspider.com/}&gt;SimpleSearch&gt;token" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="SimpleSearch_out">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="SimpleSearchResponse" name="parameters" qname="{http://www.chemspider.com/}SimpleSearchResponse">
+          <s:elements>
+            <s:arraytype optional="true" unbounded="false" wrapped="true" typename="ArrayOfInt" name="SimpleSearchResult" qname="{http://www.chemspider.com/}&gt;SimpleSearchResponse&gt;SimpleSearchResult">
+              <s:elementtype>
+                <s:basetype optional="false" unbounded="false" typename="int" name="" qname="{http://www.w3.org/2001/XMLSchema}int" />
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="GetCompoundThumbnail">
+    <s:description>Get compound thumbnail in PNG format. Security token is required to get access to this service.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.chemspider.com/Search.asmx?WSDL</s:wsdl>
+      <s:operation>GetCompoundThumbnail</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="GetExtendedCompoundInfoArray">
+    <s:description>Get array of extended record details by an array of CSIDs. Security token is required to get access to this service.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.chemspider.com/MassSpecAPI.asmx?WSDL</s:wsdl>
+      <s:operation>GetExtendedCompoundInfoArray</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="GetInfoArray_in">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetExtendedCompoundInfoArray" name="parameters" qname="{http://www.chemspider.com/}GetExtendedCompoundInfoArray">
+          <s:elements>
+            <s:arraytype optional="true" unbounded="false" wrapped="true" typename="ArrayOfInt" name="CSIDs" qname="{http://www.chemspider.com/}&gt;GetExtendedCompoundInfoArray&gt;CSIDs">
+              <s:elementtype>
+                <s:basetype optional="false" unbounded="false" typename="int" name="" qname="{http://www.w3.org/2001/XMLSchema}int" />
+              </s:elementtype>
+            </s:arraytype>
+            <s:basetype optional="true" unbounded="false" typename="string" name="token" qname="{http://www.chemspider.com/}&gt;GetExtendedCompoundInfoArray&gt;token" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="GetCompoundThumbnail_in">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetCompoundThumbnail" name="parameters" qname="{http://www.chemspider.com/}GetCompoundThumbnail">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="id" qname="{http://www.chemspider.com/}&gt;GetCompoundThumbnail&gt;id" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="token" qname="{http://www.chemspider.com/}&gt;GetCompoundThumbnail&gt;token" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="GetCompoundThumbnail_out">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetCompoundThumbnailResponse" name="parameters" qname="{http://www.chemspider.com/}GetCompoundThumbnailResponse">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="base64Binary" name="GetCompoundThumbnailResult" qname="{http://www.chemspider.com/}&gt;GetCompoundThumbnailResponse&gt;GetCompoundThumbnailResult" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="GetCompoundThumbnail:parameters" sink="GetCompoundThumbnail_out:input" />
+  <s:link source="SimpleSearch:parameters" sink="SimpleSearch_out:input" />
+  <s:link source="SimpleSearch_in:output" sink="SimpleSearch:parameters" />
+  <s:link source="query" sink="SimpleSearch_in:query" />
+  <s:link source="token" sink="SimpleSearch_in:token" />
+  <s:link source="GetCompoundThumbnail_in:output" sink="GetCompoundThumbnail:parameters" />
+  <s:link source="GetInfoArray_in:output" sink="GetExtendedCompoundInfoArray:parameters" />
+  <s:link source="SimpleSearch_out:SimpleSearchResult" sink="GetInfoArray_in:CSIDs" />
+  <s:link source="token" sink="GetInfoArray_in:token" />
+  <s:link source="SimpleSearch_out:SimpleSearchResult" sink="GetCompoundThumbnail_in:id" />
+  <s:link source="token" sink="GetCompoundThumbnail_in:token" />
+  <s:link source="GetCompoundThumbnail_out:GetCompoundThumbnailResult" sink="ChemSpider_compound_image" />
+  <s:link source="GetExtendedCompoundInfoArray:parameters" sink="ChemSpider_compound_info" />
+  <s:source name="query" />
+  <s:source name="token" />
+  <s:sink name="ChemSpider_compound_info" />
+  <s:sink name="ChemSpider_compound_image">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>image/*</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

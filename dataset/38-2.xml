@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:30ae8bf5-7d1d-4b57-b09c-0b81daa4422d" author="Franck Tanoh" title="keggID to Kegg pathways with BioMoby services">This workflow retrieves KEGG  pathway id and image given a KEGG gene id. 
+e.g hsa:6402 or eco:b0002</s:workflowdescription>
+  <s:processor name="getKeggPathwaysByKeggID">
+    <s:description>This service, given a KEGG identifier, attempts to retrieve KEGG pathways that that contain this ID.
+
+For example, passing in:
+hsa:6402
+
+results in the following pathway returned: hsa04514.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://mobycentral.icapture.ubc.ca/cgi-bin/MOBY05/mobycentral.pl</s:mobyEndpoint>
+      <s:serviceName>getKeggPathwaysByKeggID</s:serviceName>
+      <s:authorityName>bioinfo.icapture.ubc.ca</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Object">
+    <s:description>an object</s:description>
+    <s:defaults>
+      <s:default name="namespace">KEGG</s:default>
+      <s:default name="article name">KeggID</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://mobycentral.icapture.ubc.ca/cgi-bin/MOBY05/mobycentral.pl</s:mobyEndpoint>
+      <s:serviceName>Object</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_Object">
+    <s:description>Processor to parse the datatype Object</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://mobycentral.icapture.ubc.ca/cgi-bin/MOBY05/mobycentral.pl</s:endpoint>
+      <s:datatype>Object</s:datatype>
+      <s:articleName>pathways</s:articleName>
+      <s:description>Processor to parse the datatype Object</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="getKeggPathwayAsGif">
+    <s:description>This service, given a KEGG pathway, returns a Gif image of the pathway if it exists.
+For example, the &lt;Object, KEGG_PATHWAY, 'hsa00053')
+returns a diagram of the pathway 'ASCORBATE AND ALDRATE METABOLISM'.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://mobycentral.icapture.ubc.ca/cgi-bin/MOBY05/mobycentral.pl</s:mobyEndpoint>
+      <s:serviceName>getKeggPathwayAsGif</s:serviceName>
+      <s:authorityName>bioinfo.icapture.ubc.ca</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_b64_encoded_gif">
+    <s:description>Processor to parse the datatype b64_encoded_gif</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://mobycentral.icapture.ubc.ca/cgi-bin/MOBY05/mobycentral.pl</s:endpoint>
+      <s:datatype>b64_encoded_gif</s:datatype>
+      <s:articleName>image</s:articleName>
+      <s:description>Processor to parse the datatype b64_encoded_gif</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="Decode_base64_to_byte">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.DecodeBase64</s:local>
+  </s:processor>
+  <s:processor name="String_Constant" boring="true">
+    <s:stringconstant>eco:b0002</s:stringconstant>
+  </s:processor>
+  <s:link source="Decode_base64_to_byte:bytes" sink="pathwayImage" />
+  <s:link source="Object:mobyData" sink="getKeggPathwaysByKeggID:Object(keggID)" />
+  <s:link source="Parse_Moby_Data_b64_encoded_gif:image_'content'" sink="Decode_base64_to_byte:base64" />
+  <s:link source="String_Constant:value" sink="Object:id" />
+  <s:link source="getKeggPathwayAsGif:b64_encoded_gif(image)" sink="Parse_Moby_Data_b64_encoded_gif:mobyData('b64_encoded_gif')" />
+  <s:link source="getKeggPathwaysByKeggID:Object(Collection - 'pathways' As Simples)" sink="getKeggPathwayAsGif:Object(pathway)" />
+  <s:link source="Parse_Moby_Data_Object:id" sink="pathwayId" />
+  <s:link source="getKeggPathwaysByKeggID:Object(Collection - 'pathways' As Simples)" sink="Parse_Moby_Data_Object:mobyData('Object')" />
+  <s:link source="getKeggPathwaysByKeggID:Object(Collection - 'pathways')" sink="output" />
+  <s:sink name="output" />
+  <s:sink name="pathwayId" />
+  <s:sink name="pathwayImage">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>image/*</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

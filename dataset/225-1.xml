@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:70d8a2a8-a369-4824-879d-dbfa36fcecc8" author="Hamish McWilliam" title="Structure_or_ID">Given a structure or structure entry identifer (e.g. PDB:1crn), return the structure in PDB format.
+
+If a structure identifier, in database:identifier format, is input the EBI's WSDbfetch web service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch) is used to retrive the structure in PDB format. Otherwise the input is assumed to be a formated structure and is passed through to the output.</s:workflowdescription>
+  <s:processor name="Fail_if_identifer">
+    <s:description>Fails if the workflow input is an identifier (i.e. is an actual structure).</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+  </s:processor>
+  <s:processor name="Fail_if_structure">
+    <s:description>Fails if the workflow input was a structure (i.e. is an identifer).</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+  </s:processor>
+  <s:processor name="Is_structure">
+    <s:description>Return true if the input is a structure or false if the input is a structure identifer (e.g. PDB:1crn).</s:description>
+    <s:beanshell>
+      <s:scriptvalue>lineLen = structure.indexOf("\n");
+if(lineLen &lt; 1) {
+  lineLen = structure.length();
+}
+if(!structure.startsWith("ID ") &amp;&amp;
+   structure.indexOf(":") &gt; 0 &amp;&amp;
+   structure.indexOf(":") &lt; lineLen) {
+  is_structure = "false";
+} else {
+  is_structure = "true";
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">structure</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">is_structure</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="fetchData">
+    <s:description>Fetch the structure in PDB format from the identifer using EBI's WSDbfetch service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch).</s:description>
+    <s:defaults>
+      <s:default name="format">pdb</s:default>
+      <s:default name="style">raw</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSDbfetch.wsdl</s:wsdl>
+      <s:operation>fetchData</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Use_structure">
+    <s:description>Pass the input structure to the output.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>out_structure = in_structure;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">in_structure</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">out_structure</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="Structure_or_ID" sink="Is_structure:structure" />
+  <s:link source="Structure_or_ID" sink="fetchData:query" />
+  <s:link source="Is_structure:is_structure" sink="Fail_if_identifer:test" />
+  <s:link source="Is_structure:is_structure" sink="Fail_if_structure:test" />
+  <s:link source="Structure_or_ID" sink="Use_structure:in_structure" />
+  <s:link source="Use_structure:out_structure" sink="Structure" />
+  <s:link source="fetchData:fetchDataReturn" sink="Structure" />
+  <s:source name="Structure_or_ID">
+    <s:metadata>
+      <s:description>Either a atructure in PDB format or a PDB entry identifer in database:identifier format (e.g. PDB:1crn).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="Structure">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>chemical/x-pdb</s:mimeType>
+      </s:mimeTypes>
+      <s:description>Structure in PDB format.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:coordination name="fetchData_BLOCKON_Fail_if_sequence">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Fail_if_structure</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>fetchData</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="Use_structure_BLOCKON_Fail_if_identifer">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Fail_if_identifer</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Use_structure</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

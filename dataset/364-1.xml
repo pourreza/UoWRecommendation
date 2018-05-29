@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:2QHN4W0J0A144" author="" title="" />
+  <s:processor name="searchSimple">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.ddbj.nig.ac.jp/wsdl/Blast.wsdl</s:wsdl>
+      <s:operation>searchSimple</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="database" boring="true">
+    <s:stringconstant>SWISS</s:stringconstant>
+  </s:processor>
+  <s:processor name="program" boring="true">
+    <s:stringconstant>blastp</s:stringconstant>
+  </s:processor>
+  <s:processor name="genscan">
+    <s:description>Runs genscan on the input sequence</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:8081/axis/services/seq_analysis.genscan</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="patmatmotifs">
+    <s:description>Search a PROSITE motif database with a
+                  protein sequence</s:description>
+    <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/services/protein_motifs.patmatmotifs</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="dna" sink="genscan:sequence_direct_data" />
+  <s:link source="database:value" sink="searchSimple:database" />
+  <s:link source="genscan:output" sink="genscan_report" />
+  <s:link source="genscan:output" sink="patmatmotifs:sequence_direct_data" />
+  <s:link source="genscan:output" sink="searchSimple:query" />
+  <s:link source="patmatmotifs:outfile" sink="Prosite_matches" />
+  <s:link source="program:value" sink="searchSimple:program" />
+  <s:link source="searchSimple:Result" sink="blast_out" />
+  <s:source name="dna" />
+  <s:sink name="blast_out" />
+  <s:sink name="Prosite_matches" />
+  <s:sink name="genscan_report" />
+</s:scufl>
+
+

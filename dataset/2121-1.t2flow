@@ -1,0 +1,107 @@
+<workflow xmlns="http://taverna.sf.net/2008/xml/t2flow" version="1" producedBy="taverna-2.2.0"><dataflow id="3b7a240c-959b-467f-bffe-a1c2f70140f0" role="top"><name>Workflow3</name><inputPorts><port><name>NP_file</name><depth>1</depth><granularDepth>1</granularDepth><annotations /></port><port><name>SM_file</name><depth>1</depth><granularDepth>1</granularDepth><annotations /></port><port><name>Query_file</name><depth>1</depth><granularDepth>1</granularDepth><annotations /></port><port><name>Score_file</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port><port><name>Fragments_SDF</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port></inputPorts><outputPorts><port><name>Score_file</name><annotations /></port><port><name>SDF_of_Fragments</name><annotations /></port></outputPorts><processors><processor><name>Query_fragments_scorer</name><inputPorts><port><name>NP_file</name><depth>1</depth></port><port><name>SM_file</name><depth>1</depth></port><port><name>QueryFile_Signatures</name><depth>1</depth></port></inputPorts><outputPorts><port><name>Structure_scores</name><depth>1</depth><granularDepth>1</granularDepth></port><port><name>Fragment_structures</name><depth>1</depth><granularDepth>1</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>org.openscience.cdk.applications.taverna</group><artifact>cdk-taverna-2-activity</artifact><version>0.5.1</version></raven><class>org.openscience.cdk.applications.taverna.signaturescoring.QueryFragmentScorerActivity</class><inputMap><map from="NP_file" to="NP_file" /><map from="SM_file" to="SM_file" /><map from="QueryFile_Signatures" to="QueryFile_Signatures" /></inputMap><outputMap><map from="Fragment_structures" to="Fragment_structures" /><map from="Structure_scores" to="Structure_scores" /></outputMap><configBean encoding="xstream"><org.openscience.cdk.applications.taverna.CDKActivityConfigurationBean xmlns="">
+  <activityName>Query fragments scorer</activityName>
+  <folderName>Signature Scoring</folderName>
+  <additionalProperties />
+</org.openscience.cdk.applications.taverna.CDKActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="NP_file" depth="1" /><port name="SM_file" depth="1" /><port name="QueryFile_Signatures" depth="1" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>Text_File_Writer</name><inputPorts><port><name>Strings</name><depth>1</depth></port><port><name>File</name><depth>0</depth></port></inputPorts><outputPorts><port><name>Files</name><depth>1</depth><granularDepth>1</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>org.openscience.cdk.applications.taverna</group><artifact>cdk-taverna-2-activity</artifact><version>0.5.1</version></raven><class>org.openscience.cdk.applications.taverna.io.TextFileWriterActivity</class><inputMap><map from="Strings" to="Strings" /><map from="File" to="File" /></inputMap><outputMap><map from="Files" to="Files" /></outputMap><configBean encoding="xstream"><org.openscience.cdk.applications.taverna.CDKActivityConfigurationBean xmlns="">
+  <activityName>Text File Writer</activityName>
+  <folderName>I/O</folderName>
+  <additionalProperties>
+    <entry>
+      <string>ONE FILE PER ITERATION</string>
+      <boolean>false</boolean>
+    </entry>
+    <entry>
+      <string>FILE EXTENSION</string>
+      <string>.txt</string>
+    </entry>
+  </additionalProperties>
+</org.openscience.cdk.applications.taverna.CDKActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="Strings" depth="1" /><port name="File" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>SDFile_Writer</name><inputPorts><port><name>Structures</name><depth>1</depth></port><port><name>File</name><depth>0</depth></port></inputPorts><outputPorts><port><name>Files</name><depth>1</depth><granularDepth>1</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>org.openscience.cdk.applications.taverna</group><artifact>cdk-taverna-2-activity</artifact><version>0.5.1</version></raven><class>org.openscience.cdk.applications.taverna.io.MDLSDFileWriterActivity</class><inputMap><map from="File" to="File" /><map from="Structures" to="Structures" /></inputMap><outputMap><map from="Files" to="Files" /></outputMap><configBean encoding="xstream"><org.openscience.cdk.applications.taverna.CDKActivityConfigurationBean xmlns="">
+  <activityName>SDFile Writer</activityName>
+  <folderName>I/O</folderName>
+  <additionalProperties>
+    <entry>
+      <string>ONE FILE PER ITERATION</string>
+      <boolean>false</boolean>
+    </entry>
+    <entry>
+      <string>FILE EXTENSION</string>
+      <string>.sdf</string>
+    </entry>
+  </additionalProperties>
+</org.openscience.cdk.applications.taverna.CDKActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.2</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="Structures" depth="1" /><port name="File" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor></processors><conditions /><datalinks><datalink><sink type="processor"><processor>Query_fragments_scorer</processor><port>NP_file</port></sink><source type="dataflow"><port>NP_file</port></source></datalink><datalink><sink type="processor"><processor>Query_fragments_scorer</processor><port>SM_file</port></sink><source type="dataflow"><port>SM_file</port></source></datalink><datalink><sink type="processor"><processor>Query_fragments_scorer</processor><port>QueryFile_Signatures</port></sink><source type="dataflow"><port>Query_file</port></source></datalink><datalink><sink type="processor"><processor>Text_File_Writer</processor><port>Strings</port></sink><source type="processor"><processor>Query_fragments_scorer</processor><port>Structure_scores</port></source></datalink><datalink><sink type="processor"><processor>Text_File_Writer</processor><port>File</port></sink><source type="dataflow"><port>Score_file</port></source></datalink><datalink><sink type="processor"><processor>SDFile_Writer</processor><port>Structures</port></sink><source type="processor"><processor>Query_fragments_scorer</processor><port>Fragment_structures</port></source></datalink><datalink><sink type="processor"><processor>SDFile_Writer</processor><port>File</port></sink><source type="dataflow"><port>Fragments_SDF</port></source></datalink><datalink><sink type="dataflow"><port>Score_file</port></sink><source type="processor"><processor>Text_File_Writer</processor><port>Files</port></source></datalink><datalink><sink type="dataflow"><port>SDF_of_Fragments</port></sink><source type="processor"><processor>SDFile_Writer</processor><port>Files</port></source></datalink></datalinks><annotations><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>c7898ce0-455d-4f44-9bf4-47241b947986</identification>
+      </annotationBean>
+      <date>2011-05-13 10:16:04.442 BST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>1a7f0ea9-69c4-4743-b46d-e97f0d07372e</identification>
+      </annotationBean>
+      <date>2011-05-11 09:46:13.646 BST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>3f598b01-eb2b-41b9-88c7-e255cdac5568</identification>
+      </annotationBean>
+      <date>2011-05-13 14:31:51.653 BST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>3b7a240c-959b-467f-bffe-a1c2f70140f0</identification>
+      </annotationBean>
+      <date>2011-05-13 14:33:47.758 BST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>beedba56-688f-4449-a873-7ba96b91d312</identification>
+      </annotationBean>
+      <date>2011-05-13 14:33:23.794 BST</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2></annotations></dataflow></workflow>

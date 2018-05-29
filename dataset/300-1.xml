@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P308SQKWX847" author="" title="" />
+  <s:processor name="Acc" boring="true">
+    <s:stringconstant>NP_012624</s:stringconstant>
+  </s:processor>
+  <s:processor name="TitleFromGi">
+    <s:description>Gets title given a gi value.</s:description>
+    <s:seqhound>
+      <s:method>SHoundTitleFromGi</s:method>
+      <s:server>seqhound.blueprint.org</s:server>
+      <s:jseqremserver>skinner.blueprint.org:8080</s:jseqremserver>
+      <s:path>/cgi-bin/seqrem</s:path>
+      <s:jseqrempath>/jseqhound/jseqrem</s:jseqrempath>
+    </s:seqhound>
+  </s:processor>
+  <s:processor name="GOIDFromGi">
+    <s:description>retrieves an array of goid for a specified gi</s:description>
+    <s:seqhound>
+      <s:method>SHoundGOIDFromGi</s:method>
+      <s:server>seqhound.blueprint.org</s:server>
+      <s:jseqremserver>skinner.blueprint.org:8080</s:jseqremserver>
+      <s:path>/cgi-bin/seqrem</s:path>
+      <s:jseqrempath>/jseqhound/jseqrem</s:jseqrempath>
+    </s:seqhound>
+  </s:processor>
+  <s:processor name="FindAcc">
+    <s:description>Converts an accession number for a sequence into a
+ GenInfo identifier - GI. 
+ This function will not accept a version number
+ (e.g. NP_116609.1).  The '.1' must be removed from the
+ example version number to form a valid accession.  
+ SeqHound only stores and returns the latest version of</s:description>
+    <s:seqhound>
+      <s:method>SHoundFindAcc</s:method>
+      <s:server>seqhound.blueprint.org</s:server>
+      <s:jseqremserver>skinner.blueprint.org:8080</s:jseqremserver>
+      <s:path>/cgi-bin/seqrem</s:path>
+      <s:jseqrempath>/jseqhound/jseqrem</s:jseqrempath>
+    </s:seqhound>
+  </s:processor>
+  <s:processor name="MuidFromGi">
+    <s:description>Get the MUID for a given gi</s:description>
+    <s:seqhound>
+      <s:method>SHoundMuidFromGi</s:method>
+      <s:server>seqhound.blueprint.org</s:server>
+      <s:jseqremserver>skinner.blueprint.org:8080</s:jseqremserver>
+      <s:path>/cgi-bin/seqrem</s:path>
+      <s:jseqrempath>/jseqhound/jseqrem</s:jseqrempath>
+    </s:seqhound>
+  </s:processor>
+  <s:link source="Acc:value" sink="FindAcc:acc" />
+  <s:link source="FindAcc:result" sink="GOIDFromGi:gi" />
+  <s:link source="FindAcc:result" sink="MuidFromGi:gi" />
+  <s:link source="FindAcc:result" sink="TitleFromGi:gi" />
+  <s:link source="FindAcc:result" sink="Gi_number" />
+  <s:link source="GOIDFromGi:result" sink="GO_ID" />
+  <s:link source="MuidFromGi:result" sink="MU_ID" />
+  <s:link source="TitleFromGi:result" sink="title" />
+  <s:sink name="title" />
+  <s:sink name="MU_ID" />
+  <s:sink name="GO_ID" />
+  <s:sink name="Gi_number" />
+</s:scufl>
+
+

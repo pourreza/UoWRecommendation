@@ -1,0 +1,79 @@
+<workflow xmlns="http://taverna.sf.net/2008/xml/t2flow" version="1" producedBy="taverna-2.4.0"><dataflow id="ddde0008-6cf6-4286-a6a3-2f364f0d3ce8" role="top"><name>Workflow1</name><inputPorts><port><name>oauth_client_id</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port><port><name>oauth_client_secret</name><depth>0</depth><granularDepth>0</granularDepth><annotations /></port></inputPorts><outputPorts><port><name>responseBody</name><annotations /></port><port><name>status</name><annotations /></port></outputPorts><processors><processor><name>Get_Twitter_OAuth_Access_Token</name><inputPorts><port><name>client_id</name><depth>0</depth></port><port><name>client_secret</name><depth>0</depth></port></inputPorts><outputPorts><port><name>access_token</name><depth>0</depth><granularDepth>0</granularDepth></port><port><name>access_token_secret</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>uk.ac.soton.mib104.t2.activities</group><artifact>oauth-activity</artifact><version>0.0.1</version></raven><class>uk.ac.soton.mib104.t2.activities.oauth.OAuthActivity</class><inputMap><map from="client_secret" to="client_secret" /><map from="client_id" to="client_id" /></inputMap><outputMap><map from="access_token_secret" to="access_token_secret" /><map from="access_token" to="access_token" /></outputMap><configBean encoding="xstream"><uk.ac.soton.mib104.t2.activities.oauth.OAuthActivityConfigurationBean xmlns="">
+  <accessTokenEndpoint>https://api.twitter.com/oauth/access_token</accessTokenEndpoint>
+  <accessTokenFormat>TEXT_PLAIN</accessTokenFormat>
+  <accessTokenVerb>POST</accessTokenVerb>
+  <authorizationEndpoint>https://api.twitter.com/oauth/authorize</authorizationEndpoint>
+  <requestTokenEndpoint>https://api.twitter.com/oauth/request_token</requestTokenEndpoint>
+  <requestTokenRequired>true</requestTokenRequired>
+  <requestTokenVerb>POST</requestTokenVerb>
+</uk.ac.soton.mib104.t2.activities.oauth.OAuthActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="client_id" depth="0" /><port name="client_secret" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>Get_Home_Timeline</name><inputPorts><port><name>oauth_access_token</name><depth>0</depth></port><port><name>oauth_access_token_secret</name><depth>0</depth></port><port><name>oauth_client_id</name><depth>0</depth></port><port><name>oauth_client_secret</name><depth>0</depth></port></inputPorts><outputPorts><port><name>responseBody</name><depth>0</depth><granularDepth>0</granularDepth></port><port><name>status</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>uk.ac.soton.mib104.t2.activities</group><artifact>oauth-activity</artifact><version>0.0.1</version></raven><class>uk.ac.soton.mib104.t2.activities.oauth.OAuth10aRESTActivity</class><inputMap><map from="oauth_client_id" to="oauth_client_id" /><map from="oauth_client_secret" to="oauth_client_secret" /><map from="oauth_access_token_secret" to="oauth_access_token_secret" /><map from="oauth_access_token" to="oauth_access_token" /></inputMap><outputMap><map from="status" to="status" /><map from="responseBody" to="responseBody" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.authrest.RESTActivityConfigurationBean xmlns="">
+  <httpMethod>GET</httpMethod>
+  <urlSignature>https://api.twitter.com/1.1/statuses/home_timeline.json</urlSignature>
+  <acceptsHeaderValue>application/json</acceptsHeaderValue>
+  <contentTypeForUpdates>application/xml</contentTypeForUpdates>
+  <outgoingDataFormat>String</outgoingDataFormat>
+  <sendHTTPExpectRequestHeader>false</sendHTTPExpectRequestHeader>
+  <showRedirectionOutputPort>false</showRedirectionOutputPort>
+  <showActualUrlPort>false</showActualUrlPort>
+  <showResponseHeadersPort>false</showResponseHeadersPort>
+  <escapeParameters>true</escapeParameters>
+  <otherHTTPHeaders />
+  <activityInputs>
+    <entry>
+      <string>oauth_scope</string>
+      <java-class>java.lang.String</java-class>
+    </entry>
+    <entry>
+      <string>oauth_client_id</string>
+      <java-class>java.lang.String</java-class>
+    </entry>
+    <entry>
+      <string>oauth_access_token_secret</string>
+      <java-class>java.lang.String</java-class>
+    </entry>
+    <entry>
+      <string>oauth_client_secret</string>
+      <java-class>java.lang.String</java-class>
+    </entry>
+    <entry>
+      <string>oauth_access_token</string>
+      <java-class>java.lang.String</java-class>
+    </entry>
+  </activityInputs>
+</net.sf.taverna.t2.activities.authrest.RESTActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="oauth_access_token" depth="0" /><port name="oauth_access_token_secret" depth="0" /><port name="oauth_client_id" depth="0" /><port name="oauth_client_secret" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor></processors><conditions /><datalinks><datalink><sink type="processor"><processor>Get_Twitter_OAuth_Access_Token</processor><port>client_id</port></sink><source type="dataflow"><port>oauth_client_id</port></source></datalink><datalink><sink type="processor"><processor>Get_Twitter_OAuth_Access_Token</processor><port>client_secret</port></sink><source type="dataflow"><port>oauth_client_secret</port></source></datalink><datalink><sink type="processor"><processor>Get_Home_Timeline</processor><port>oauth_access_token</port></sink><source type="processor"><processor>Get_Twitter_OAuth_Access_Token</processor><port>access_token</port></source></datalink><datalink><sink type="processor"><processor>Get_Home_Timeline</processor><port>oauth_access_token_secret</port></sink><source type="processor"><processor>Get_Twitter_OAuth_Access_Token</processor><port>access_token_secret</port></source></datalink><datalink><sink type="processor"><processor>Get_Home_Timeline</processor><port>oauth_client_id</port></sink><source type="dataflow"><port>oauth_client_id</port></source></datalink><datalink><sink type="processor"><processor>Get_Home_Timeline</processor><port>oauth_client_secret</port></sink><source type="dataflow"><port>oauth_client_secret</port></source></datalink><datalink><sink type="dataflow"><port>responseBody</port></sink><source type="processor"><processor>Get_Home_Timeline</processor><port>responseBody</port></source></datalink><datalink><sink type="dataflow"><port>status</port></sink><source type="processor"><processor>Get_Home_Timeline</processor><port>status</port></source></datalink></datalinks><annotations><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>576c96fe-86b9-4e37-929a-450525a4dc71</identification>
+      </annotationBean>
+      <date>2013-01-22 11:39:04.323 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>ddde0008-6cf6-4286-a6a3-2f364f0d3ce8</identification>
+      </annotationBean>
+      <date>2013-01-22 11:40:11.378 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2></annotations></dataflow></workflow>

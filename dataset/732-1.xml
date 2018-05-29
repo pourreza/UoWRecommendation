@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:6dede55f-d124-405f-8264-76e43f675d81" author="" title="fetch_fasta" />
+  <s:processor name="Get_Nucleotide_FASTA">
+    <s:local>net.sourceforge.taverna.scuflworkers.ncbi.NucleotideFastaWorker</s:local>
+  </s:processor>
+  <s:processor name="Write_Text_File">
+    <s:defaults>
+      <s:default name="outputFile">staph_strains.fna</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileWriter</s:local>
+  </s:processor>
+  <s:processor name="run_blastall">
+    <s:defaults>
+      <s:default name="command">blastall</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.LocalCommand</s:local>
+  </s:processor>
+  <s:processor name="Read_FASTA">
+    <s:defaults>
+      <s:default name="fileurl">C:\taverna-1.7.1\fasta.fna</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="splitIDs">
+    <s:defaults>
+      <s:default name="regex">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="local_create_blastdb">
+    <s:defaults>
+      <s:default name="command">formatdb</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.LocalCommand</s:local>
+  </s:processor>
+  <s:processor name="ClustalW">
+    <s:defaults>
+      <s:default name="command">C:\Program Files\ClustalW2\clustalw2</s:default>
+      <s:default name="args">C:\taverna-1.7.1\fasta.fna</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.LocalCommand</s:local>
+  </s:processor>
+  <s:processor name="Merge_FASTA">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="create_blastall_cmd_args">
+    <s:beanshell>
+      <s:scriptvalue>List cmdArgsList = new ArrayList();
+cmdArgsList.add("-i");
+cmdArgsList.add("./set7.fna");
+cmdArgsList.add("-p");
+cmdArgsList.add("tblastn");
+cmdArgsList.add("-d");
+cmdArgsList.add("customBLASTdb");
+cmdArgsList.add("-o");
+cmdArgsList.add("./blastReport");</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">cmdArgsList</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="create_formatdb_cmdArgs">
+    <s:description>This beanshell will not be run until after the fasta file is written from the Write_Fasta_File processor.
+
+This beanshell creates an array of strings (a list of plain text), with each element containing one element of the arguments for the formatdb command line. Note that you can change the text in the beanshell in the element in the line after the one containing "-n" to set the name of the blast database you want. 
+
+If you want to add any other command line arguments, follow the system in the beanshell. E.g. add the flag, e.g. "-x" in one line, and its argument "somethingOrOther" in another line.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>List cmdArgsList = new ArrayList();
+cmdArgsList.add("-i");
+cmdArgsList.add("./staph_strains.fna");
+cmdArgsList.add("-p");
+cmdArgsList.add("F");
+cmdArgsList.add("-n");
+cmdArgsList.add("customBLASTdb");</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">cmdArgsList</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="parametersXML2">
+    <s:defaults>
+      <s:default name="arg0">C:\taverna-1.7.1\blastReport</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getSequences" name="parameters" qname="{http://seqservice/}getSequences">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="arg0" qname="getSequences&gt;arg0" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Neighbours">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getNeighboursResponse" name="parameters" qname="{http://seqservice/}getNeighboursResponse">
+          <s:elements>
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="return" qname="getNeighboursResponse&gt;return">
+              <s:elementtype>
+                <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="getNeighbours">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://localhost:9000/SeqService?wsdl</s:wsdl>
+      <s:operation>getNeighbours</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="addSequenceToFasta">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://localhost:9000/SeqService?wsdl</s:wsdl>
+      <s:operation>addSequenceToFasta</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getSequences">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://localhost:9000/SeqService?wsdl</s:wsdl>
+      <s:operation>getSequences</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="isMRSA">
+    <s:workflow>
+      <s:xscufllocation>file:/C:/taverna-1.7.1/isMRSA.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="EBI_TCoffee">
+    <s:defaults>
+      <s:default name="Email_address">david.fox1@ncl.ac.uk</s:default>
+    </s:defaults>
+    <s:workflow>
+      <s:xscufllocation>http://www.myexperiment.org/workflows/222/download?version=1</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="draw_tree">
+    <s:defaults>
+      <s:default name="command">C:\Program Files\Rod Page\TreeView\treev32</s:default>
+      <s:default name="args">C:\taverna-1.7.1\fasta.dnd</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.LocalCommand</s:local>
+  </s:processor>
+  <s:link source="Get_Nucleotide_FASTA:outputText" sink="Merge_FASTA:stringlist" />
+  <s:link source="Merge_FASTA:concatenated" sink="Write_Text_File:filecontents" />
+  <s:link source="create_blastall_cmd_args:cmdArgsList" sink="run_blastall:args" />
+  <s:link source="create_formatdb_cmdArgs:cmdArgsList" sink="local_create_blastdb:args" />
+  <s:link source="sequenceIds" sink="splitIDs:string" />
+  <s:link source="parametersXML2:output" sink="getSequences:parameters" />
+  <s:link source="query_strain_id" sink="isMRSA:sequenceId" />
+  <s:link source="Read_FASTA:filecontents" sink="EBI_TCoffee:Sequences" />
+  <s:link source="email" sink="EBI_TCoffee:Email_address" />
+  <s:link source="getNeighbours:parameters" sink="Neighbours:input" />
+  <s:link source="splitIDs:split" sink="Get_Nucleotide_FASTA:id" />
+  <s:link source="ClustalW:result" sink="tree" />
+  <s:link source="EBI_TCoffee:TCoffee_alignment" sink="alignment" />
+  <s:link source="Merge_FASTA:concatenated" sink="nuc_fasta" />
+  <s:link source="Neighbours:return" sink="Neighbours" />
+  <s:link source="isMRSA:isMRSA" sink="isMRSA" />
+  <s:source name="sequenceIds" />
+  <s:source name="query_strain_id" />
+  <s:source name="email" />
+  <s:sink name="nuc_fasta" />
+  <s:sink name="alignment" />
+  <s:sink name="isMRSA" />
+  <s:sink name="Neighbours" />
+  <s:sink name="tree" />
+  <s:coordination name="create_formatdb_cmdArgs_BLOCKON_Write_Text_File">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Write_Text_File</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>create_formatdb_cmdArgs</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="run_blastall_BLOCKON_local_create_blastdb">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>local_create_blastdb</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>run_blastall</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="parametersXML2_BLOCKON_run_blastall">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>run_blastall</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>parametersXML2</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="Read_FASTA_BLOCKON_getSequences">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>getSequences</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Read_FASTA</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="Read_FASTA_BLOCKON_addSequenceToFasta">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>addSequenceToFasta</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Read_FASTA</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="addSequenceToFasta_BLOCKON_run_blastall">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>run_blastall</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>addSequenceToFasta</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="getNeighbours_BLOCKON_run_blastall">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>run_blastall</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>getNeighbours</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="ClustalW_BLOCKON_Read_FASTA">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Read_FASTA</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>ClustalW</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="draw_tree_BLOCKON_ClustalW">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>ClustalW</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>draw_tree</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

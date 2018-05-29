@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:1288059a-3b3a-4db2-b889-4869d4558ca5" author="" title="Find address entry" />
+  <s:processor name="returnXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="Entry" name="return" qname="{http://entry.addressbook.sample/xsd}Entry">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="city" qname="{http://www.w3.org/2001/XMLSchema}string" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="name" qname="{http://www.w3.org/2001/XMLSchema}string" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="postalCode" qname="{http://www.w3.org/2001/XMLSchema}string" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="state" qname="{http://www.w3.org/2001/XMLSchema}string" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="street" qname="{http://www.w3.org/2001/XMLSchema}string" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="part1XML1">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="findEntry" name="part1" qname="{http://service.addressbook.sample/xsd}findEntry">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="param0" qname="{http://www.w3.org/2001/XMLSchema}string" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="part1XML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="findEntryResponse" name="part1" qname="{http://service.addressbook.sample/xsd}findEntryResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="Entry" name="return" qname="{http://entry.addressbook.sample/xsd}Entry">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="city" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="name" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="postalCode" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="state" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="street" qname="{http://www.w3.org/2001/XMLSchema}string" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="findEntry">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://localhost:8080/axis2/services/AddressBookService?wsdl</s:wsdl>
+      <s:operation>findEntry</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Beanshell_scripting_host">
+    <s:beanshell>
+      <s:scriptvalue>address = "Name : " + name + "\nStreet : " + street + "\nCity : " + city + "\nState : " + state + "\nPost Code : " + postCode;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">name</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">street</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">city</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">state</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">postCode</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">address</s:beanshelloutput>
+      </s:beanshelloutputlist>
+    </s:beanshell>
+  </s:processor>
+  <s:link source="param" sink="part1XML1:param0" />
+  <s:link source="Beanshell_scripting_host:address" sink="address" />
+  <s:link source="findEntry:part1" sink="part1XML:input" />
+  <s:link source="part1XML1:output" sink="findEntry:part1" />
+  <s:link source="part1XML:return" sink="returnXML:input" />
+  <s:link source="returnXML:city" sink="Beanshell_scripting_host:city" />
+  <s:link source="returnXML:name" sink="Beanshell_scripting_host:name" />
+  <s:link source="returnXML:postalCode" sink="Beanshell_scripting_host:postCode" />
+  <s:link source="returnXML:state" sink="Beanshell_scripting_host:state" />
+  <s:link source="returnXML:street" sink="Beanshell_scripting_host:street" />
+  <s:source name="param" />
+  <s:sink name="address" />
+</s:scufl>
+

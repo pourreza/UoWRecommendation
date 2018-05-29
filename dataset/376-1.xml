@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:253527c3-d542-4340-a3e0-75de2210e706" author="Andrea Wiggins" title="Data Set Metadata Generator">This workflow generates ePrints XML import files with data set metadata for the FLOSSmole project. It reads in an input file generated from a Notre Dame SourceForge dump SQL query and uses regular expressions to parse the filename for the data set's source repository, download URL, and basic description. It also translates the epoch date into a sql format suitable for import, and the file size from bytes into larger units, e.g. GB, MB, etc. These data are inserted into an XML eprint record template (specific to the FLOSSmole ePrints repository configuration at wp.floss.syr.edu) and the individual eprints are aggregated into an XML import file.</s:workflowdescription>
+  <s:processor name="read_input">
+    <s:description>Shim to read in the file, location provided by a string constant.</s:description>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="file_location" boring="true">
+    <s:description>Edit to use your local path to the input file location.</s:description>
+    <s:stringconstant>/inputfilelocation/inputfile.txt</s:stringconstant>
+  </s:processor>
+  <s:processor name="split_rows">
+    <s:description>Takes a flat CSV input file and splits it into a list.</s:description>
+    <s:defaults>
+      <s:default name="regex">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="split_more">
+    <s:description>Takes the list input and creates a 2-deep list.</s:description>
+    <s:defaults>
+      <s:default name="regex">,</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="parse_filename_for_description">
+    <s:description>Creates a general description of the data set contents based on regex matching on filenames.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>import java.util.regex.Pattern;
+
+//file_name = filename.get(0);
+
+String dm_regex = ".*datamart.*";
+String copy_regex = ".*opyright.*";
+String lic_regex = ".*icense.*";
+String author_regex = ".*uthor.*";
+String desc_regex = ".*[d|D]esc.*";
+String stats_regex = ".*[s|S]tats.*";
+String ossmole_regex = "ossmole.*";
+String trove_regex = ".*[t|T]rove.*";
+String url_regex = ".*[u|U][r|R][L|l].*";
+String date_regex = ".*[d|D]ate.*";
+String list_regex = ".*[L|l]ist.*";
+String donor_regex = ".*[d|D]onor.*";
+String download_regex = ".*[d|D]ownload.*";
+String lang_regex = ".*rog[L|l]ang.*|.*anguage.*";
+
+String dbenv_regex = ".*[D|d][b|B][e|E]nv.*";
+String rank_regex = ".*[r|R]ank.*";
+String forum_regex = ".*[f|F]orum.*";
+String tracker_regex = ".*racker.*";
+String name_regex = ".*[n|N]ame.*";
+String aud_regex = ".*[i|I]nt[a|A]ud.*";
+String info_regex = ".*nfo.*";
+String topic_regex = ".*[t|T]opic.*";
+String status_regex = ".*[S|s]tatus.*";
+String os_regex = ".*[o|O]p[s|S]ys.*";
+String env_regex = ".*[e|E]nviro.*";
+String dev_regex = ".*evelopers.*|.*[D|d]eveloper[d|D]ata.*";
+String devproj_regex = ".*[D|d]eveloper[P|p]roject.*|.*[d|D]ev[p|P]roject.*|.*[d|D]eveloper_[p|P]roj.*";
+String natlang_regex = ".*[n|N]at[l|L]ang.*";
+String userint_regex = ".*[i|I]nterface.*|.*[u|U]ser[I|i]nt.*";
+
+
+if (Pattern.matches(dm_regex, filename)) {
+	description = "Datamart package of all data for the project made in this release.";
+} else {
+	if (Pattern.matches(ossmole_regex, filename)) {
+		description = "Data used to generate the FLOSSmole data products.";
+	} else {
+	if (Pattern.matches(dbenv_regex, filename)) {
+		description = "Database environment information.";
+	} else {
+	if (Pattern.matches(lic_regex, filename)) {
+		description = "Project license information.";
+	} else {
+	if (Pattern.matches(author_regex, filename)) {
+		description = "Project authorship data.";
+	} else {
+	if (Pattern.matches(desc_regex, filename)) {
+		description = "Project descriptive data.";
+	} else {
+	if (Pattern.matches(stats_regex, filename)) {
+		description = "Project statistics.";
+	} else {
+	if (Pattern.matches(trove_regex, filename)) {
+		description = "Classification of topics.";
+	} else {
+	if (Pattern.matches(url_regex, filename)) {
+		description = "Project URLs.";
+	} else {
+	if (Pattern.matches(list_regex, filename)) {
+		description = "Project list for the source repository.";
+	} else {
+	if (Pattern.matches(date_regex, filename)) {
+		description = "Date projects were founded.";
+	} else {
+	if (Pattern.matches(donor_regex, filename)) {
+		description = "Donor information for projects.";
+	} else {
+	if (Pattern.matches(download_regex, filename)) {
+		description = "Download statistics.";
+	} else {
+	if (Pattern.matches(lang_regex, filename)) {
+		description = "Project programming language.";
+	} else {
+	if (Pattern.matches(rank_regex, filename)) {
+		description = "Project ranking within the source repository.";
+	} else {
+	if (Pattern.matches(forum_regex, filename)) {
+		description = "Project forum data.";
+	} else {
+	if (Pattern.matches(tracker_regex, filename)) {
+		description = "Project tracker data.";
+	} else {
+	if (Pattern.matches(name_regex, filename)) {
+		description = "Project names.";
+	} else {
+	if (Pattern.matches(aud_regex, filename)) {
+		description = "Intended audience for the product.";
+	} else {
+	if (Pattern.matches(info_regex, filename)) {
+		description = "Project information.";
+	} else {
+	if (Pattern.matches(topic_regex, filename)) {
+		description = "Project topic information.";
+	} else {
+	if (Pattern.matches(status_regex, filename)) {
+		description = "Project status data.";
+	} else {
+	if (Pattern.matches(os_regex, filename)) {
+		description = "Operating system information.";
+	} else {
+	if (Pattern.matches(env_regex, filename)) {
+		description = "Project development environment.";
+	} else {
+	if (Pattern.matches(dev_regex, filename)) {
+		description = "Project developers.";
+	} else {
+	if (Pattern.matches(devproj_regex, filename)) {
+		description = "Developers and projects association data.";
+	} else {
+	if (Pattern.matches(natlang_regex, filename)) {
+		description = "Project native development language.";
+	} else {
+	if (Pattern.matches(userint_regex, filename)) {
+		description = "User interface information.";
+	} else {
+		description = "";
+	}
+}}}}
+}}}}
+}}}}
+}}}
+}}}
+}}}
+}}}
+}}}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">filename</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">description</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="parse_filename_for_source">
+    <s:description>Extracts the repository data source from each filename.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>import java.util.regex.Pattern;
+
+//file_name = filename.get(0);
+
+String ow_regex = "^ow.*";
+String sf_regex = "^sf.*";
+String proj_regex = "^project.*";
+String fm_regex = "^fm.*";
+String rf_regex = "^rf.*";
+String fsf_regex = "^fsf.*";
+String debian_regex = "^deb.*";
+String ossmole_regex = "^ossmole.*";
+String sk_regex = "^sk.*";
+String dm_fm_regex = "^datamart_fm.*";
+String dm_sf_regex = "^datamart_sf.*";
+String dm_ow_regex = "^datamart_ow.*";
+String dm_rf_regex = "^datamart_rf.*";
+String dm_deb_regex = "^datamart_deb.*";
+String dm_fsf_regex = "^datamart_fsf.*";
+
+
+if (Pattern.matches(ow_regex, filename)) {
+	source = "ObjectWeb";
+} else {
+	if (Pattern.matches(sf_regex, filename)) {
+		source = "SourceForge";
+	} else {
+	if (Pattern.matches(proj_regex, filename)) {
+		source = "FLOSSmole";
+	} else {
+	if (Pattern.matches(fm_regex, filename)) {
+		source = "freshmeat";
+	} else {
+	if (Pattern.matches(rf_regex, filename)) {
+		source = "RubyForge";
+	} else {
+	if (Pattern.matches(fsf_regex, filename)) {
+		source = "Free Software Foundation";
+	} else {
+	if (Pattern.matches(debian_regex, filename)) {
+		source = "Debian";
+	} else {
+	if (Pattern.matches(sk_regex, filename)) {
+		source = "Source Kibitzer";
+	} else {
+	if (Pattern.matches(ossmole_regex, filename)) {
+		source = "FLOSSmole";
+	} else {
+	if (Pattern.matches(dm_ow_regex, filename)) {
+		source = "ObjectWeb";
+	} else {
+	if (Pattern.matches(dm_sf_regex, filename)) {
+		source = "SourceForge";
+	} else {
+	if (Pattern.matches(dm_fm_regex, filename)) {
+		source = "freshmeat";
+	} else {
+	if (Pattern.matches(dm_rf_regex, filename)) {
+		source = "RubyForge";
+	} else {
+	if (Pattern.matches(dm_fsf_regex, filename)) {
+		source = "Free Software Foundation";
+	} else {
+	if (Pattern.matches(dm_deb_regex, filename)) {
+		source = "Debian";
+	} else {
+		source = "other";
+	}
+}}
+}}
+}}
+}}
+}}
+}}
+}
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">filename</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">source</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="aggregate_eprints">
+    <s:description>Aggregates the individual eprint records into a depositable XML file, configured specifically for the wp.floss.syr.edu ePrints repository.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>delim = "\n";
+
+count = eprint.size();
+
+out = "&lt;eprints&gt;" + delim;
+
+for(i = 0; i &lt; count; i++) {
+out = out + eprint.get(i);
+out = out + delim;
+}
+out = out + "&lt;/eprints&gt;";
+
+import_file = out;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">eprint</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">import_file</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="change_date_format">
+    <s:description>Changes the date format from epoch to sql.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>import java.text.SimpleDateFormat;
+
+sql = new SimpleDateFormat("yyyy-MM-dd");
+
+epochSecs = Long.parseLong(post_date);
+// using the Date(long epochMilliSecs) constructor
+epochTrue = epochSecs * 1000;
+epochDate = new Date(epochTrue);
+
+date_posted = sql.format(epochDate);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">post_date</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">date_posted</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="format_filesize">
+    <s:description>Formats the filesize in bytes into a more human-readable format, conditionally displaying results in GB, MB, KB, or B.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>bytes = Integer.parseInt(filesize);
+		kbytes = bytes / 1000;
+		mbytes = kbytes / 1000;
+		gbytes = mbytes / 1000;
+		
+		if (gbytes &gt;= 1) {
+			formatted_filesize = +gbytes+" GB";
+		} else {
+		if (mbytes &gt;= 1) {
+			formatted_filesize = +mbytes+" MB";
+		} else {
+		if (kbytes &gt;= 1) {
+			formatted_filesize = +kbytes+" KB";
+		} else {
+			formatted_filesize = +bytes+" B";
+		}
+		}
+	}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">filesize</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">formatted_filesize</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="build_URL_from_filename">
+    <s:description>Constructs the SourceForge file download URL for FLOSSmole data sets, given the name of the files.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>url = "http://downloads.sourceforge.net/ossmole/"+filename+"";</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">filename</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="parse_filename_for_filetype">
+    <s:description>Uses pattern matching to identify file types in file names.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>import java.util.regex.Pattern;
+
+//file_name = filename.get(0);
+
+String bz2_regex = ".*bz2$";
+String gz_regex = ".*gz$";
+String txt_regex = ".*txt$";
+
+if (Pattern.matches(bz2_regex, filename)) {
+	filetype = ".bz2";
+} else {
+	if (Pattern.matches(gz_regex, filename)) {
+		filetype = ".gz";
+	} else {
+	if (Pattern.matches(txt_regex, filename)) {
+		filetype = ".txt";
+	} else {
+		filetype = "other";
+	}
+	}
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">filename</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">filetype</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="split_fields">
+    <s:description>Reads the 2-deep input list and splits out the values into separate variables. Not all fields were used.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>file_name = file.get(0);
+post_date = file.get(3);
+filesize = file.get(2);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">file</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">file_name</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">post_date</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">filesize</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:iterator xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10" name="file" />
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="generate_xml_record">
+    <s:description>Generates an XML ePrint record based on a template specifically configured for data set deposit in the wp.floss.syr.edu ePrints repository.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>eprint_record = "&lt;eprint&gt;&lt;userid&gt;232&lt;/userid&gt;&lt;type&gt;dataset&lt;/type&gt;&lt;data_type&gt;archive/secondary&lt;/data_type&gt;&lt;abstract&gt;"+description+"&lt;/abstract&gt;&lt;creators&gt;&lt;item&gt;&lt;name&gt;&lt;given&gt;Megan&lt;/given&gt;&lt;family&gt;Squire&lt;/family&gt;&lt;lineage/&gt;&lt;honourific/&gt;&lt;/name&gt;&lt;id&gt;megan@elon.edu&lt;/id&gt;&lt;/item&gt;&lt;item&gt;&lt;name&gt;&lt;given&gt;Kevin&lt;/given&gt;&lt;family&gt;Crowston&lt;/family&gt;&lt;lineage/&gt;&lt;honourific/&gt;&lt;/name&gt;&lt;id&gt;crowston@syr.edu&lt;/id&gt;&lt;/item&gt;&lt;item&gt;&lt;name&gt;&lt;given&gt;James&lt;/given&gt;&lt;family&gt;Howison&lt;/family&gt;&lt;lineage/&gt;&lt;honourific/&gt;&lt;/name&gt;&lt;id&gt;jhowison@syr.edu&lt;/id&gt;&lt;/item&gt;&lt;/creators&gt;&lt;producers&gt;&lt;item&gt;FLOSSmole&lt;/item&gt;&lt;/producers&gt;&lt;title&gt;"+filename+"&lt;/title&gt;&lt;ispublished&gt;dep&lt;/ispublished&gt;&lt;output_media&gt;download&lt;/output_media&gt;&lt;publisher&gt;FLOSSmole&lt;/publisher&gt;&lt;official_url&gt;"+url+"&lt;/official_url&gt;&lt;funders&gt;&lt;item&gt;US NSF Grant 07-08437&lt;/item&gt;&lt;/funders&gt;&lt;data_file_format&gt;"+filetype+"&lt;/data_file_format&gt;&lt;data_file_size&gt;"+filesize+"&lt;/data_file_size&gt;&lt;dataset_format&gt;CSV&lt;/dataset_format&gt;&lt;source_repository&gt;"+source+"&lt;/source_repository&gt;&lt;note&gt;FLOSS research data mined from source repositories for the FLOSSmole project. Data are freely available for use; citation requested.&lt;/note&gt;&lt;date&gt;"+post_date+"&lt;/date&gt;&lt;date_type&gt;deposited&lt;/date_type&gt;&lt;subjects&gt;&lt;item&gt;flossmole&lt;/item&gt;&lt;/subjects&gt;&lt;/eprint&gt;";</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">filename</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">source</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">filesize</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">post_date</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">filetype</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">url</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">description</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">eprint_record</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="description" />
+        <i:iterator name="url" />
+        <i:iterator name="filetype" />
+        <i:iterator name="post_date" />
+        <i:iterator name="filesize" />
+        <i:iterator name="source" />
+        <i:iterator name="filename" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:link source="aggregate_eprints:import_file" sink="XMLoutput" />
+  <s:link source="build_URL_from_filename:url" sink="generate_xml_record:url" />
+  <s:link source="change_date_format:date_posted" sink="generate_xml_record:post_date" />
+  <s:link source="file_location:value" sink="read_input:fileurl" />
+  <s:link source="format_filesize:formatted_filesize" sink="generate_xml_record:filesize" />
+  <s:link source="generate_xml_record:eprint_record" sink="aggregate_eprints:eprint" />
+  <s:link source="parse_filename_for_description:description" sink="generate_xml_record:description" />
+  <s:link source="parse_filename_for_filetype:filetype" sink="generate_xml_record:filetype" />
+  <s:link source="parse_filename_for_source:source" sink="generate_xml_record:source" />
+  <s:link source="read_input:filecontents" sink="split_rows:string" />
+  <s:link source="split_fields:file_name" sink="build_URL_from_filename:filename" />
+  <s:link source="split_fields:file_name" sink="generate_xml_record:filename" />
+  <s:link source="split_fields:file_name" sink="parse_filename_for_description:filename" />
+  <s:link source="split_fields:file_name" sink="parse_filename_for_filetype:filename" />
+  <s:link source="split_fields:file_name" sink="parse_filename_for_source:filename" />
+  <s:link source="split_fields:filesize" sink="format_filesize:filesize" />
+  <s:link source="split_fields:post_date" sink="change_date_format:post_date" />
+  <s:link source="split_more:split" sink="split_fields:file" />
+  <s:link source="split_rows:split" sink="split_more:string" />
+  <s:sink name="XMLoutput">
+    <s:metadata>
+      <s:description>Text output of XML input file for ePrints metadata records.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:3cd05093-831d-464c-b24d-f4bcf9d0cf4d" author="Paul Dobson" title="CDK Example">This workflow reads a library from an SD file (change the default value of Read_MDL_SD_File) and identifies those structures that conform to Lipinski's Rule of Five.
+
+It then performs a substructure query, represented as SMILES (change the default value on Parse_SMILES), on the structures that pass Lipinski, and creates PNG images of those structures that contain the substructure.
+
+The image results will be found in your Taverna Data folder.</s:workflowdescription>
+  <s:processor name="Substructure_Filter">
+    <s:cdk>org.openscience.cdk.applications.taverna.isomorphism.SubstructureFilter</s:cdk>
+  </s:processor>
+  <s:processor name="Parse_SMILES">
+    <s:defaults>
+      <s:default name="SMILE">c1cccc1</s:default>
+    </s:defaults>
+    <s:cdk>org.openscience.cdk.applications.taverna.smiles.SMILESParser</s:cdk>
+  </s:processor>
+  <s:processor name="Create_PNG_File_with_2D_Structures">
+    <s:cdk>org.openscience.cdk.applications.taverna.renderers.CreatePNGWith2DStructures</s:cdk>
+  </s:processor>
+  <s:processor name="Read_MDL_SD_File">
+    <s:cdk>org.openscience.cdk.applications.taverna.io.ReadMDLSDFile</s:cdk>
+  </s:processor>
+  <s:processor name="Rule_of_Five_Filter">
+    <s:cdk>org.openscience.cdk.applications.taverna.qsar.descriptors.molecular.RuleOfFiveFilter</s:cdk>
+  </s:processor>
+  <s:link source="Parse_SMILES:resultStructure" sink="Substructure_Filter:subStructure" />
+  <s:link source="Read_MDL_SD_File:resultStructure" sink="Rule_of_Five_Filter:inputStructures" />
+  <s:link source="Rule_of_Five_Filter:matchingStructures" sink="Substructure_Filter:inputStructures" />
+  <s:link source="Substructure_Filter:matchingStructures" sink="Create_PNG_File_with_2D_Structures:inputStructures" />
+</s:scufl>
+

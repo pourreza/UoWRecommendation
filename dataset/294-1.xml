@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:P81DV9PQW02" author="" title="" />
+  <s:processor name="split_by_regex">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="regex" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="getGeneInfo">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/Ensembl.wsdl</s:wsdl>
+      <s:operation>getGeneInfo</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="parse_sequence">
+    <s:beanshell>
+      <s:scriptvalue>String[] split = input.split("\n");
+Vector nonEmpty = new Vector();
+
+for (int i = 0; i &lt; split.length; i++) 
+{		
+	String trimmed = split[i].trim();
+	String[] trimmedSplit = trimmed.split("\t");
+	System.out.println(trimmedSplit.length);
+	if (trimmedSplit.length == 4){
+	    nonEmpty.add(trimmedSplit[3].trim());	
+	}
+}
+
+String output = "";
+
+for (int i = 0; i &lt; nonEmpty.size(); i++)
+{
+	output = output + (String) (nonEmpty.elementAt(i) + "\n");
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="options3" boring="true">
+    <s:stringconstant>seq</s:stringconstant>
+  </s:processor>
+  <s:processor name="parse_gene_info_3">
+    <s:description>extract information from geneGeneInfo processor at http://xml.nig.ac.jp/wsdl/Ensembl.wsdl</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.parse_ddbj_gene_info</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="genes_in_region" sink="split_by_regex:string" />
+  <s:link source="getGeneInfo:Result" sink="parse_gene_info_3:file_direct_data" />
+  <s:link source="options3:value" sink="parse_gene_info_3:options" />
+  <s:link source="parse_gene_info_3:output" sink="parse_sequence:input" />
+  <s:link source="parse_sequence:output" sink="sequences" />
+  <s:link source="regex:value" sink="split_by_regex:regex" />
+  <s:link source="split_by_regex:split" sink="getGeneInfo:geneId" />
+  <s:source name="genes_in_region" />
+  <s:sink name="sequences" />
+</s:scufl>
+
+

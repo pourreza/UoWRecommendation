@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:58D5AYHL1761" author="Paolo Romano, National Cancer Research Institute of Genoa, Italy" title="Retrieve full descriptions of bacteria strains from CABRI catalogues (see www.cabri.org) by their scientific name (genus and species only)">This workflow retrieves the full description of bacteria strains that are available in the CABRI network services (see www.cabri.org).
+
+Input are the name of the involved CABRI catalogues (text/plain string with one catalogue name per line) and the scientific name of the desired bacteria strain (a text/plain string including genus and species separated by a blank space).
+
+Data are retrieved from the CABRI Web Services in two steps. First, all bacteria strains IDs are retrieved by using the getBacteriaIdsByName method, and after descriptions are retrieved by using the getBacteriaById method.
+
+Some list/text elaboration is required to remove catalogue names from retirned IDs and to substitute blank spaces with the '_SP_' string in the search terms.</s:workflowdescription>
+  <s:processor name="line_terminator">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="Substitute_blanks_in_IDs">
+    <s:beanshell>
+      <s:scriptvalue>output_str = input_str.replaceAll(" ","_SP_");</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input_str</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output_str</s:beanshelloutput>
+      </s:beanshelloutputlist>
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Extract_acc_no">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="Separate_bacteria_ids">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="acc_no_regex">
+    <s:stringconstant>([A-Z_]*:)([ A-Z0-9-]*)</s:stringconstant>
+  </s:processor>
+  <s:processor name="acc_no_pos">
+    <s:stringconstant>2</s:stringconstant>
+  </s:processor>
+  <s:processor name="Substitute_blanks_in_scientific_name">
+    <s:beanshell>
+      <s:scriptvalue>output_str = input_str.replaceAll(" ","_SP_");</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input_str</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output_str</s:beanshelloutput>
+      </s:beanshelloutputlist>
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="getBacteriaIdsByName">
+    <s:description>Get bacteria strain ids by name from CABRI bacteria catalogues (see www.cabri.org)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/cabri::getBacteriaIdsByName</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getBacteriaById">
+    <s:description>Get bacteria strains by Id from CABRI bacteria catalogues (see www.cabri.org)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/cabri::getBacteriaById</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="Separate_bacteria_ids:split" sink="Extract_acc_no:stringlist" />
+  <s:link source="acc_no_regex:value" sink="Extract_acc_no:regex" />
+  <s:link source="line_terminator:value" sink="Separate_bacteria_ids:regex" />
+  <s:link source="acc_no_pos:value" sink="Extract_acc_no:group" />
+  <s:link source="Extract_acc_no:filteredlist" sink="Substitute_blanks_in_IDs:input_str" />
+  <s:link source="scientific_name" sink="Substitute_blanks_in_scientific_name:input_str" />
+  <s:link source="Substitute_blanks_in_scientific_name:output_str" sink="getBacteriaIdsByName:name" />
+  <s:link source="catalogues" sink="getBacteriaIdsByName:libs" />
+  <s:link source="getBacteriaIdsByName:result" sink="Separate_bacteria_ids:string" />
+  <s:link source="Substitute_blanks_in_IDs:output_str" sink="getBacteriaById:id" />
+  <s:link source="catalogues" sink="getBacteriaById:libs" />
+  <s:link source="getBacteriaById:result" sink="bactria_strains_descriptions" />
+  <s:source name="catalogues" />
+  <s:source name="scientific_name" />
+  <s:sink name="bactria_strains_descriptions" />
+</s:scufl>
+
+

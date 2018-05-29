@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:VZJS5NJL4P0" author="" title="ddbjBlastn" />
+  <s:processor name="blastsimplifier">
+    <s:description>Simplifies BLAST output for later use</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:8555/axis/services/seq_analysis.blastsimplifier</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="blast_ddbj">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/Blast.wsdl</s:wsdl>
+      <s:operation>searchSimple</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="gi_number" boring="true">
+    <s:stringconstant>gi</s:stringconstant>
+  </s:processor>
+  <s:processor name="query_seq" boring="true">
+    <s:stringconstant>MSSRIARALALVVTLLHLTRLALSTCPAACHCPLEAPKCAPGVGLVRDGCGCCKVCAKQL</s:stringconstant>
+  </s:processor>
+  <s:processor name="database" boring="true">
+    <s:stringconstant>SWISS</s:stringconstant>
+  </s:processor>
+  <s:processor name="program" boring="true">
+    <s:stringconstant>blastp</s:stringconstant>
+  </s:processor>
+  <s:processor name="GetFasta">
+    <s:description>The FASTA format is widely used in bioinformatics community;
+ it consists of a definition line, new line followed by a
+ sequence terminated by a second new line.</s:description>
+    <s:seqhound>
+      <s:method>SHoundGetFasta</s:method>
+      <s:server>seqhound.blueprint.org</s:server>
+      <s:jseqremserver>skinner.blueprint.org:8080</s:jseqremserver>
+      <s:path>/cgi-bin/seqrem</s:path>
+      <s:jseqrempath>/jseqhound/jseqrem</s:jseqrempath>
+    </s:seqhound>
+  </s:processor>
+  <s:processor name="MoleculeType">
+    <s:description>determines the molecular type given a gi</s:description>
+    <s:seqhound>
+      <s:method>SHoundMoleculeType</s:method>
+      <s:server>seqhound.blueprint.org</s:server>
+      <s:jseqremserver>skinner.blueprint.org:8080</s:jseqremserver>
+      <s:path>/cgi-bin/seqrem</s:path>
+      <s:jseqrempath>/jseqhound/jseqrem</s:jseqrempath>
+    </s:seqhound>
+  </s:processor>
+  <s:link source="GetFasta:result" sink="fasta_sequences" />
+  <s:link source="MoleculeType:result" sink="molecular_type" />
+  <s:link source="blast_ddbj:Result" sink="blastsimplifier:new_direct_data" />
+  <s:link source="blastsimplifier:output" sink="GetFasta:gi" />
+  <s:link source="blastsimplifier:output" sink="MoleculeType:gi" />
+  <s:link source="database:value" sink="blast_ddbj:database" />
+  <s:link source="gi_number:value" sink="blastsimplifier:gi" />
+  <s:link source="program:value" sink="blast_ddbj:program" />
+  <s:link source="query_seq:value" sink="blast_ddbj:query" />
+  <s:link source="blastsimplifier:output" sink="blast_simple" />
+  <s:sink name="blast_simple" />
+  <s:sink name="fasta_sequences" />
+  <s:sink name="molecular_type" />
+</s:scufl>
+
+

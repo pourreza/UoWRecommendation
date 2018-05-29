@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:d6115b6f-ff4d-4192-bf22-93d321c853ef" author="Bela Tiwari" title="fetchEnsemblSeqsAndBlast">This workflow allows you to configure a BioMart query to fetch sequences you want from Ensembl. These sequences are retrieved and a blast database of them is created (by default, in the directory you ran taverna from). 
+
+Warning: This workflow assumes that you have blastall and formatdb installed on the machine, and that by default, these are both found or linked in /usr/local/bin. It also assumes that you have write permission to the directory you have run taverna from. The beanshells "create_blastall_cmdArgs" and "create_formatdb_cmdArgs" are what you need to edit if the default locations are not appropriate for you.
+
+Shortcomings:
+The names of all the files created and used is hard coded in this workflow. This means that if you run this workflow more than once without editing anything, you will overwrite files you have previously created.
+
+All files created in the working directory are not yet coded to be deleted via the workflow. Ideally there would be an option that a user could choose that would set the files to be kept or deleted after use.</s:workflowdescription>
+  <s:processor name="local_create_blastdb">
+    <s:defaults>
+      <s:default name="command">/usr/local/bin/formatdb</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.LocalCommand</s:local>
+  </s:processor>
+  <s:processor name="runBlastSearch">
+    <s:description>This runs the blastall command (NCBI blast) on your local machine. This means you need to have blastall installed. The location provided is /usr/local/bin/blastall, so if your executable is not in that location, you will need to edit this. If you are working on a Bio-Linux machine, this should work for you without change.
+
+Note that the blast results are written to your hard disk in the working directory by default. Edit the location indicated in the create_blastall_cmdArgs beanshell in the line after the one adding "-o" if you are not happy with this.</s:description>
+    <s:defaults>
+      <s:default name="command">/usr/local/bin/blastall</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.LocalCommand</s:local>
+  </s:processor>
+  <s:processor name="create_blastall_cmdArgs">
+    <s:description>This beanshell creates an array of strings (a list of plain text), with each element containing one element of the arguments for the blastall command line. For the familiar blastall command line arguments to be put together in such a way that this the runBlastSearch processor will understand them, they need to have the flag added as a separate element in the list, right before its argument. 
+
+Note the defaults are probably not what you want - you need to edit them!
+
+You can also add additional arguments by configuring the beanshell. For example, to indicate that you wish to limit the hits reported to just those with e-values below 0.1, you would add the following text to the bottom of the beanshell:
+
+cmdArgsList.add("-e");
+cmdArgsList.add("0.1");</s:description>
+    <s:beanshell>
+      <s:scriptvalue>List cmdArgsList = new ArrayList();
+cmdArgsList.add("-p");
+cmdArgsList.add("blastn");
+cmdArgsList.add("-d");
+cmdArgsList.add("./ensemblBlastDB");
+cmdArgsList.add("-i");
+cmdArgsList.add(sequenceFileName);
+cmdArgsList.add("-o");
+cmdArgsList.add("blast.out");</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">sequenceFileName</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">cmdArgsList</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="create_formatdb_cmdArgs">
+    <s:description>This beanshell will not be run until after the fasta file is written from the Write_Fasta_File processor.
+
+This beanshell creates an array of strings (a list of plain text), with each element containing one element of the arguments for the formatdb command line. Note that you can change the text in the beanshell in the element in the line after the one containing "-n" to set the name of the blast database you want. 
+
+If you want to add any other command line arguments, follow the system in the beanshell. E.g. add the flag, e.g. "-x" in one line, and its argument "somethingOrOther" in another line.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>List cmdArgsList = new ArrayList();
+cmdArgsList.add("-i");
+cmdArgsList.add("./ensemblFastaFile");
+cmdArgsList.add("-p");
+cmdArgsList.add("F");
+cmdArgsList.add("-n");
+cmdArgsList.add("ensemblBlastDB");</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">cmdArgsList</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="fetch_seqs_from_ensembl">
+    <s:description>By default, this is set up to collect sequences for Danio rerio genes (ZFISH7). Of course, you can configure it for whatever you want to get from ensembl.</s:description>
+    <s:biomart>
+      <biomart:MartQuery xmlns:biomart="http://org.embl.ebi.escience/xscufl-biomart/0.1alpha">
+        <biomart:MartService location="http://www.biomart.org/biomart/martservice" />
+        <biomart:MartDataset displayName="Danio rerio genes (ZFISH7)" name="drerio_gene_ensembl" type="TableSet" initialBatchSize="200" maximumBatchSize="50000" visible="false" interface="default" modified="2008-02-19 12:58:55">
+          <biomart:MartURLLocation database="ensembl_mart_49" default="1" displayName="ENSEMBL 49 GENES (SANGER)" host="www.biomart.org" includeDatasets="" martUser="" name="ensembl" path="/biomart/martservice" port="80" serverVirtualSchema="default" virtualSchema="default" visible="1" redirect="0" />
+        </biomart:MartDataset>
+        <biomart:Query virtualSchemaName="default" count="0" uniqueRows="0" softwareVersion="0.6" formatter="FASTA" header="1" requestId="taverna">
+          <biomart:Dataset name="drerio_gene_ensembl">
+            <biomart:Attribute name="transcript_exon_intron" />
+            <biomart:Attribute name="gene_stable_id" />
+            <biomart:Filter name="chromosome_name" value="1" />
+            <biomart:Filter name="end" value="10000000" />
+            <biomart:Filter name="start" value="1" />
+          </biomart:Dataset>
+        </biomart:Query>
+      </biomart:MartQuery>
+    </s:biomart>
+  </s:processor>
+  <s:processor name="Write_Fasta_File">
+    <s:description>This processor writes the fasta sequences retrieved by the fetch_seqs_from_ensembl processor to a file on the hard drive (in the working directory). This is necessary for running formatdb on the command line.</s:description>
+    <s:defaults>
+      <s:default name="outputFile">ensemblFastaFile</s:default>
+      <s:default name="filecontents" />
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileWriter</s:local>
+  </s:processor>
+  <s:link source="create_blastall_cmdArgs:cmdArgsList" sink="runBlastSearch:args" />
+  <s:link source="create_formatdb_cmdArgs:cmdArgsList" sink="local_create_blastdb:args" />
+  <s:link source="fetch_seqs_from_ensembl:drerio_gene_ensembl" sink="Write_Fasta_File:filecontents" />
+  <s:link source="sequenceFileName" sink="create_blastall_cmdArgs:sequenceFileName" />
+  <s:link source="fetch_seqs_from_ensembl:drerio_gene_ensembl" sink="ensemblOutputFastaFile" />
+  <s:source name="sequenceFileName">
+    <s:metadata>
+      <s:description>Provide the name, and if not in your working directory, the location of the file of fasta sequence(s) that you wish to use to search the blast database created in this workflow.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="ensemblOutputFastaFile" />
+  <s:coordination name="Beanshell_scripting_host_BLOCKON_Write_Text_File">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Write_Fasta_File</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>create_formatdb_cmdArgs</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="runBlastSearch_BLOCKON_local_create_blastdb">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>local_create_blastdb</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>runBlastSearch</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

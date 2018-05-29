@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:85187e42-e01e-4df8-803a-dbee10f0d9d7" author="" title="Probabilistic Model Checking (PMC): compute results" />
+  <s:processor name="varName" boring="true">
+    <s:stringconstant>e</s:stringconstant>
+  </s:processor>
+  <s:processor name="propertiesUrl" boring="true">
+    <s:stringconstant>http://bioputer.mimuw.edu.pl/tav4sb/models/enzyme.csl</s:stringconstant>
+  </s:processor>
+  <s:processor name="rewardsUrl" boring="true">
+    <s:description>Optional rewards to be appended to the model specification. See http://www.prismmodelchecker.org/manual/ThePRISMLanguage/CostsAndRewards for description of PRISM rewards specification.</s:description>
+    <s:stringconstant>http://bioputer.mimuw.edu.pl/tav4sb/models/enzyme.rew</s:stringconstant>
+  </s:processor>
+  <s:processor name="appendRewards">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="getRewards">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="setConstantsStr">
+    <s:beanshell>
+      <s:scriptvalue>k = nameList.size();
+l = valueList.size();
+n = Math.max(k, l);
+sb = new StringBuffer();
+for (int i = 0; i &lt; n; i++) {
+    sb.append(nameList.get(i % k)+"="+valueList.get(i % l)+",");
+}
+sb.deleteCharAt(sb.length()-1);
+constantsStr = sb.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">nameList</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">valueList</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">constantsStr</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="nameList" />
+        <i:iterator name="valueList" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="getProperties">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="initValues" boring="true">
+    <s:stringconstant>12;1:3:19</s:stringconstant>
+  </s:processor>
+  <s:processor name="getModel">
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileReader</s:local>
+  </s:processor>
+  <s:processor name="modelUrl" boring="true">
+    <s:stringconstant>http://bioputer.mimuw.edu.pl/tav4sb/models/enzyme_stoch.xml</s:stringconstant>
+  </s:processor>
+  <s:processor name="Prism">
+    <s:workflow>
+      <s:xscufllocation>http://bioputer.mimuw.edu.pl/tav4sb/workflows/ws_prism.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Sbml2Prism">
+    <s:defaults>
+      <s:default name="maxAmount"></s:default>
+    </s:defaults>
+    <s:workflow>
+      <s:xscufllocation>http://bioputer.mimuw.edu.pl/tav4sb/workflows/ws_sbml2Prism.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="parametrizePrismModel">
+    <s:beanshell>
+      <s:scriptvalue>source(new URL("http://bioputer.mimuw.edu.pl/tav4sb/workflows/parametrizePrismModel.bsh"));</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">inModel</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">constList</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">initList</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">initSufix</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">outModel</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">paramList</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="constName" boring="true">
+    <s:stringconstant>p_MAX</s:stringconstant>
+  </s:processor>
+  <s:processor name="initvalues2List">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="initValuesSep" boring="true">
+    <s:stringconstant>;</s:stringconstant>
+  </s:processor>
+  <s:link source="Sbml2Prism:prismModel" sink="parametrizePrismModel:inModel" />
+  <s:link source="appendRewards:output" sink="Prism:model" />
+  <s:link source="constName:value" sink="parametrizePrismModel:constList" />
+  <s:link source="getModel:filecontents" sink="Sbml2Prism:sbmlModel" />
+  <s:link source="getProperties:filecontents" sink="Prism:properties" />
+  <s:link source="getRewards:filecontents" sink="appendRewards:string2" />
+  <s:link source="initValues:value" sink="initvalues2List:string" />
+  <s:link source="initValuesSep:value" sink="initvalues2List:regex" />
+  <s:link source="initvalues2List:split" sink="setConstantsStr:valueList" />
+  <s:link source="modelUrl:value" sink="getModel:fileurl" />
+  <s:link source="parametrizePrismModel:outModel" sink="appendRewards:string1" />
+  <s:link source="parametrizePrismModel:paramList" sink="constantNameList" />
+  <s:link source="parametrizePrismModel:paramList" sink="setConstantsStr:nameList" />
+  <s:link source="propertiesUrl:value" sink="getProperties:fileurl" />
+  <s:link source="rewardsUrl:value" sink="getRewards:fileurl" />
+  <s:link source="setConstantsStr:constantsStr" sink="Prism:constants" />
+  <s:link source="varName:value" sink="parametrizePrismModel:initList" />
+  <s:link source="Prism:resultsXml" sink="resultsXml" />
+  <s:sink name="resultsXml" />
+  <s:sink name="constantNameList" />
+</s:scufl>
+

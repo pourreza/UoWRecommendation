@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:FB5WOXCGH410" author="Tom Oinn" title="Retrieve SNPs from regions around known genes">Given a list of Gene IDs this workflow will query against the Ensembl human genome data to fetch the genomic region for each gene, extend that region by 1000bp in each direction and use this set of ranges, one per gene, to build a query against dbSNP to return the SNP identifier and location information (chromosome name, strand and position)</s:workflowdescription>
+  <s:processor name="Add1000">
+    <s:beanshell>
+      <s:scriptvalue>i = Integer.parseInt(input);
+output = ""+(i+1000);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="ForceListType">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.EchoList</s:local>
+  </s:processor>
+  <s:processor name="NCBI36">
+    <s:description>Homo sapiens genes (NCBI36)</s:description>
+    <s:biomart>
+      <biomart:MartQuery xmlns:biomart="http://org.embl.ebi.escience/xscufl-biomart/0.1alpha">
+        <biomart:MartService location="http://www.biomart.org/biomart/martservice" />
+        <biomart:MartDataset displayName="Homo sapiens genes (NCBI36)" name="hsapiens_gene_ensembl" type="TableSet" initialBatchSize="100" maximumBatchSize="50000" visible="false">
+          <biomart:MartURLLocation default="1" displayName="ENSEMBL 38 (SANGER)" host="www.biomart.org" name="ensembl" port="80" serverVirtualSchema="default" virtualSchema="default" visible="1" />
+        </biomart:MartDataset>
+        <biomart:Query virtualSchemaName="default" count="0">
+          <biomart:Dataset name="hsapiens_gene_ensembl">
+            <biomart:Attribute name="chromosome_name" />
+            <biomart:Attribute name="end_position" />
+            <biomart:Attribute name="start_position" />
+            <biomart:Filter name="gene_stable_id" value="" list="true" />
+          </biomart:Dataset>
+        </biomart:Query>
+      </biomart:MartQuery>
+    </s:biomart>
+  </s:processor>
+  <s:processor name="Subtract1000">
+    <s:beanshell>
+      <s:scriptvalue>i = Integer.parseInt(input);
+output = ""+(i - 1000);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="CreateReport">
+    <s:beanshell>
+      <s:scriptvalue>result = strand + "," + chromStart + "," + chrom + "," + snpID;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">strand</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">chromStart</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">chrom</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">snpID</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">result</s:beanshelloutput>
+      </s:beanshelloutputlist>
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="strand" />
+        <i:iterator name="chromStart" />
+        <i:iterator name="chrom" />
+        <i:iterator name="snpID" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="dbSNP">
+    <s:description>Homo sapiens SNPs (dbSNP 125)</s:description>
+    <s:biomart>
+      <biomart:MartQuery xmlns:biomart="http://org.embl.ebi.escience/xscufl-biomart/0.1alpha">
+        <biomart:MartService location="http://www.biomart.org/biomart/martservice" />
+        <biomart:MartDataset displayName="Homo sapiens SNPs (dbSNP 125)" name="hsapiens_snp" type="TableSet" initialBatchSize="100" maximumBatchSize="50000" visible="false">
+          <biomart:MartURLLocation default="0" displayName="SNP 38 (SANGER)" host="www.biomart.org" name="snp" port="80" serverVirtualSchema="default" virtualSchema="default" visible="1" />
+        </biomart:MartDataset>
+        <biomart:Query virtualSchemaName="default" count="0">
+          <biomart:Dataset name="hsapiens_snp">
+            <biomart:Attribute name="refsnp_id" />
+            <biomart:Attribute name="chr_name" />
+            <biomart:Attribute name="chrom_start" />
+            <biomart:Attribute name="chrom_strand" />
+            <biomart:Filter name="chr_name" value="1" />
+            <biomart:Filter name="chrom_end" value="" />
+            <biomart:Filter name="chrom_start" value="" />
+          </biomart:Dataset>
+        </biomart:Query>
+      </biomart:MartQuery>
+    </s:biomart>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="hsapiens_snp.chr_name_filter" />
+        <i:iterator name="hsapiens_snp.chrom_end_filter" />
+        <i:iterator name="hsapiens_snp.chrom_start_filter" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:link source="Add1000:output" sink="dbSNP:hsapiens_snp.chrom_end_filter" />
+  <s:link source="GeneIDList" sink="ForceListType:inputlist" />
+  <s:link source="CreateReport:result" sink="ReportList" />
+  <s:link source="ForceListType:outputlist" sink="GeneIDList" />
+  <s:link source="ForceListType:outputlist" sink="NCBI36:hsapiens_gene_ensembl.gene_stable_id_filter" />
+  <s:link source="NCBI36:hsapiens_gene_ensembl.chromosome_name" sink="dbSNP:hsapiens_snp.chr_name_filter" />
+  <s:link source="NCBI36:hsapiens_gene_ensembl.end_position" sink="Add1000:input" />
+  <s:link source="NCBI36:hsapiens_gene_ensembl.start_position" sink="Subtract1000:input" />
+  <s:link source="Subtract1000:output" sink="dbSNP:hsapiens_snp.chrom_start_filter" />
+  <s:link source="dbSNP:hsapiens_snp.chr_name" sink="CreateReport:chrom" />
+  <s:link source="dbSNP:hsapiens_snp.chrom_start" sink="CreateReport:chromStart" />
+  <s:link source="dbSNP:hsapiens_snp.chrom_strand" sink="CreateReport:strand" />
+  <s:link source="dbSNP:hsapiens_snp.refsnp_id" sink="CreateReport:snpID" />
+  <s:source name="GeneIDList">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/plain</s:mimeType>
+      </s:mimeTypes>
+      <s:description>List of Ensemble gene identifiers for human.</s:description>
+      <s:semanticType>http://www.mygrid.org.uk/ontology#gene_id</s:semanticType>
+    </s:metadata>
+  </s:source>
+  <s:sink name="ReportList" />
+  <s:sink name="GeneIDList">
+    <s:metadata>
+      <s:semanticType>http://www.mygrid.org.uk/ontology#gene_id</s:semanticType>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

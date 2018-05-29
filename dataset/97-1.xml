@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:61408ed9-6774-4f5f-ae5a-a119431b7a6c" author="Egon Willighagen" title="Download from ChemSpider using Accurate Mass" />
+  <s:processor name="SearchByMass">
+    <s:description>Search ChemSpider compounds by mass +/- range. Search within specified datasources (if given).</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.chemspider.com/MassSpecAPI.asmx?WSDL</s:wsdl>
+      <s:operation>SearchByMass</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="parametersXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="SearchByMass" name="parameters" qname="{http://www.chemspider.com/}SearchByMass">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="double" name="mass" qname="{http://www.chemspider.com/}&gt;SearchByMass&gt;mass" />
+            <s:basetype optional="false" unbounded="false" typename="double" name="range" qname="{http://www.chemspider.com/}&gt;SearchByMass&gt;range" />
+            <s:arraytype optional="true" unbounded="false" wrapped="true" typename="ArrayOfString" name="dbs" qname="{http://www.chemspider.com/}&gt;SearchByMass&gt;dbs">
+              <s:elementtype>
+                <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Mass_Range" boring="true">
+    <s:stringconstant>0.0005</s:stringconstant>
+  </s:processor>
+  <s:processor name="Accurate_Mass" boring="true">
+    <s:stringconstant>194.057909</s:stringconstant>
+  </s:processor>
+  <s:processor name="parametersXML1">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="SearchByMassResponse" name="parameters" qname="{http://www.chemspider.com/}SearchByMassResponse">
+          <s:elements>
+            <s:arraytype optional="true" unbounded="false" wrapped="true" typename="ArrayOfString" name="SearchByMassResult" qname="{http://www.chemspider.com/}&gt;SearchByMassResponse&gt;SearchByMassResult">
+              <s:elementtype>
+                <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="GetCompoundDetails">
+    <s:description>Return specified compound details.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.chemspider.com/MassSpecAPI.asmx?WSDL</s:wsdl>
+      <s:operation>GetCompoundDetails</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="parametersXML2">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetCompoundDetails" name="parameters" qname="{http://www.chemspider.com/}GetCompoundDetails">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="cmp_id" qname="{http://www.chemspider.com/}&gt;GetCompoundDetails&gt;cmp_id" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersXML3">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetCompoundDetailsResponse" name="parameters" qname="{http://www.chemspider.com/}GetCompoundDetailsResponse">
+          <s:elements>
+            <s:arraytype optional="true" unbounded="false" wrapped="true" typename="ArrayOfString" name="GetCompoundDetailsResult" qname="{http://www.chemspider.com/}&gt;GetCompoundDetailsResponse&gt;GetCompoundDetailsResult">
+              <s:elementtype>
+                <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="Accurate_Mass:value" sink="parametersXML:mass" />
+  <s:link source="GetCompoundDetails:parameters" sink="parametersXML3:input" />
+  <s:link source="Mass_Range:value" sink="parametersXML:range" />
+  <s:link source="SearchByMass:parameters" sink="parametersXML1:input" />
+  <s:link source="parametersXML1:SearchByMassResult" sink="parametersXML2:cmp_id" />
+  <s:link source="parametersXML2:output" sink="GetCompoundDetails:parameters" />
+  <s:link source="parametersXML:output" sink="SearchByMass:parameters" />
+</s:scufl>
+

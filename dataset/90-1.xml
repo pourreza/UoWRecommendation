@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:63e5e4d3-a75c-497a-8834-d6e4053b0343" author="Kieren Lythgow" title="Multiple Blastp">This is a workflow to automate multiple BLASTp jobs on a large list of protein sequences in FASTA format.</s:workflowdescription>
+  <s:processor name="Database" boring="true">
+    <s:stringconstant>SWISS</s:stringconstant>
+  </s:processor>
+  <s:processor name="searchSimple">
+    <s:description>Execute Blast</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://xml.nig.ac.jp/wsdl/Blast.wsdl</s:wsdl>
+      <s:operation>searchSimple</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Program" boring="true">
+    <s:stringconstant>blastp</s:stringconstant>
+  </s:processor>
+  <s:processor name="Split_string_into_list">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Concatenate_two_strings">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="Regex" boring="true">
+    <s:stringconstant>&gt;</s:stringconstant>
+  </s:processor>
+  <s:processor name="removeFirstCharacter">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://localhost:8080/test/RemoveFirstCharacter.jws?WSDL</s:wsdl>
+      <s:operation>removeFirstCharacter</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="Database:value" sink="searchSimple:database" />
+  <s:link source="Program:value" sink="searchSimple:program" />
+  <s:link source="Protein_sequences" sink="removeFirstCharacter:fastaList" />
+  <s:link source="Concatenate_two_strings:output" sink="searchSimple:query" />
+  <s:link source="Regex:value" sink="Concatenate_two_strings:string1" />
+  <s:link source="Regex:value" sink="Split_string_into_list:regex" />
+  <s:link source="Split_string_into_list:split" sink="Concatenate_two_strings:string2" />
+  <s:link source="removeFirstCharacter:removeFirstCharacterReturn" sink="Split_string_into_list:string" />
+  <s:link source="searchSimple:Result" sink="Blast_reports" />
+  <s:source name="Protein_sequences" />
+  <s:sink name="Blast_reports" />
+</s:scufl>
+

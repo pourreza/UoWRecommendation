@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:8c4d9af5-596a-4a31-9c3b-cf79a0693db9" author="" title="AppendToFile" />
+  <s:processor name="AppendToFile">
+    <s:description>Processor to add content to a (existing)  file. The content is added to the end of the file.
+
+The inputs:
+Filename: the file name of a file, if the file does not exists, a new file is added
+Content: the string to append
+NewLine [default = true]: if true, a newline is added to the end of the line (useful if you want to add a record each time)</s:description>
+    <s:defaults>
+      <s:default name="Filename">z:\test.txt</s:default>
+      <s:default name="NewLine">false</s:default>
+    </s:defaults>
+    <s:beanshell>
+      <s:scriptvalue>PrintStream stream = new PrintStream(new FileOutputStream(Filename, true));
+if(NewLine == void){
+  NewLine = "true";
+}
+if(Boolean.parseBoolean(NewLine)){
+  stream.println(Content);
+} else{
+  stream.print(Content);
+}
+stream.close();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">Filename</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">Content</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">NewLine</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist />
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+</s:scufl>
+

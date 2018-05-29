@@ -1,0 +1,929 @@
+<workflow xmlns="http://taverna.sf.net/2008/xml/t2flow" version="1" producedBy="taverna-2.4.0"><dataflow id="9a80207b-1428-4698-b7dd-664b679a7be4" role="top"><name>Check_the_content_of</name><inputPorts /><outputPorts><port><name>notInHFC</name><annotations /></port><port><name>notInRegistry</name><annotations /></port></outputPorts><processors><processor><name>Get_Web_Page_from_URL</name><inputPorts><port><name>url</name><depth>0</depth></port></inputPorts><outputPorts><port><name>contents</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>localworker-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.localworker.LocalworkerActivity</class><inputMap><map from="url" to="url" /></inputMap><outputMap><map from="contents" to="contents" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.localworker.LocalworkerActivityConfigurationBean xmlns="">
+  <inputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>url</name>
+      <depth>0</depth>
+      <mimeTypes>
+        <string>'text/x-taverna-web-url'</string>
+      </mimeTypes>
+      <handledReferenceSchemes />
+      <translatedElementType>java.lang.String</translatedElementType>
+      <allowsLiteralValues>true</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>base</name>
+      <depth>0</depth>
+      <mimeTypes>
+        <string>'text/x-taverna-web-url'</string>
+      </mimeTypes>
+      <handledReferenceSchemes />
+      <translatedElementType>java.lang.String</translatedElementType>
+      <allowsLiteralValues>true</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+  </inputs>
+  <outputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+      <name>contents</name>
+      <depth>0</depth>
+      <mimeTypes>
+        <string>'text/plain,text/html'</string>
+      </mimeTypes>
+      <granularDepth>0</granularDepth>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+  </outputs>
+  <classLoaderSharing>workflow</classLoaderSharing>
+  <localDependencies />
+  <artifactDependencies />
+  <script>if ((url == void) || (url == null)) {
+	throw new RuntimeException("The url must be specified");
+}
+
+URL inputURL = null;
+if (base != void) {
+  inputURL = new URL(new URL(base), url);
+}
+else {
+  inputURL = new URL(url);
+}
+URLConnection con = inputURL.openConnection();
+InputStream in = con.getInputStream();
+
+StringBuffer result = new StringBuffer();
+BufferedReader reader;
+
+String encoding = con.getContentEncoding();
+if (encoding == null) {
+  reader = new BufferedReader(new InputStreamReader(in));
+} else {
+  reader = new BufferedReader(new InputStreamReader(in, encoding));
+}
+String line = null;
+String NEWLINE = System.getProperty("line.separator");
+while ((line = reader.readLine()) != null) {
+	result.append(line);
+	result.append(NEWLINE);
+}
+
+reader.close();
+contents = result.toString();
+</script>
+  <dependencies />
+  <localworkerName>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</localworkerName>
+</net.sf.taverna.t2.activities.localworker.LocalworkerActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="url" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>url_value</name><inputPorts /><outputPorts><port><name>value</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>stringconstant-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.stringconstant.StringConstantActivity</class><inputMap /><outputMap><map from="value" to="value" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.stringconstant.StringConstantConfigurationBean xmlns="">
+  <value>http://msslkz.mssl.ucl.ac.uk/helio_registry/viewResourceEntry_body.jsp?XML=true&amp;IVORN=ivo%3A%2F%2Fhelio-vo.eu%2Fhfc</value>
+</net.sf.taverna.t2.activities.stringconstant.StringConstantConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy /></iteration></iterationStrategyStack></processor><processor><name>getTableNames</name><inputPorts /><outputPorts><port><name>response</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>wsdl-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.wsdl.WSDLActivity</class><inputMap /><outputMap><map from="response" to="response" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.wsdl.WSDLActivityConfigurationBean xmlns="">
+  <wsdl>http://voparis-helio.obspm.fr/hfc-hqi/HelioTavernaService?wsdl</wsdl>
+  <operation>getTableNames</operation>
+</net.sf.taverna.t2.activities.wsdl.WSDLActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy /></iteration></iterationStrategyStack></processor><processor><name>XPath_Service</name><inputPorts><port><name>xml_text</name><depth>0</depth></port></inputPorts><outputPorts><port><name>nodelist</name><depth>1</depth><granularDepth>1</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>xpath-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.xpath.XPathActivity</class><inputMap><map from="xml_text" to="xml_text" /></inputMap><outputMap><map from="nodelist" to="nodelist" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.xpath.XPathActivityConfigurationBean xmlns="">
+  <xmlDocument>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;ri:Resource xmlns:ri="http://www.ivoa.net/xml/RegistryInterface/v1.0" xmlns:cea="http://www.ivoa.net/xml/CEA/v1.0rc1" xmlns:va="http://www.ivoa.net/xml/VOApplication/v1.0rc1" xmlns:vr="http://www.ivoa.net/xml/VOResource/v1.0" xmlns:vs="http://www.ivoa.net/xml/VODataService/v1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" created="2011-03-03T16:43:57" status="active" updated="2011-07-28T10:58:40" xsi:type="vs:CatalogService"&gt;
+        &lt;title xmlns:vg="http://www.ivoa.net/xml/VORegistry/v1.0"&gt;Heliophysics Feature Catalogue&lt;/title&gt;
+        &lt;identifier xmlns:vg="http://www.ivoa.net/xml/VORegistry/v1.0"&gt;ivo://helio-vo.eu/hfc&lt;/identifier&gt;
+        &lt;curation xmlns:vg="http://www.ivoa.net/xml/VORegistry/v1.0"&gt;
+            &lt;publisher&gt;Paris Observatory&lt;/publisher&gt;
+            &lt;contact&gt;
+                &lt;name&gt;xavier Bonnin&lt;/name&gt;
+                &lt;email&gt;xavier.bonnin@obspm.fr&lt;/email&gt;
+            &lt;/contact&gt;
+        &lt;/curation&gt;
+        &lt;content xmlns:vg="http://www.ivoa.net/xml/VORegistry/v1.0"&gt;
+            &lt;subject/&gt;
+            &lt;description/&gt;
+            &lt;referenceURL&gt;http://voparis-helio.obspm.fr/helio-hfc/&lt;/referenceURL&gt;
+            &lt;type&gt;Other&lt;/type&gt;
+            &lt;contentLevel&gt;Research&lt;/contentLevel&gt;
+        &lt;/content&gt;
+        &lt;capability xmlns:cap="urn:astrogrid:schema:Capabilities" xmlns:cs="http://www.ivoa.net/xml/ConeSearch/v1.0" standardID="ivo://helio-vo.eu/std/FullQuery/v0.2"&gt;
+            &lt;interface xsi:type="vs:ParamHTTP"&gt;
+                &lt;accessURL use="full"&gt;http://voparis-helio.obspm.fr/helio-hfc/HelioQueryService&lt;/accessURL&gt;
+            &lt;/interface&gt;
+            &lt;interface xsi:type="vr:WebService"&gt;
+                &lt;accessURL use="full"&gt;http://voparis-helio.obspm.fr/helio-hfc/HelioService&lt;/accessURL&gt;
+            &lt;/interface&gt;
+        &lt;/capability&gt;
+        &lt;capability xmlns:cap="urn:astrogrid:schema:Capabilities" xmlns:cs="http://www.ivoa.net/xml/ConeSearch/v1.0" standardID="ivo://ivoa.net/std/VOSI#capabilities"&gt;
+            &lt;interface xsi:type="vs:ParamHTTP"&gt;
+                &lt;accessURL use="full"&gt;http://voparis-helio.obspm.fr/helio-hfc/VOSI/capabilities&lt;/accessURL&gt;
+                &lt;queryType&gt;GET&lt;/queryType&gt;
+                &lt;resultType&gt;application/xml&lt;/resultType&gt;
+            &lt;/interface&gt;
+        &lt;/capability&gt;
+        &lt;capability standardID="ivo://helio-vo.eu/std/FullQuery/Soap/v1.0"&gt;
+            &lt;interface xsi:type="vr:WebService"&gt;
+                &lt;accessURL use="full"&gt;http://voparis-helio.obspm.fr/helio-hfc/HelioService&lt;/accessURL&gt;
+            &lt;/interface&gt;
+        &lt;/capability&gt;
+        &lt;capability standardID="ivo://helio-vo.eu/std/FullQuery/v1.0"&gt;
+            &lt;interface xsi:type="vs:ParamHTTP"&gt;
+                &lt;accessURL use="full"&gt;http://voparis-helio.obspm.fr/helio-hfc/HelioQueryService&lt;/accessURL&gt;
+            &lt;/interface&gt;
+        &lt;/capability&gt;
+        &lt;capability standardID="ivo://helio-vo.eu/std/LongFullQuery/Soap/v1.0"&gt;
+            &lt;interface xsi:type="vr:WebService"&gt;
+                &lt;accessURL use="full"&gt;http://voparis-helio.obspm.fr/helio-hfc/HelioLongQueryService&lt;/accessURL&gt;
+            &lt;/interface&gt;
+        &lt;/capability&gt;
+        &lt;capability standardID="ivo://helio-vo.eu/std/LongFullQuery/v1.0"&gt;
+            &lt;interface xsi:type="vs:ParamHTTP"&gt;
+                &lt;accessURL use="full"&gt;http://voparis-helio.obspm.fr/helio-hfc/LongRunningQueryService&lt;/accessURL&gt;
+            &lt;/interface&gt;
+        &lt;/capability&gt;
+        &lt;capability xmlns:cap="urn:astrogrid:schema:Capabilities" xmlns:cs="http://www.ivoa.net/xml/ConeSearch/v1.0" standardID="ivo://org.astrogrid/std/VOSI/v0.3#tables"&gt;
+            &lt;interface xsi:type="vs:ParamHTTP"&gt;
+                &lt;accessURL use="full"&gt;http://voparis-helio.obspm.fr/helio-hfc/VOSI/tables&lt;/accessURL&gt;
+                &lt;queryType&gt;GET&lt;/queryType&gt;
+                &lt;resultType&gt;application/xml&lt;/resultType&gt;
+            &lt;/interface&gt;
+        &lt;/capability&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;CORONALHOLES&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;CH_THRESHOLD&lt;/name&gt;
+                &lt;description&gt;Threshold value used on the image&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;BR_PIX&lt;/name&gt;
+                &lt;description&gt;Bounding rectangle coordinates in pixels&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;BR_DEG&lt;/name&gt;
+                &lt;description&gt;Bounding rectangle coordinates in deg&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;BR_ARC&lt;/name&gt;
+                &lt;description&gt;Bounding rectangle coordinates in arsec&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CHC_PIX&lt;/name&gt;
+                &lt;description&gt;CH centre coordinates in pixels&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CHC_DEG&lt;/name&gt;
+                &lt;description&gt;CH centre coordinates in deg&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CHC_ARC&lt;/name&gt;
+                &lt;description&gt;CH centre coordinates in arsec&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;LAT_WIDTH_DEG&lt;/name&gt;
+                &lt;description&gt;Latitude widht of the CH in HG deg&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;LON_WIDTH_DEG&lt;/name&gt;
+                &lt;description&gt;Longitude widht of the CH in HG deg&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;LAT_WIDTH_ARC&lt;/name&gt;
+                &lt;description&gt;Latitude widht of the CH in arc&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;LON_WIDTH_ARC&lt;/name&gt;
+                &lt;description&gt;Longitude widht of the CH in arc&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_NPIX&lt;/name&gt;
+                &lt;description&gt;Number of pixels included in the feature&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MIN_INT&lt;/name&gt;
+                &lt;description&gt;Feature min. value, in units of the original observation&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MAX_INT&lt;/name&gt;
+                &lt;description&gt;Feature max. value, in units of the original observation&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MEAN_INT&lt;/name&gt;
+                &lt;description&gt;Feature mean intensity value in the units of the original obs.&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MEAN2QSUN&lt;/name&gt;
+                &lt;description&gt;Mean of the feature to QS instensity ratio&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MIN_BZ&lt;/name&gt;
+                &lt;description&gt;Feature min. line-of-sight magnetic field in Gauss&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MAX_BZ&lt;/name&gt;
+                &lt;description&gt;Feature max. line-of-sight magnetic field in Gauss&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MEAN_BZ&lt;/name&gt;
+                &lt;description&gt;Feature mean line-of-sight magnetic field in Gauss&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_SKEW_BZ&lt;/name&gt;
+                &lt;description&gt;Feature skewness of the line-of-sight magnetic field in Gaus&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;ENC_MET&lt;/name&gt;
+                &lt;description&gt;Encoding method (raster, chain code, none?)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CC_PIX_XY&lt;/name&gt;
+                &lt;description&gt;X and Y coordinate of chain code start position in pixels&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CHAIN_CODE&lt;/name&gt;
+                &lt;description&gt;Boundary chain code&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CCODE_LNTH&lt;/name&gt;
+                &lt;description&gt;Length of the chain code&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;RUN_DATE&lt;/name&gt;
+                &lt;description&gt;Date when FR code was run&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;OBS_DATE&lt;/name&gt;
+                &lt;description&gt;Date when CH was observed&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;OBSERVATORY&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;OBSERVAT&lt;/name&gt;
+                &lt;description&gt;Name of the observatory that made the observation&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;INSTRUME&lt;/name&gt;
+                &lt;description&gt;Name of the instrument that made the observation&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;TELESCOP&lt;/name&gt;
+                &lt;description&gt;Name of sub-part of the instrument that made the observation&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;UNITS&lt;/name&gt;
+                &lt;description&gt;Units of the original observation intensity&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;WAVELENGTH&lt;/name&gt;
+                &lt;description&gt;Wavelength of the original observation&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;WAVENAME&lt;/name&gt;
+                &lt;description&gt;Name of the wavelength of the original observation (if any)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;WAVEUNIT&lt;/name&gt;
+                &lt;description&gt;A, nm, or other&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;OBS_TYPE&lt;/name&gt;
+                &lt;description&gt;Spectral domain in which observations were made&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;COMMENT&lt;/name&gt;
+                &lt;description/&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;VIEW_FILAMENTS_FULL&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;date_obs&lt;/name&gt;
+                &lt;description&gt;Date and time of the start of the observation in UTC&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;date_end&lt;/name&gt;
+                &lt;description&gt;Date and time of the end of the observation in UTC&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;cdelt1&lt;/name&gt;
+                &lt;description&gt;Spatial scale of the pre-processed observations (X axis) in arcsec&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;cdelt2&lt;/name&gt;
+                &lt;description&gt;Spatial scale of the pre-processed observations (Y axis) in arcsec&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;bitpix&lt;/name&gt;
+                &lt;description&gt;Coding of the pre-processed image&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;naxis1&lt;/name&gt;
+                &lt;description&gt;First dimension of the pre-processed image (X)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;naxis2&lt;/name&gt;
+                &lt;description&gt;Second dimension of the processed image (Y)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;center_x&lt;/name&gt;
+                &lt;description&gt;X coordinate of the Sun center in pixels&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;center_y&lt;/name&gt;
+                &lt;description&gt;Y coordinate of the Sun center in pixels&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;r_sun&lt;/name&gt;
+                &lt;description&gt;Radius of the Sun in pixels&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;RUN_DATE&lt;/name&gt;
+                &lt;description&gt;Date where the FRC was run&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;SC_ARC_X&lt;/name&gt;
+                &lt;description&gt;Gravity center in arcsecs (X)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;SC_ARC_Y&lt;/name&gt;
+                &lt;description&gt;Gravity center in arcsecs (Y)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;SC_CAR_LAT&lt;/name&gt;
+                &lt;description&gt;Gravity center in heliographic (deg)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;SC_CAR_LON&lt;/name&gt;
+                &lt;description&gt;Gravity center in heliographic (deg)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_NPIX&lt;/name&gt;
+                &lt;description&gt;Number of pixels included in the filament&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_AREA&lt;/name&gt;
+                &lt;description&gt;Area of the filament in square degrees&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MEAN2QSUN&lt;/name&gt;
+                &lt;description&gt;Mean of the feature to quiet sun intensity ratio&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;BR_ARC&lt;/name&gt;
+                &lt;description&gt;Bounding rectangle coordinates in arcsec&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;BR_PIX&lt;/name&gt;
+                &lt;description&gt;Bounding rectangle coordinates in pixels&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MAX_INT&lt;/name&gt;
+                &lt;description&gt;Filament maximum value in units of the orginal obs.&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MIN_INT&lt;/name&gt;
+                &lt;description&gt;Filament minimum value in units of the original obs.&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MEAN_INT&lt;/name&gt;
+                &lt;description&gt;Filament mean value in units of the original obs.&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;ENC_MET&lt;/name&gt;
+                &lt;description&gt;Encoding method&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CC_PIX_X&lt;/name&gt;
+                &lt;description&gt;Coding 1st position in pixels (X axis)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CC_PIX_Y&lt;/name&gt;
+                &lt;description&gt;Coding 1st position in pixels (Y axis)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CC_ARC_X&lt;/name&gt;
+                &lt;description&gt;Coding 1st position in arcsecs (X axis)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CC_ARC_Y&lt;/name&gt;
+                &lt;description&gt;Coding 1st position in arcsecs (Y axis)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;SKE_LEN_DEG&lt;/name&gt;
+                &lt;description&gt;Skeleton length in degrees&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CURVATURE&lt;/name&gt;
+                &lt;description&gt;Curvature index (from 0 to 10)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;ELONG&lt;/name&gt;
+                &lt;description&gt;Elongation factor (-1 if not enough points)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;ORIENTATION&lt;/name&gt;
+                &lt;description&gt;Global orientation of the filament (CCW from Ox axis)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;COD_SKE_PIX_X&lt;/name&gt;
+                &lt;description&gt;Skeleton coding 1st position in pixels (X axis)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;COD_SKE_PIX_Y&lt;/name&gt;
+                &lt;description&gt;skeleton coding 1st position in pixels (Y axis)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;COD_SKE_ARC_X&lt;/name&gt;
+                &lt;description&gt;Skeleton coding 1st position in arcsec (X axis)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;COD_SKE_ARC_Y&lt;/name&gt;
+                &lt;description&gt;Skeleton coding 1st position in arcsec (Y axis)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CHAIN_CODE&lt;/name&gt;
+                &lt;description&gt;Chain code of the filament boundary&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CHAIN_CODE_SKE&lt;/name&gt;
+                &lt;description&gt;Chain code of the filament skeleton&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CCODE_LNTH&lt;/name&gt;
+                &lt;description&gt;Number of pixels included in the chain code&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CCODE_SKE_LNTH&lt;/name&gt;
+                &lt;description&gt;Number of pixels included in the skeleton chain code&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;PR_LOCFNAME&lt;/name&gt;
+                &lt;description&gt;Name of the pre-processed file, including the full path from the local organization&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;ACTIVEREGIONS&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;RUN_DATE&lt;/name&gt;
+                &lt;description&gt;Date when FR code was run&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;AR_DATE&lt;/name&gt;
+                &lt;description&gt;Date of the AR (ie. date of the image used)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;AR_DATE_T&lt;/name&gt;
+                &lt;description&gt;Date of the previous image used for the detection&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;SC_ARC_X&lt;/name&gt;
+                &lt;description&gt;X coordinate of skeleton centre in arcsec&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;SC_ARC_Y&lt;/name&gt;
+                &lt;description&gt;Y coordinate of the skeleton centre in arsec&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;SC_CAR_LAT&lt;/name&gt;
+                &lt;description&gt;Carrington latitude of skeleton centre (°)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;SC_CAR_LON&lt;/name&gt;
+                &lt;description&gt;Carrington longitude of skeleton centre (°)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_NPIX&lt;/name&gt;
+                &lt;description&gt;Number of pixels included in the feature&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_AREA&lt;/name&gt;
+                &lt;description&gt;Area of the feature in square degrees&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;BR_ARC&lt;/name&gt;
+                &lt;description&gt;Bounding rectangle coordinates in arsec&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;BR_PIX&lt;/name&gt;
+                &lt;description&gt;Bounding rectangle coordinates in pixels&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MAX_INT&lt;/name&gt;
+                &lt;description&gt;Feature max. value, in units of the original observation&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MIN_INT&lt;/name&gt;
+                &lt;description&gt;Feature min. value, in units of the original observation&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_MEAN_INT&lt;/name&gt;
+                &lt;description&gt;Feature mean intensity value in the units of the original obs.&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_LNL&lt;/name&gt;
+                &lt;description&gt;Feature length of the neutral line.&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_LSG&lt;/name&gt;
+                &lt;description&gt;Feature lenght of the strong gradienth of nl above 50G/Mm.&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_GRAD_MAX&lt;/name&gt;
+                &lt;description&gt;Maximum of the horizontal gradient.&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_GRAD_MEAN&lt;/name&gt;
+                &lt;description&gt;Mean of the horizontal gradient.&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_GRAD_MEDIAN&lt;/name&gt;
+                &lt;description&gt;Median of the horizontal gradient.&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_RVAL&lt;/name&gt;
+                &lt;description&gt;R sch... value.&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;FEAT_WLSG&lt;/name&gt;
+                &lt;description&gt;WLSG value.&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;ENC_MET&lt;/name&gt;
+                &lt;description&gt;Encoding method (raster, chain code, none?)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CC_PIX_X&lt;/name&gt;
+                &lt;description&gt;X coordinate of chain code start position in pixels&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CC_PIX_Y&lt;/name&gt;
+                &lt;description&gt;Y coordinate of chain code start position in pixels&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CC_ARC_X&lt;/name&gt;
+                &lt;description&gt;X coordinate of chain code start position in arcsec&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CC_ARC_Y&lt;/name&gt;
+                &lt;description&gt;Y coordinate of chain code start position in arcsec&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CHAIN_CODE&lt;/name&gt;
+                &lt;description&gt;Boundary chain code&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;CCODE_LNTH&lt;/name&gt;
+                &lt;description&gt;Length of the chain code&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+    &lt;/ri:Resource&gt;</xmlDocument>
+  <xpathExpression>/ri:Resource/table/name</xpathExpression>
+  <xpathNamespaceMap>
+    <entry>
+      <string>cea</string>
+      <string>http://www.ivoa.net/xml/CEA/v1.0rc1</string>
+    </entry>
+    <entry>
+      <string>ri</string>
+      <string>http://www.ivoa.net/xml/RegistryInterface/v1.0</string>
+    </entry>
+    <entry>
+      <string>vr</string>
+      <string>http://www.ivoa.net/xml/VOResource/v1.0</string>
+    </entry>
+    <entry>
+      <string>vs</string>
+      <string>http://www.ivoa.net/xml/VODataService/v1.0</string>
+    </entry>
+    <entry>
+      <string>va</string>
+      <string>http://www.ivoa.net/xml/VOApplication/v1.0rc1</string>
+    </entry>
+    <entry>
+      <string>xsi</string>
+      <string>http://www.w3.org/2001/XMLSchema-instance</string>
+    </entry>
+  </xpathNamespaceMap>
+</net.sf.taverna.t2.activities.xpath.XPathActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="xml_text" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>XPath_Service_2</name><inputPorts><port><name>xml_text</name><depth>0</depth></port></inputPorts><outputPorts><port><name>nodelist</name><depth>1</depth><granularDepth>1</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>xpath-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.xpath.XPathActivity</class><inputMap><map from="xml_text" to="xml_text" /></inputMap><outputMap><map from="nodelist" to="nodelist" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.xpath.XPathActivityConfigurationBean xmlns="">
+  <xmlDocument>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;helio:queryResponse xmlns:helio="http://helio-vo.eu/xml/QueryService/v0.1"&gt;&lt;VOTABLE xmlns="http://www.ivoa.net/xml/VOTable/v1.1" version="1.1"&gt;
+&lt;RESOURCE&gt;
+&lt;DESCRIPTION&gt;HFC Query Interface&lt;/DESCRIPTION&gt;
+&lt;INFO name="QUERY_STATUS" value="OK"/&gt;
+&lt;INFO name="EXECUTED_AT" value="2012-07-26 14:15:32"/&gt;
+&lt;TABLE name="Table Names"&gt;
+&lt;FIELD arraysize="*" datatype="char" name="table_names"&gt;
+  &lt;DESCRIPTION&gt;Names of tables for this service. Input as 'FROM' in functions&lt;/DESCRIPTION&gt;
+&lt;/FIELD&gt;
+&lt;DATA&gt;
+&lt;TABLEDATA&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;RADIOSOURCES&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_T3_HQI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;NOAA_SP&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_T2_HQI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_RS_HQI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;TYPE_II&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_T3_GUI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;FILAMENTS&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_SP_HQI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_T2_GUI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_RS_GUI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;FRC_INFO&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;NOAA&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_SP_GUI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_AR_HQI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_PP_HQI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;FILAMENTS_TRACKING&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;ACTIVEREGIONS_TRACKING&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;ACTIVEREGIONS&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_AR_GUI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;TYPE_III&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;CHGROUPS&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;PP_INFO&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;CORONALHOLES_TRACKING&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;CORONALHOLES&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;ANNOTATIONS&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_PRO_HQI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_PRO_GUI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_CH_HQI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;NOAA_AR&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_CH_GUI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;OBSERVATIONS&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;PROMINENCES&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;OBSERVATORY&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_FIL_HQI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;PP_OUTPUT&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_OBS_HQI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;VIEW_FIL_GUI&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;SUNSPOTS&lt;/TD&gt;
+  &lt;/TR&gt;
+&lt;/TABLEDATA&gt;
+&lt;/DATA&gt;
+&lt;/TABLE&gt;
+&lt;/RESOURCE&gt;
+&lt;/VOTABLE&gt;
+&lt;/helio:queryResponse&gt;</xmlDocument>
+  <xpathExpression>/helio:queryResponse/default:VOTABLE/default:RESOURCE/default:TABLE/default:DATA/default:TABLEDATA/default:TR/default:TD</xpathExpression>
+  <xpathNamespaceMap>
+    <entry>
+      <string>default</string>
+      <string>http://www.ivoa.net/xml/VOTable/v1.1</string>
+    </entry>
+    <entry>
+      <string>helio</string>
+      <string>http://helio-vo.eu/xml/QueryService/v0.1</string>
+    </entry>
+  </xpathNamespaceMap>
+</net.sf.taverna.t2.activities.xpath.XPathActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="xml_text" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>String_List_Difference</name><inputPorts><port><name>list1</name><depth>1</depth></port><port><name>list2</name><depth>1</depth></port></inputPorts><outputPorts><port><name>notIn1</name><depth>1</depth><granularDepth>1</granularDepth></port><port><name>notIn2</name><depth>1</depth><granularDepth>1</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>localworker-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.localworker.LocalworkerActivity</class><inputMap><map from="list2" to="list2" /><map from="list1" to="list1" /></inputMap><outputMap><map from="notIn2" to="notIn2" /><map from="notIn1" to="notIn1" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.localworker.LocalworkerActivityConfigurationBean xmlns="">
+  <inputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>list1</name>
+      <depth>1</depth>
+      <mimeTypes>
+        <string>l('text/plain')</string>
+      </mimeTypes>
+      <handledReferenceSchemes />
+      <translatedElementType>java.lang.String</translatedElementType>
+      <allowsLiteralValues>true</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>list2</name>
+      <depth>1</depth>
+      <mimeTypes>
+        <string>l('text/plain')</string>
+      </mimeTypes>
+      <handledReferenceSchemes />
+      <translatedElementType>java.lang.String</translatedElementType>
+      <allowsLiteralValues>true</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+  </inputs>
+  <outputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+      <name>notIn1</name>
+      <depth>1</depth>
+      <mimeTypes />
+      <granularDepth>1</granularDepth>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+      <name>notIn2</name>
+      <depth>1</depth>
+      <mimeTypes />
+      <granularDepth>1</granularDepth>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+  </outputs>
+  <classLoaderSharing>workflow</classLoaderSharing>
+  <localDependencies />
+  <artifactDependencies />
+  <script>List notIn1 = new ArrayList();
+List notIn2 = new ArrayList();
+
+for (Iterator i = list1.iterator(); i.hasNext();) {
+	Object o = i.next();
+	if (!list2.contains(o)) {
+		notIn2.add(o);
+	}
+}
+for (Iterator i = list2.iterator(); i.hasNext();) {
+	Object o = i.next();
+	if (!list1.contains(o)) {
+		notIn1.add(o);
+	}
+}
+</script>
+  <dependencies />
+  <localworkerName>org.embl.ebi.escience.scuflworkers.java.StringSetDifference</localworkerName>
+</net.sf.taverna.t2.activities.localworker.LocalworkerActivityConfigurationBean></configBean><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.HostInstitution">
+        <text>UserNameHere</text>
+      </annotationBean>
+      <date>2012-07-24 14:33:11.562 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain></annotations></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="list1" depth="1" /><port name="list2" depth="1" /></cross></strategy></iteration></iterationStrategyStack></processor></processors><conditions /><datalinks><datalink><sink type="processor"><processor>Get_Web_Page_from_URL</processor><port>url</port></sink><source type="processor"><processor>url_value</processor><port>value</port></source></datalink><datalink><sink type="processor"><processor>XPath_Service</processor><port>xml_text</port></sink><source type="processor"><processor>Get_Web_Page_from_URL</processor><port>contents</port></source></datalink><datalink><sink type="processor"><processor>XPath_Service_2</processor><port>xml_text</port></sink><source type="processor"><processor>getTableNames</processor><port>response</port></source></datalink><datalink><sink type="processor"><processor>String_List_Difference</processor><port>list1</port></sink><source type="processor"><processor>XPath_Service</processor><port>nodelist</port></source></datalink><datalink><sink type="processor"><processor>String_List_Difference</processor><port>list2</port></sink><source type="processor"><processor>XPath_Service_2</processor><port>nodelist</port></source></datalink><datalink><sink type="dataflow"><port>notInHFC</port></sink><source type="processor"><processor>String_List_Difference</processor><port>notIn2</port></source></datalink><datalink><sink type="dataflow"><port>notInRegistry</port></sink><source type="processor"><processor>String_List_Difference</processor><port>notIn1</port></source></datalink></datalinks><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>This workflow check for tables which are registered in the HELIO registry but not available in the HFC and for tables which are in the UOC but which are not registred. </text>
+      </annotationBean>
+      <date>2012-07-26 14:25:46.93 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>8e7cb332-7def-488e-b579-9189de5cecfb</identification>
+      </annotationBean>
+      <date>2012-07-26 14:18:15.468 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>9a80207b-1428-4698-b7dd-664b679a7be4</identification>
+      </annotationBean>
+      <date>2012-07-26 14:25:47.312 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>d801205a-c27d-49b5-8b99-9e03edfbcfeb</identification>
+      </annotationBean>
+      <date>2012-07-26 14:15:29.406 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.DescriptiveTitle">
+        <text>Check the content of the Registry for mismaches to content of HFC</text>
+      </annotationBean>
+      <date>2012-07-26 14:25:26.328 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.Author">
+        <text>Anja Le Blanc</text>
+      </annotationBean>
+      <date>2012-07-26 14:24:46.750 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>10487ccd-91d5-4493-9404-190f1b2ed75b</identification>
+      </annotationBean>
+      <date>2012-07-26 14:19:39.390 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2></annotations></dataflow></workflow>

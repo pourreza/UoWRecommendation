@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:987VIOO8G26" author="" title="Retrieve TP53 mutations for CABRI cell-lines" />
+  <s:processor name="String_Constant" boring="true">
+    <s:stringconstant>([A-Z0-9]*:)([0-9]*)</s:stringconstant>
+  </s:processor>
+  <s:processor name="label_identifier_regex" boring="true">
+    <s:stringconstant>([A-Za-z_]*) ([^\n]*)</s:stringconstant>
+  </s:processor>
+  <s:processor name="wild_card" boring="true">
+    <s:stringconstant>*</s:stringconstant>
+  </s:processor>
+  <s:processor name="split_list_regex" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="tp53_iarc_label_separator" boring="true">
+    <s:stringconstant>([A-Za-z_]* )([^\n]*)</s:stringconstant>
+  </s:processor>
+  <s:processor name="token_position" boring="true">
+    <s:stringconstant>2</s:stringconstant>
+  </s:processor>
+  <s:processor name="tp53_somatic_database" boring="true">
+    <s:stringconstant>tp53_somatic</s:stringconstant>
+  </s:processor>
+  <s:processor name="Filter_list_of_strings_extracting_match_to_a_regex_for_tp53">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="Split_string_into_string_list_by_regular_expression_for_tp53">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Filter_list_of_strings">
+    <s:defaults>
+      <s:default name="regex">([A-Z0-9]*) ([0-9]*)</s:default>
+      <s:default name="group">2</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="Filter_list_of_strings_extracting_match_to_a_regex">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="Split_string_into_string_list_by_regular_expression">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Get_pubmed_xml_by_pmid">
+    <s:local>net.sourceforge.taverna.scuflworkers.ncbi.PubMedEFetchWorker</s:local>
+  </s:processor>
+  <s:processor name="Filter_list_of_strings_">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="String_list_intersection">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringSetIntersection</s:local>
+  </s:processor>
+  <s:processor name="Remove_any_minus_character">
+    <s:beanshell>
+      <s:scriptvalue>output_str = input_str.replaceAll("-","");</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input_str</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output_str</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Remove_any_blank_space">
+    <s:beanshell>
+      <s:scriptvalue>output_str = input_str.replaceAll(" ","");</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input_str</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output_str</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Concatenate_two_strings">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="string2" />
+        <i:iterator name="string1" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="Concatenate_two_strings1">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="string2" />
+        <i:iterator name="string1" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="getP53SampleNames">
+    <s:description>Get tp53 gene mutation  sample (cell line) names from IARC TP53 Database catalogue (see srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getP53SampleNames</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="Retrieve_all_cell_line_names">
+    <s:description>Get cell lines names from CABRI human and animal cell lines catalogues (see www.cabri.org)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/cabri.getCellLineNames</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53MutationsBySampleName">
+    <s:description>Get tp53  mutations  by sample (cell line) name from IARC TP53 Database catalogue (see srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://www.o2i.it:8080/axis/services/o2i.getP53MutationsBySampleName</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getCellLineByName">
+    <s:description>Get cell lines by name from CABRI human and animal cell lines catalogues (see www.cabri.org)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/cabri.getCellLineByName</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53MutationIdsBySampleName">
+    <s:description>Get tp53 gene mutation ids  by sample (cell line) name from IARC TP53 Database catalogue (see srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getP53MutationIdsBySampleName</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="Beanshell_scripting_host">
+    <s:beanshell>
+      <s:scriptvalue>output_str = input_str.replaceAll("/","");</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input_str</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output_str</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="getP53PubMedIdByRefId">
+    <s:description>Get PubMed id by reference id from IARC TP53 Database catalogue (see srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getP53PubMedIdByRefId</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="cell_line_lib" sink="Retrieve_all_cell_line_names:libs" />
+  <s:link source="Beanshell_scripting_host:output_str" sink="Remove_any_minus_character:input_str" />
+  <s:link source="Concatenate_two_strings:output" sink="Concatenate_two_strings1:string1" />
+  <s:link source="Filter_list_of_strings:filteredlist" sink="Get_pubmed_xml_by_pmid:id" />
+  <s:link source="Filter_list_of_strings_:filteredlist" sink="getP53PubMedIdByRefId:ref_id" />
+  <s:link source="Filter_list_of_strings_extracting_match_to_a_regex:filteredlist" sink="String_list_intersection:list1" />
+  <s:link source="Filter_list_of_strings_extracting_match_to_a_regex_for_tp53:filteredlist" sink="String_list_intersection:list2" />
+  <s:link source="Get_pubmed_xml_by_pmid:outputText" sink="Concatenate_two_strings1:string2" />
+  <s:link source="Remove_any_blank_space:output_str" sink="Beanshell_scripting_host:input_str" />
+  <s:link source="Remove_any_minus_character:output_str" sink="getP53MutationIdsBySampleName:sample" />
+  <s:link source="Remove_any_minus_character:output_str" sink="getP53MutationsBySampleName:sample" />
+  <s:link source="Retrieve_all_cell_line_names:result" sink="Split_string_into_string_list_by_regular_expression:string" />
+  <s:link source="Split_string_into_string_list_by_regular_expression:split" sink="Filter_list_of_strings_extracting_match_to_a_regex:stringlist" />
+  <s:link source="Split_string_into_string_list_by_regular_expression_for_tp53:split" sink="Filter_list_of_strings_extracting_match_to_a_regex_for_tp53:stringlist" />
+  <s:link source="String_list_intersection:intersection" sink="Remove_any_blank_space:input_str" />
+  <s:link source="cell_line_lib" sink="getCellLineByName:libs" />
+  <s:link source="Remove_any_minus_character:output_str" sink="getCellLineByName:sample" />
+  <s:link source="String_Constant:value" sink="Filter_list_of_strings_:regex" />
+  <s:link source="getCellLineByName:result" sink="Concatenate_two_strings:string1" />
+  <s:link source="getP53MutationIdsBySampleName:result" sink="Filter_list_of_strings_:stringlist" />
+  <s:link source="getP53MutationsBySampleName:result" sink="Concatenate_two_strings:string2" />
+  <s:link source="getP53PubMedIdByRefId:result" sink="Filter_list_of_strings:stringlist" />
+  <s:link source="Concatenate_two_strings1:output" sink="result" />
+  <s:link source="getP53SampleNames:result" sink="Split_string_into_string_list_by_regular_expression_for_tp53:string" />
+  <s:link source="label_identifier_regex:value" sink="Filter_list_of_strings_extracting_match_to_a_regex:regex" />
+  <s:link source="split_list_regex:value" sink="Split_string_into_string_list_by_regular_expression:regex" />
+  <s:link source="split_list_regex:value" sink="Split_string_into_string_list_by_regular_expression_for_tp53:regex" />
+  <s:link source="token_position:value" sink="Filter_list_of_strings_:group" />
+  <s:link source="token_position:value" sink="Filter_list_of_strings_extracting_match_to_a_regex:group" />
+  <s:link source="token_position:value" sink="Filter_list_of_strings_extracting_match_to_a_regex_for_tp53:group" />
+  <s:link source="tp53_iarc_label_separator:value" sink="Filter_list_of_strings_extracting_match_to_a_regex_for_tp53:regex" />
+  <s:link source="tp53_somatic_database:value" sink="getP53MutationIdsBySampleName:libs" />
+  <s:link source="tp53_somatic_database:value" sink="getP53MutationsBySampleName:libs" />
+  <s:link source="tp53_somatic_database:value" sink="getP53SampleNames:libs" />
+  <s:link source="wild_card:value" sink="Retrieve_all_cell_line_names:id" />
+  <s:link source="wild_card:value" sink="getP53SampleNames:id" />
+  <s:source name="cell_line_lib" />
+  <s:sink name="result" />
+</s:scufl>

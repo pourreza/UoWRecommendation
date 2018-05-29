@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:1ad6c989-9ed7-420d-a3ac-bf0d4f127da1" author="Thomas Kuhn" title="ART2A Classification Workflow">This workflow loads a vector from a database and performs an ART2A classification. The ART2A classificator contains various options which are changeable within the stored workflow configuration file. There is no UI for these content available.</s:workflowdescription>
+  <s:processor name="ART2A_Classificator">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.qsar.model.ART2AClassificator.ART2AClassificatorWorker
+      <s:extensions>
+        <s:ART2AClassificator scalefingerprint="true" uppervigilancelimit="0.999999" lowervigilancelimit="1.0E-6" numberofclassificators="100" maximumclassificationtime="1000000" convergenceflag="true" requiredsimilarity="0.99" deterministicrandom="false" />
+        <s:art2afoldernames foldername="D:\Users\kuhn\Documents\temp" />
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Write_Result_File_Name">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.io.FileWriter
+      <s:extensions>
+        <s:filewriter s:filename="D:\Users\kuhn\Documents\temp\TestResultArt2A.txt" />
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Write_Log_File">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.io.FileWriter
+      <s:extensions>
+        <s:filewriter s:filename="D:\Users\kuhn\Documents\temp\log_ClassificatorArt2A.txt" />
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Get_QSAR_vector_from_database">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.database.pgchem.GetQSARVectorFromDB
+      <s:extensions>
+        <s:GetQSARVectorFromDB CleanFingerprintVector="true" setAllVectorsWhichRemainAfterTheCutoffToZero="false" removeAllVectorsWhichRemainsAfterTheCutoff="true" removeAllComponentsWhichMinMaxValueDoNotDiffer="true" maxPercentageOfUnusableValues="1.0">
+          <DBConnectionPostgres>
+            <DBURL>jdbc:postgresql://localhost/cdktaverna</DBURL>
+            <DBUserName></DBUserName>
+            <DBUserPassword></DBUserPassword>
+            <SQLQuery>SELECT * FROM qsarresults</SQLQuery>
+          </DBConnectionPostgres>
+        </s:GetQSARVectorFromDB>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Write_UnusableVector_IDs">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.io.FileWriter
+      <s:extensions>
+        <s:filewriter s:filename="D:\Users\kuhn\Documents\temp\unusedvectors.txt" />
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Write_UsableColumnNames">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.io.FileWriter
+      <s:extensions>
+        <s:filewriter s:filename="D:\Users\kuhn\Documents\temp\log_usablecolumns.txt" />
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Write_UnusableColumnNames">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.io.FileWriter
+      <s:extensions>
+        <s:filewriter s:filename="D:\Users\kuhn\Documents\temp\log_unusablecolumns.txt" />
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:link source="ART2A_Classificator:Comment" sink="Write_Log_File:content" />
+  <s:link source="ART2A_Classificator:resultFileNames" sink="Write_Result_File_Name:content" />
+  <s:link source="Get_QSAR_vector_from_database:UnusableColumnNames" sink="Write_UnusableColumnNames:content" />
+  <s:link source="Get_QSAR_vector_from_database:UnusableVectorIdentifierList" sink="Write_UnusableVector_IDs:fileName" />
+  <s:link source="Get_QSAR_vector_from_database:UsableColumnNames" sink="Write_UsableColumnNames:content" />
+  <s:link source="Get_QSAR_vector_from_database:fingerprintItemList" sink="ART2A_Classificator:fingerprintItemList" />
+</s:scufl>
+

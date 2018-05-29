@@ -1,0 +1,771 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:3d46d90c-43c3-44e4-a347-2d1b05062358" author="Ingo Wassink, Han Rauwerda, Pieter Neerincx" title="DoBlatOrBlastForSequence" />
+  <s:processor name="Create_Sequence_Chunks">
+    <s:defaults>
+      <s:default name="chunkSize">7</s:default>
+    </s:defaults>
+    <s:beanshell>
+      <s:scriptvalue>int size = Integer.parseInt(chunkSize);
+
+List chunks = new ArrayList();
+for(int index=0; index &lt; sequences.size(); index += size){
+  Iterator iterator = sequences.subList(index, Math.min(sequences.size(), index+size)).iterator();
+  StringBuffer stringBuffer = new StringBuffer();
+  while(iterator.hasNext()){
+    stringBuffer.append(iterator.next()).append("\n");
+  }
+  chunks.add(stringBuffer.toString());
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">sequences</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">chunkSize</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">chunks</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Flatten_list">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Split_sequences">
+    <s:beanshell>
+      <s:scriptvalue>import java.io.BufferedReader;
+import java.io.StringReader;
+
+BufferedReader reader = new BufferedReader(new StringReader(sequenceText));
+
+ArrayList sequences = new ArrayList();
+String line;
+while((line = reader.readLine()) != null){  
+  if(line.trim().length() == 0){
+    continue;
+  }
+
+  if(line.startsWith("&gt;")){
+     line += "\n" + reader.readLine();
+  }
+  sequences.add(line);
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">sequenceText</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">sequences</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Merge_string_list_to_string">
+    <s:defaults>
+      <s:default name="seperator">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="Chunk_Size" boring="true">
+    <s:stringconstant>250</s:stringconstant>
+  </s:processor>
+  <s:processor name="Merge_string_list_to_string1">
+    <s:defaults>
+      <s:default name="seperator">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="Write_Text_File">
+    <s:defaults>
+      <s:default name="outputFile">z:\blastReport.txt</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileWriter</s:local>
+  </s:processor>
+  <s:processor name="Write_Text_File1">
+    <s:defaults>
+      <s:default name="outputFile">z:\biomart.txt</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.TextFileWriter</s:local>
+  </s:processor>
+  <s:processor name="DoBioMart" workers="30">
+    <s:workflow>
+      <s:xscufllocation>file:/Z:/DoBioMart.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="BlatOrBlast" workers="2">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:3d46d90c-43c3-44e4-a347-2d1b05062358" author="Ingo Wassink, Han Rauwerda, Pieter Neerincx" title="BlatBlastCombi">This workflow combines the blat and blast workflows. It takes as input a database name (Danio_rerio_Genome for Zebra Fish for example) and and a set of Fasta sequences. It first tries to perform a blat (at www.bioinformatics.nl). When this service returns nothing, a blast is done (also at www.bioinformatics.nl). The resulting reports are combined.</s:workflowdescription>
+        <s:processor name="EmptyList">
+          <s:beanshell>
+            <s:scriptvalue>list = new ArrayList();</s:scriptvalue>
+            <s:beanshellinputlist />
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="l('text/plain')">list</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Fail_if_true">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+        </s:processor>
+        <s:processor name="Join_Blat_Blast_Results">
+          <s:beanshell>
+            <s:scriptvalue>outputList = new ArrayList();
+outputList.addAll(list1);
+outputList.addAll(list2);</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="l('text/plain')">list1</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="l('text/plain')">list2</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="l('text/plain')">outputList</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Fail_if_false">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="isEmpty">
+          <s:beanshell>
+            <s:scriptvalue>isEmpty = new Boolean(string.length() == 0).toString();</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">string</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">isEmpty</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Filter_Sequences_For_Blast">
+          <s:beanshell>
+            <s:scriptvalue>StringBuffer buffer = new StringBuffer();
+for(String blatLine : blatResult){
+  buffer.append(blatLine);
+}
+blatReport = buffer.toString();
+
+// create reader for sequence list
+BufferedReader reader = new BufferedReader(new StringReader(sequences));
+StringBuffer blastSequences = new StringBuffer();
+
+
+
+
+// filter sequences
+ArrayList sequences = new ArrayList();
+String line;
+while((line = reader.readLine()) != null){  
+  if(line.startsWith("&gt;")){
+    String sequenceId = line.substring(1).trim();
+
+    // if sequenceId is not in blat report, than it should be blasted
+    if(blatReport.indexOf(sequenceId) &lt; 0){
+      blastSequences.append(line).append("\n").append(reader.readLine()).append("\n");
+    } 
+
+  }
+}
+
+sequencesForBlast = blastSequences.toString();</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">sequences</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="l('text/plain')">blatResult</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">sequencesForBlast</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Blast">
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:8eb05694-c30b-4baf-889c-961922578e8c" author="Ingo Wassink, Han Rauwerda, Pieter Neerincx" title="Blast">This workflow invokes the blast service provided at www.bioinformatics.nl, written by Pieter Neerincx. The workflow takes as input a database name (Danio_rerio_Genome for Zebra Fish for example) and a set of sequences in fasta format.
+
+The blast service is invoked (using polling) and the result is a tab separated blast report.</s:workflowdescription>
+              <s:processor name="Flatten_urls">
+                <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+              </s:processor>
+              <s:processor name="DownloadURLWithBasicAuth">
+                <s:description>This Beanshell downloads a file to disk. The standard download local Java widgets don't handle URLs with HTTP(S) Basic Authentication, but this Beanshell can. When a webserver uses BasicAuth, a login and password can be coded as part of the URL using the following syntax: http(s)://login:password@www.some.website/my/great/tool/result.xml. This beanshel extracts the login and password from the URL and supplies them automatically to the webserver. This prevents Taverna from showing popup dialogs requesting the login and password from the user as this will be problematic for large workflows.
+
+Please note that the path where the downloaded file will be stored must be an absolute path to a folder ended with a slash. (Slash backward on Windows or a slash forward on Linux/Unix/Mac OS X.) The filename for the result is automatically extracted from the URL.</s:description>
+                <s:beanshell>
+                  <s:scriptvalue>//
+// Import modules;
+//
+import java.io.*;
+import java.net.*;
+import java.util.regex.*;
+
+// Connect to URL.
+URL oURL = new URL(theURL);
+URLConnection oURLConnection = oURL.openConnection();
+
+// Check if we are are dealing with a site 
+// that uses basic http(s) authentication.
+oPattern = Pattern.compile("(\\w+://)??([^:]+):([^:@]+)@.*");
+oMatcher = oPattern.matcher(oURL.toString());
+vHit = oMatcher.matches();
+if (vHit) {
+	//String vProtocol = oMatcher.group(1);
+	String vUser = oMatcher.group(2);
+	String vPass = oMatcher.group(3);
+	String vAuth = vUser + ":" + vPass;
+	String vEncodedUserPassword = new sun.misc.BASE64Encoder().encode(vAuth.getBytes());
+	oURLConnection.setRequestProperty ("Authorization", "Basic " + vEncodedUserPassword);	
+}
+
+InputStream inputStream = oURLConnection.getInputStream();
+BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+
+blastResults = new ArrayList();
+String line;
+while((line = reader.readLine()) != null){
+  blastResults.add("!BLAST!" + line);
+}
+
+reader.close();</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">theURL</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="l('text/plain')">blastResults</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="Parse_Moby_Data_URL">
+                <s:description>Processor to parse the datatype URL</s:description>
+                <s:biomobyparser>
+                  <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+                  <s:datatype>URL</s:datatype>
+                  <s:articleName>result</s:articleName>
+                  <s:description>Processor to parse the datatype URL</s:description>
+                </s:biomobyparser>
+              </s:processor>
+              <s:processor name="Program">
+                <s:description>A generic program object.</s:description>
+                <s:defaults>
+                  <s:default name="namespace">blast</s:default>
+                  <s:default name="id">blastn</s:default>
+                  <s:default name="article name">program</s:default>
+                </s:defaults>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>Program</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:processor name="MobyBlast_submit">
+                <s:description>Submit a BLAST Job and retrieve a Job ID. Use this Job ID with the MobyBlast_poll service from the same service provider to check the status of your job.Use this Job ID with the MobyBlast_retrieve service from the same service provider to fetch the results.</s:description>
+                <s:biomobywsdl maxretries="30" retrydelay="500">
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>MobyBlast_submit</s:serviceName>
+                  <s:authorityName>www.bioinformatics.nl</s:authorityName>
+                  <s:Parameter s:name="t">0</s:Parameter>
+                  <s:Parameter s:name="g">T</s:Parameter>
+                  <s:Parameter s:name="s">F</s:Parameter>
+                  <s:Parameter s:name="J">T</s:Parameter>
+                  <s:Parameter s:name="W">0</s:Parameter>
+                  <s:Parameter s:name="v">500</s:Parameter>
+                  <s:Parameter s:name="e">0.00015</s:Parameter>
+                  <s:Parameter s:name="B">0</s:Parameter>
+                  <s:Parameter s:name="D">1</s:Parameter>
+                  <s:Parameter s:name="q">-3</s:Parameter>
+                  <s:Parameter s:name="b">250</s:Parameter>
+                  <s:Parameter s:name="I">F</s:Parameter>
+                  <s:Parameter s:name="G">0</s:Parameter>
+                  <s:Parameter s:name="z">0</s:Parameter>
+                  <s:Parameter s:name="U">F</s:Parameter>
+                  <s:Parameter s:name="F">T</s:Parameter>
+                  <s:Parameter s:name="w">0</s:Parameter>
+                  <s:Parameter s:name="r">1</s:Parameter>
+                  <s:Parameter s:name="Q">1</s:Parameter>
+                  <s:Parameter s:name="M">BLOSUM62</s:Parameter>
+                  <s:Parameter s:name="C">0</s:Parameter>
+                  <s:Parameter s:name="f">0</s:Parameter>
+                  <s:Parameter s:name="L" />
+                  <s:Parameter s:name="A">0</s:Parameter>
+                  <s:Parameter s:name="n">F</s:Parameter>
+                  <s:Parameter s:name="X">0</s:Parameter>
+                  <s:Parameter s:name="P">0</s:Parameter>
+                  <s:Parameter s:name="m">8</s:Parameter>
+                  <s:Parameter s:name="y">0</s:Parameter>
+                  <s:Parameter s:name="Z">0</s:Parameter>
+                  <s:Parameter s:name="Y">0</s:Parameter>
+                  <s:Parameter s:name="E">0</s:Parameter>
+                  <s:Parameter s:name="K" />
+                  <s:Parameter s:name="S">3</s:Parameter>
+                </s:biomobywsdl>
+              </s:processor>
+              <s:processor name="DataBase">
+                <s:description>A database object.</s:description>
+                <s:defaults>
+                  <s:default name="namespace">blast</s:default>
+                  <s:default name="article name">database</s:default>
+                </s:defaults>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>DataBase</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:processor name="Email">
+                <s:description>An e-mail address object.</s:description>
+                <s:defaults>
+                  <s:default name="namespace">www.bioinformatics.nl</s:default>
+                  <s:default name="id">some.user@domain.nl</s:default>
+                  <s:default name="article name">email</s:default>
+                </s:defaults>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>Email</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:processor name="String">
+                <s:description>a string</s:description>
+                <s:defaults>
+                  <s:default name="id">fasta</s:default>
+                </s:defaults>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>String</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:processor name="User">
+                <s:description>A generic user object.</s:description>
+                <s:defaults>
+                  <s:default name="namespace">www.bioinformatics.nl</s:default>
+                  <s:default name="id">client</s:default>
+                  <s:default name="article name">user</s:default>
+                </s:defaults>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>User</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:processor name="BlastJob">
+                <s:description>A BLAST job.</s:description>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>BlastJob</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:processor name="Password">
+                <s:description>A generic password object.</s:description>
+                <s:defaults>
+                  <s:default name="namespace">www.bioinformatics.nl</s:default>
+                  <s:default name="id">testing</s:default>
+                  <s:default name="article name">password</s:default>
+                </s:defaults>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>Password</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:processor name="Poll_Job">
+                <s:workflow maxretries="10000" retrydelay="500">
+                  <s:scufl version="0.2" log="0">
+                    <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:a7f029f5-ea3d-4939-8adc-5d388bcd02b3" author="" title="Poll_Job" />
+                    <s:processor name="isRunning">
+                      <s:beanshell>
+                        <s:scriptvalue>// if status is "r", than is running, "f" is finished
+isRunning = new Boolean(status.equals("r")).toString();</s:scriptvalue>
+                        <s:beanshellinputlist>
+                          <s:beanshellinput s:syntactictype="'text/plain'">status</s:beanshellinput>
+                        </s:beanshellinputlist>
+                        <s:beanshelloutputlist>
+                          <s:beanshelloutput s:syntactictype="'text/plain'">isRunning</s:beanshelloutput>
+                        </s:beanshelloutputlist>
+                        <s:dependencies s:classloader="iteration" />
+                      </s:beanshell>
+                    </s:processor>
+                    <s:processor name="MergeID">
+                      <s:defaults>
+                        <s:default name="seperator" />
+                      </s:defaults>
+                      <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+                    </s:processor>
+                    <s:processor name="Correct_Moby_Object">
+                      <s:beanshell>
+                        <s:scriptvalue>outputXML = inputXML.replace("&lt;Object articleName=\"\"", "&lt;Object articleName=\"job_id\"");</s:scriptvalue>
+                        <s:beanshellinputlist>
+                          <s:beanshellinput s:syntactictype="'text/plain'">inputXML</s:beanshellinput>
+                        </s:beanshellinputlist>
+                        <s:beanshelloutputlist>
+                          <s:beanshelloutput s:syntactictype="'text/plain'">outputXML</s:beanshelloutput>
+                        </s:beanshelloutputlist>
+                        <s:dependencies s:classloader="iteration" />
+                      </s:beanshell>
+                    </s:processor>
+                    <s:processor name="Get_Job_ID">
+                      <s:defaults>
+                        <s:default name="xpath">//moby:Simple/*/@id</s:default>
+                      </s:defaults>
+                      <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+                    </s:processor>
+                    <s:processor name="Fail_if_true">
+                      <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+                    </s:processor>
+                    <s:processor name="Parse_Moby_Data_Object">
+                      <s:description>Processor to parse the datatype Object</s:description>
+                      <s:biomobyparser>
+                        <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+                        <s:datatype>Object</s:datatype>
+                        <s:articleName>status</s:articleName>
+                        <s:description>Processor to parse the datatype Object</s:description>
+                      </s:biomobyparser>
+                    </s:processor>
+                    <s:processor name="MobyBlast_poll">
+                      <s:description>Submit the result of the MobyBlast_submit service and obtain status info for the job.</s:description>
+                      <s:biomobywsdl>
+                        <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                        <s:serviceName>MobyBlast_poll</s:serviceName>
+                        <s:authorityName>www.bioinformatics.nl</s:authorityName>
+                      </s:biomobywsdl>
+                    </s:processor>
+                    <s:processor name="Object">
+                      <s:description>an object</s:description>
+                      <s:defaults>
+                        <s:default name="namespace">www.bioinformatics.nl</s:default>
+                        <s:default name="article name">job_id</s:default>
+                      </s:defaults>
+                      <s:biomobyobject>
+                        <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                        <s:serviceName>Object</s:serviceName>
+                        <s:authorityName />
+                      </s:biomobyobject>
+                    </s:processor>
+                    <s:link source="BlastJob" sink="Get_Job_ID:xml-text" />
+                    <s:link source="Correct_Moby_Object:outputXML" sink="MobyBlast_poll:Object(job_id)" />
+                    <s:link source="Get_Job_ID:nodelist" sink="MergeID:stringlist" />
+                    <s:link source="MergeID:concatenated" sink="Object:id" />
+                    <s:link source="MobyBlast_poll:Object(status)" sink="Parse_Moby_Data_Object:mobyData('Object')" />
+                    <s:link source="Object:mobyData" sink="Correct_Moby_Object:inputXML" />
+                    <s:link source="Parse_Moby_Data_Object:id" sink="isRunning:status" />
+                    <s:link source="isRunning:isRunning" sink="Fail_if_true:test" />
+                    <s:source name="BlastJob" />
+                  </s:scufl>
+                </s:workflow>
+              </s:processor>
+              <s:processor name="FASTA">
+                <s:description>FASTA formatted sequence</s:description>
+                <s:defaults>
+                  <s:default name="id">1</s:default>
+                </s:defaults>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>FASTA</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:link source="BlastJob:mobyData" sink="MobyBlast_submit:BlastJob(input)" />
+              <s:link source="DataBase:mobyData" sink="BlastJob:DataBase(database)" />
+              <s:link source="DataBaseName" sink="DataBase:id" />
+              <s:link source="Email:mobyData" sink="User:Email(email)" />
+              <s:link source="FASTA:mobyData" sink="BlastJob:FASTA(fasta)" />
+              <s:link source="MobyBlast_submit:BlastJob(output)" sink="Poll_Job:BlastJob" />
+              <s:link source="MobyBlast_submit:URL(result)" sink="Parse_Moby_Data_URL:mobyData('URL')" />
+              <s:link source="Parse_Moby_Data_URL:id" sink="Flatten_urls:stringlist" />
+              <s:link source="Password:mobyData" sink="User:Password(password)" />
+              <s:link source="Program:mobyData" sink="BlastJob:Program(program)" />
+              <s:link source="Sequences" sink="String:value" />
+              <s:link source="DownloadURLWithBasicAuth:blastResults" sink="BlatResults" />
+              <s:link source="Flatten_urls:concatenated" sink="DownloadURLWithBasicAuth:theURL" />
+              <s:link source="String:mobyData" sink="FASTA:String(content)" />
+              <s:link source="User:mobyData" sink="MobyBlast_submit:User(user)" />
+              <s:source name="Sequences" />
+              <s:source name="DataBaseName" />
+              <s:sink name="BlatResults" />
+              <s:coordination name="DownloadURLWithBasicAuth_BLOCKON_Poll_Job">
+                <s:condition>
+                  <s:state>Completed</s:state>
+                  <s:target>Poll_Job</s:target>
+                </s:condition>
+                <s:action>
+                  <s:target>DownloadURLWithBasicAuth</s:target>
+                  <s:statechange>
+                    <s:from>Scheduled</s:from>
+                    <s:to>Running</s:to>
+                  </s:statechange>
+                </s:action>
+              </s:coordination>
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:processor name="Blat">
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:29ce4255-9c51-46f7-a517-5b9bcc275069" author="Ingo Wassink, Han Rauwerda, Pieter Neerincx" title="Blat">The blat workflow invokes the blat services provided at www.bioinformatics.nl (author Pieter Neerincx).
+
+As input, it takes a database name (for example, Danio_rerio_Genome for Zebra Fish) and one or more sequences in Fasta format. The output will be a tab separated output of the blat. An eValue string constant is added to filter on the e-Value.
+
+Note, the e-Value is not exactly the same as the blast e-Value.</s:workflowdescription>
+              <s:processor name="Flatten_urls">
+                <s:defaults>
+                  <s:default name="seperator" />
+                </s:defaults>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+              </s:processor>
+              <s:processor name="Download_Report_and_Filter">
+                <s:description>This Beanshell downloads a file to disk. The standard download local Java widgets don't handle URLs with HTTP(S) Basic Authentication, but this Beanshell can. When a webserver uses BasicAuth, a login and password can be coded as part of the URL using the following syntax: http(s)://login:password@www.some.website/my/great/tool/result.xml. This beanshel extracts the login and password from the URL and supplies them automatically to the webserver. This prevents Taverna from showing popup dialogs requesting the login and password from the user as this will be problematic for large workflows.
+
+Please note that the path where the downloaded file will be stored must be an absolute path to a folder ended with a slash. (Slash backward on Windows or a slash forward on Linux/Unix/Mac OS X.) The filename for the result is automatically extracted from the URL.</s:description>
+                <s:beanshell>
+                  <s:scriptvalue>//
+// Import modules;
+//
+import java.io.*;
+import java.net.*;
+import java.util.regex.*;
+
+
+// Connect to URL.
+URL oURL = new URL(URL);
+URLConnection oURLConnection = oURL.openConnection();
+
+// Check if we are are dealing with a site 
+// that uses basic http(s) authentication.
+oPattern = Pattern.compile("(\\w+://)??([^:]+):([^:@]+)@.*");
+oMatcher = oPattern.matcher(URL);
+vHit = oMatcher.matches();
+if (vHit) {
+	//String vProtocol = oMatcher.group(1);
+	String vUser = oMatcher.group(2);
+	String vPass = oMatcher.group(3);
+	String vAuth = vUser + ":" + vPass;
+	String vEncodedUserPassword = new sun.misc.BASE64Encoder().encode(vAuth.getBytes());
+	oURLConnection.setRequestProperty ("Authorization", "Basic " + vEncodedUserPassword);	
+}
+
+// get input stream
+InputStream inputStream = oURLConnection.getInputStream();
+
+
+// download all results and filter
+BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+List blatResults = new ArrayList();
+double ev = Double.parseDouble(eValue);
+
+String line;
+while((line = reader.readLine()) != null){
+  String[] values = line.split("\t");
+  double currentEValue = Double.parseDouble(values[values.length-2]);
+
+  if(currentEValue &lt; ev){
+    blatResults.add(line);
+  }
+}
+reader.close();</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">URL</s:beanshellinput>
+                    <s:beanshellinput s:syntactictype="'text/plain'">eValue</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">blatResults</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="eValue" boring="true">
+                <s:stringconstant>0.00015</s:stringconstant>
+              </s:processor>
+              <s:processor name="Parse_Moby_Data_URL">
+                <s:description>Processor to parse the datatype URL</s:description>
+                <s:biomobyparser>
+                  <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+                  <s:datatype>URL</s:datatype>
+                  <s:articleName>result</s:articleName>
+                  <s:description>Processor to parse the datatype URL</s:description>
+                </s:biomobyparser>
+              </s:processor>
+              <s:processor name="MobyBlat">
+                <s:description>BioMOBY web service wrapper for the command line query tool 'BLAT'.</s:description>
+                <s:biomobywsdl maxretries="30" retrydelay="500">
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>MobyBlat</s:serviceName>
+                  <s:authorityName>www.bioinformatics.nl</s:authorityName>
+                  <s:Parameter s:name="out">blast8</s:Parameter>
+                  <s:Parameter s:name="q">dna</s:Parameter>
+                  <s:Parameter s:name="minScore">0</s:Parameter>
+                  <s:Parameter s:name="minIdentity">0</s:Parameter>
+                  <s:Parameter s:name="maxIntron">1000000</s:Parameter>
+                </s:biomobywsdl>
+              </s:processor>
+              <s:processor name="Email">
+                <s:description>An e-mail address object.</s:description>
+                <s:defaults>
+                  <s:default name="namespace">www.bioinformatics.nl</s:default>
+                  <s:default name="id">some.user@domain.nl</s:default>
+                  <s:default name="article name">email</s:default>
+                </s:defaults>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>Email</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:processor name="BlatJob">
+                <s:description>A BLAT job.</s:description>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>BlatJob</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:processor name="DataBase">
+                <s:description>A database object.</s:description>
+                <s:defaults>
+                  <s:default name="namespace">blat</s:default>
+                  <s:default name="article name">dataBase</s:default>
+                </s:defaults>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>DataBase</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:processor name="User">
+                <s:description>A generic user object.</s:description>
+                <s:defaults>
+                  <s:default name="namespace">www.bioinformatics.nl</s:default>
+                  <s:default name="id">client</s:default>
+                  <s:default name="article name">user</s:default>
+                </s:defaults>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>User</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:processor name="FASTA">
+                <s:description>FASTA formatted sequence</s:description>
+                <s:defaults>
+                  <s:default name="id">1</s:default>
+                </s:defaults>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>FASTA</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:processor name="String">
+                <s:description>a string</s:description>
+                <s:defaults>
+                  <s:default name="article name">fasta</s:default>
+                </s:defaults>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>String</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:processor name="Password">
+                <s:description>A generic password object.</s:description>
+                <s:defaults>
+                  <s:default name="namespace">www.bioinformatics.nl</s:default>
+                  <s:default name="id">testing</s:default>
+                  <s:default name="article name">password</s:default>
+                </s:defaults>
+                <s:biomobyobject>
+                  <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+                  <s:serviceName>Password</s:serviceName>
+                  <s:authorityName />
+                </s:biomobyobject>
+              </s:processor>
+              <s:link source="BlatJob:mobyData" sink="MobyBlat:BlatJob(input)" />
+              <s:link source="DataBase" sink="DataBase:id" />
+              <s:link source="DataBase:mobyData" sink="BlatJob:DataBase(database)" />
+              <s:link source="Email:mobyData" sink="User:Email(email)" />
+              <s:link source="FASTA:mobyData" sink="BlatJob:FASTA(fasta)" />
+              <s:link source="MobyBlat:URL(result)" sink="Parse_Moby_Data_URL:mobyData('URL')" />
+              <s:link source="Sequences" sink="String:value" />
+              <s:link source="Download_Report_and_Filter:blatResults" sink="blatResults" />
+              <s:link source="Flatten_urls:concatenated" sink="Download_Report_and_Filter:URL" />
+              <s:link source="Parse_Moby_Data_URL:id" sink="Flatten_urls:stringlist" />
+              <s:link source="Password:mobyData" sink="User:Password(password)" />
+              <s:link source="String:mobyData" sink="FASTA:String(content)" />
+              <s:link source="User:mobyData" sink="MobyBlat:User(user)" />
+              <s:link source="eValue:value" sink="Download_Report_and_Filter:eValue" />
+              <s:source name="DataBase" />
+              <s:source name="Sequences" />
+              <s:sink name="blatResults" />
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:link source="DataBaseName" sink="Blast:DataBaseName" />
+        <s:link source="DataBaseName" sink="Blat:DataBase" />
+        <s:link source="Sequences" sink="Blat:Sequences" />
+        <s:link source="Sequences" sink="Filter_Sequences_For_Blast:sequences" />
+        <s:link source="Blast:BlatResults" sink="Join_Blat_Blast_Results:list2" />
+        <s:link source="Blat:blatResults" sink="Filter_Sequences_For_Blast:blatResult" />
+        <s:link source="Blat:blatResults" sink="Join_Blat_Blast_Results:list1" />
+        <s:link source="EmptyList:list" sink="Join_Blat_Blast_Results:list2" />
+        <s:link source="Filter_Sequences_For_Blast:sequencesForBlast" sink="Blast:Sequences" />
+        <s:link source="Filter_Sequences_For_Blast:sequencesForBlast" sink="isEmpty:string" />
+        <s:link source="isEmpty:isEmpty" sink="Fail_if_false:test" />
+        <s:link source="isEmpty:isEmpty" sink="Fail_if_true:test" />
+        <s:link source="Join_Blat_Blast_Results:outputList" sink="Alignments" />
+        <s:source name="DataBaseName" />
+        <s:source name="Sequences" />
+        <s:sink name="Alignments" />
+        <s:coordination name="Blast_BLOCKON_Fail_if_true">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_true</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Blast</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="EmptyList_BLOCKON_Fail_if_false">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_false</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>EmptyList</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="DataBaseName" sink="BlatOrBlast:DataBaseName" />
+  <s:link source="Sequences" sink="Split_sequences:sequenceText" />
+  <s:link source="BlatOrBlast:Alignments" sink="Flatten_list:inputlist" />
+  <s:link source="Chunk_Size:value" sink="Create_Sequence_Chunks:chunkSize" />
+  <s:link source="Create_Sequence_Chunks:chunks" sink="BlatOrBlast:Sequences" />
+  <s:link source="DoBioMart:records" sink="Merge_string_list_to_string1:stringlist" />
+  <s:link source="DoBioMart:records" sink="BioMartRecord" />
+  <s:link source="Flatten_list:outputlist" sink="Alignments" />
+  <s:link source="Flatten_list:outputlist" sink="DoBioMart:blastRecord" />
+  <s:link source="Flatten_list:outputlist" sink="Merge_string_list_to_string:stringlist" />
+  <s:link source="Merge_string_list_to_string1:concatenated" sink="Write_Text_File1:filecontents" />
+  <s:link source="Merge_string_list_to_string:concatenated" sink="Write_Text_File:filecontents" />
+  <s:link source="Split_sequences:sequences" sink="Create_Sequence_Chunks:sequences" />
+  <s:source name="DataBaseName" />
+  <s:source name="Sequences" />
+  <s:sink name="Alignments" />
+  <s:sink name="BioMartRecord" />
+</s:scufl>
+

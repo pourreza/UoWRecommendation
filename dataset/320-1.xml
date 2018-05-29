@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:VI9FMF5HBQ11" author="Peter Li" title="Affymetrix probe based data mining workflow">An example of how a more complex workflow can federate multiple resources to perform data mining. In this case a single input data item in the form of a probe set identifier is cross referenced to data sets in multiple locations to answer a kind of 'show me everything about this data' question.</s:workflowdescription>
+  <s:processor name="DatabaseId1" boring="true">
+    <s:stringconstant>GO</s:stringconstant>
+  </s:processor>
+  <s:processor name="childColour" boring="true">
+    <s:stringconstant>darkslategray3</s:stringconstant>
+  </s:processor>
+  <s:processor name="getChildren">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>getChildren</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="ProbeSetId" boring="true">
+    <s:stringconstant>38276_at</s:stringconstant>
+  </s:processor>
+  <s:processor name="ancestorColour" boring="true">
+    <s:stringconstant>gold1</s:stringconstant>
+  </s:processor>
+  <s:processor name="inputTermColour" boring="true">
+    <s:stringconstant>darkolivegreen3</s:stringconstant>
+  </s:processor>
+  <s:processor name="GetSwissprotId">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://mygrid.ncl.ac.uk/axis/services/affymapper?wsdl</s:wsdl>
+      <s:operation>getSwissProtId</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="finish">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>destroySession</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="add">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>addTerm</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="addImmediateChildren">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>addTerm</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getGoIds">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://mygrid.ncl.ac.uk/axis/services/SrsEbiQuery?wsdl</s:wsdl>
+      <s:operation>queryByXRef</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getresults">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>getDot</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="colourChildren">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>markTerm</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="markAncestors">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>markTerm</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getAncestry">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>getAncestors</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="colourInputTerm">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>markTerm</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getParents">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>getParents</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="create">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/collab/mygrid/service1/goviz/GoViz.jws?wsdl</s:wsdl>
+      <s:operation>createSession</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="DatabaseId1:value" sink="getGoIds:XRefDatabankId" />
+  <s:link source="GetSwissprotId:getSwissProtIdReturn" sink="getGoIds:usa" />
+  <s:link source="ProbeSetId:value" sink="GetSwissprotId:probeSetId" />
+  <s:link source="ancestorColour:value" sink="markAncestors:colour" />
+  <s:link source="childColour:value" sink="colourChildren:colour" />
+  <s:link source="create:createSessionReturn" sink="add:sessionID" />
+  <s:link source="create:createSessionReturn" sink="addImmediateChildren:sessionID" />
+  <s:link source="create:createSessionReturn" sink="colourChildren:sessionID" />
+  <s:link source="create:createSessionReturn" sink="colourInputTerm:sessionID" />
+  <s:link source="create:createSessionReturn" sink="finish:sessionID" />
+  <s:link source="create:createSessionReturn" sink="getresults:sessionID" />
+  <s:link source="create:createSessionReturn" sink="markAncestors:sessionID" />
+  <s:link source="getAncestry:getAncestorsReturn" sink="markAncestors:geneOntologyID" />
+  <s:link source="getChildren:getChildrenReturn" sink="add:geneOntologyID" />
+  <s:link source="getGoIds:queryByXRefReturn" sink="colourInputTerm:geneOntologyID" />
+  <s:link source="getGoIds:queryByXRefReturn" sink="getAncestry:geneOntologyID" />
+  <s:link source="getGoIds:queryByXRefReturn" sink="GOIds" />
+  <s:sink name="goDiagram">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/x-graphviz</s:mimeType>
+        <s:mimeType>text/plain</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="GOIds" />
+</s:scufl>
+
+

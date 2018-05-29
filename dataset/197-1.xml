@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:b7018d96-fb53-498b-9dff-d83e6f8e99ab" author="Hamish McWilliam" title="EBI_WU-BLAST">Perform a BLAST search using the EBI's WSWUBlast service (see http://www.ebi.ac.uk/Tools/webservices/services/wublast). The default parameters search UniProtKB using blastp. To change the job parameters see Job_params.</s:workflowdescription>
+  <s:processor name="runWUBlast">
+    <s:description>Submit the WU-BLAST job.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSWUBlast.wsdl</s:wsdl>
+      <s:operation>runWUBlast</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Decode_XML_Result">
+    <s:description>Unpack the byte[] into a string for display.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+  </s:processor>
+  <s:processor name="Job_params">
+    <s:description>Parameters for the WU-BLAST job.</s:description>
+    <s:defaults>
+      <s:default name="program">blastp</s:default>
+      <s:default name="database">uniprot</s:default>
+      <s:default name="exp">1.0</s:default>
+      <s:default name="numal">50</s:default>
+      <s:default name="scores">50</s:default>
+      <s:default name="async">1</s:default>
+      <s:default name="email">your@email</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="inputParams" name="params" qname="{http://www.ebi.ac.uk/WSWUBlast}inputParams">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="program" qname="inputParams&gt;program" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="database" qname="inputParams&gt;database" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="matrix" qname="inputParams&gt;matrix" />
+            <s:basetype optional="false" unbounded="false" typename="float" name="exp" qname="inputParams&gt;exp" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="echofilter" qname="inputParams&gt;echofilter" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="filter" qname="inputParams&gt;filter" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="numal" qname="inputParams&gt;numal" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="scores" qname="inputParams&gt;scores" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="sensitivity" qname="inputParams&gt;sensitivity" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="sort" qname="inputParams&gt;sort" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="stats" qname="inputParams&gt;stats" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="strand" qname="inputParams&gt;strand" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="outformat" qname="inputParams&gt;outformat" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="topcombon" qname="inputParams&gt;topcombon" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="async" qname="inputParams&gt;async" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="email" qname="inputParams&gt;email" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Get_XML_Result">
+    <s:description>Get the XML result for the job.</s:description>
+    <s:defaults>
+      <s:default name="type">toolxml</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSWUBlast.wsdl</s:wsdl>
+      <s:operation>poll</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Get_Text_Result">
+    <s:description>Get the plain text result for the job.</s:description>
+    <s:defaults>
+      <s:default name="type">tooloutput</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSWUBlast.wsdl</s:wsdl>
+      <s:operation>poll</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Content_List">
+    <s:description>List of input data items for the job. In the case of WU-BLAST this is a list containing one input sequence.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:arraytype optional="false" unbounded="false" wrapped="false" typename="WSArrayofData" name="content" qname="{http://www.ebi.ac.uk/WSWUBlast}WSArrayofData">
+          <s:elementtype>
+            <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSWUBlast}data">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+              </s:elements>
+            </s:complextype>
+          </s:elementtype>
+        </s:arraytype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Get_Hit_ID_List">
+    <s:description>Get the list of hit identifiers from the job.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSWUBlast.wsdl</s:wsdl>
+      <s:operation>getIds</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Input_Data">
+    <s:description>Pack the input sequence into the structure required.</s:description>
+    <s:defaults>
+      <s:default name="type">sequence</s:default>
+      <s:default name="content">uniprot:wap_rat</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="data" name="" qname="{http://www.ebi.ac.uk/WSWUBlast}data">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="type" qname="data&gt;type" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="content" qname="data&gt;content" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Poll_Job">
+    <s:description>Check if job has completed.</s:description>
+    <s:workflow maxretries="100" retrydelay="5000">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:f67bf7d6-cd5e-4ac7-be1e-d8b97255889b" author="" title="Poll_Job" />
+        <s:processor name="Success">
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="checkStatus">
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSWUBlast.wsdl</s:wsdl>
+            <s:operation>checkStatus</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="Is_Done">
+          <s:beanshell>
+            <s:scriptvalue>if(job_status.equals("DONE")) {
+  is_done = "true";
+} else {
+  is_done = "false";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">job_status</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">is_done</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:link source="Job_ID" sink="checkStatus:jobid" />
+        <s:link source="Is_Done:is_done" sink="Success:test" />
+        <s:link source="checkStatus:status" sink="Is_Done:job_status" />
+        <s:link source="checkStatus:status" sink="Job_Status" />
+        <s:source name="Job_ID" />
+        <s:sink name="Job_Status" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Decode_Text_Result">
+    <s:description>Unpack plain text result from byte[] into a string for display.</s:description>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ByteArrayToString</s:local>
+  </s:processor>
+  <s:link source="BLAST Program" sink="Job_params:program" />
+  <s:link source="Content_List:output" sink="runWUBlast:content" />
+  <s:link source="E-mail Address" sink="Job_params:email" />
+  <s:link source="Get_Text_Result:result" sink="Decode_Text_Result:bytes" />
+  <s:link source="Get_XML_Result:result" sink="Decode_XML_Result:bytes" />
+  <s:link source="Input_Data:output" sink="Content_List:WSArrayofData" />
+  <s:link source="Job_params:output" sink="runWUBlast:params" />
+  <s:link source="Search Database" sink="Job_params:database" />
+  <s:link source="Sequence or ID" sink="Input_Data:content" />
+  <s:link source="runWUBlast:jobid" sink="Get_Hit_ID_List:jobid" />
+  <s:link source="runWUBlast:jobid" sink="Get_Text_Result:jobid" />
+  <s:link source="runWUBlast:jobid" sink="Get_XML_Result:jobid" />
+  <s:link source="runWUBlast:jobid" sink="Poll_Job:Job_ID" />
+  <s:link source="Decode_Text_Result:string" sink="Text Result" />
+  <s:link source="Decode_XML_Result:string" sink="XML Result" />
+  <s:link source="Get_Hit_ID_List:result" sink="Hit ID list" />
+  <s:link source="runWUBlast:jobid" sink="Job_ID" />
+  <s:source name="Sequence or ID">
+    <s:metadata>
+      <s:description>Input sequence (fasta format recommended) or sequence identifier in database:id format (e.g. uniprot:wap_rat).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Search Database">
+    <s:metadata>
+      <s:description>The name of the database to search (e.g. uniprot).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="E-mail Address">
+    <s:metadata>
+      <s:description>Your e-mail address.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="BLAST Program">
+    <s:metadata>
+      <s:description>The BLAST program to use for the search (e.g. blastp).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="Hit ID list">
+    <s:metadata>
+      <s:description>List of the identifers of the hits found by the search.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="Text Result">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>application/octet-stream</s:mimeType>
+      </s:mimeTypes>
+      <s:description>Plain text BLAST output.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="XML Result">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>application/octet-stream</s:mimeType>
+      </s:mimeTypes>
+      <s:description>XML version of the BLAST output.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="Job_ID">
+    <s:metadata>
+      <s:description>Identifier of the job run.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:coordination name="Get_Text_Result_BLOCKON_Poll_Job">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Poll_Job</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Get_Text_Result</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="Get_XML_Result_BLOCKON_Poll_Job">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Poll_Job</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Get_XML_Result</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="Get_Hit_ID_List_BLOCKON_Poll_Job">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Poll_Job</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>Get_Hit_ID_List</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

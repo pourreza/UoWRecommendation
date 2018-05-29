@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:b24d63e0-9cc4-49d0-9403-2ab58a4db9b6" author="Paul Fisher" title="Get Concepts">This workflow gets all the concepts in an Ondex graph, using a given graph id</s:workflowdescription>
+  <s:processor name="getConcepts">
+    <s:arbitrarywsdl>
+<s:wsdl>http://rpc274.cs.man.ac.uk:8080/ondex/services/ondex-graph?wsdl</s:wsdl>
+      <s:operation>getConcepts</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="parametersXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getConcepts" name="parameters" qname="{http://webservice.ondex.sourceforge.net/}getConcepts">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="long" name="graphId" qname="getConcepts&gt;graphId" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersXML1">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getConceptsResponse" name="parameters" qname="{http://webservice.ondex.sourceforge.net/}getConceptsResponse">
+          <s:elements>
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="wsConcept" name="concepts" qname="getConceptsResponse&gt;concepts">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="wsConcept" name="" qname="{http://webservice.ondex.sourceforge.net/}wsConcept">
+                  <s:elements>
+                    <s:basetype optional="true" unbounded="false" typename="string" name="annotation" qname="wsConcept&gt;annotation" />
+                    <s:basetype optional="true" unbounded="false" typename="string" name="description" qname="wsConcept&gt;description" />
+                    <s:complextype optional="true" unbounded="false" typename="wscv" name="elementOf" qname="wsConcept&gt;elementOf">
+                      <s:elements>
+                        <s:basetype optional="true" unbounded="false" typename="string" name="description" qname="wscv&gt;description" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="fullname" qname="wscv&gt;fullname" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="id" qname="wscv&gt;id" />
+                      </s:elements>
+                    </s:complextype>
+                    <s:basetype optional="true" unbounded="false" typename="int" name="id" qname="wsConcept&gt;id" />
+                    <s:complextype optional="true" unbounded="false" typename="wsConceptClass" name="ofType" qname="wsConcept&gt;ofType">
+                      <s:elements>
+                        <s:basetype optional="true" unbounded="false" typename="string" name="description" qname="wsConceptClass&gt;description" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="fullname" qname="wsConceptClass&gt;fullname" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="id" qname="wsConceptClass&gt;id" />
+                        <s:complextype optional="true" unbounded="false" typename="wsConceptClass" name="specialisationOf" qname="wsConceptClass&gt;specialisationOf">
+                          <s:elements>
+                            <s:basetype optional="true" unbounded="false" typename="string" name="description" qname="wsConceptClass&gt;description" />
+                            <s:basetype optional="true" unbounded="false" typename="string" name="fullname" qname="wsConceptClass&gt;fullname" />
+                            <s:basetype optional="true" unbounded="false" typename="string" name="id" qname="wsConceptClass&gt;id" />
+                            <s:complextype id="wsConceptClass&gt;specialisationOf" optional="true" unbounded="false" typename="wsConceptClass" name="specialisationOf" />
+                          </s:elements>
+                        </s:complextype>
+                      </s:elements>
+                    </s:complextype>
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="getConcepts:parameters" sink="parametersXML1:input" />
+  <s:link source="graphId" sink="parametersXML:graphId" />
+  <s:link source="parametersXML1:concepts" sink="concepts" />
+  <s:link source="parametersXML:output" sink="getConcepts:parameters" />
+  <s:source name="graphId" />
+  <s:sink name="concepts" />
+</s:scufl>
+

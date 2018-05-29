@@ -1,0 +1,601 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:27ae4509-23f9-4fb9-a570-99349ce0397f" author="Hamish McWilliam" title="NCBI_QBLAST">Perform an NCBI BLAST sequence similarity search using NCBI's QBLAST service (see http://www.ncbi.nlm.nih.gov/BLAST/Doc/urlapi.html). The query sequence, database to search and BLAST program to use are inputs, the other parameters for the search are allowed to default.</s:workflowdescription>
+  <s:processor name="QBLAST_Put">
+    <s:description>Submit the QBLAST job.</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:72095fb5-d22c-47f1-965e-4e6d95edb66c" author="Hamish McWilliam" title="NCBI_QBLAST_Put">Submit a job to NCBI QBLAST (see http://www.ncbi.nlm.nih.gov/BLAST/Doc/node2.html).</s:workflowdescription>
+        <s:processor name="Build_QBLAST_Put_URL">
+          <s:description>Build QBLAST put URL.</s:description>
+          <s:beanshell>
+            <s:scriptvalue>//
+// Construct a QBLAST Put URL
+//
+put_url = "http://www.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Put";
+put_url += "&amp;QUERY=" + query_sequence;
+put_url += "&amp;DATABASE=" + database;
+put_url += "&amp;PROGRAM=" + program;</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">program</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">database</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">query_sequence</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">put_url</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="QBLAST_Put">
+          <s:description>Submit the job.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+        </s:processor>
+        <s:processor name="Extract_QBLAST_job_ID">
+          <s:description>Extract the QBLAST job identifer from the response.</s:description>
+          <s:beanshell>
+            <s:scriptvalue>import java.util.StringTokenizer;
+
+StringTokenizer tok1 = new StringTokenizer(qblast_output, "\n");
+while(tok1.hasMoreElements()) {
+  line = tok1.nextElement();
+  if(line.startsWith("    RID = ")) {
+    StringTokenizer tok2 = new StringTokenizer(line);
+    while(tok2.hasMoreElements()) {
+      job_id = tok2.nextElement();
+    }
+  }
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">qblast_output</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">job_id</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:link source="BLAST_database" sink="Build_QBLAST_Put_URL:database" />
+        <s:link source="BLAST_program" sink="Build_QBLAST_Put_URL:program" />
+        <s:link source="Query_sequence" sink="Build_QBLAST_Put_URL:query_sequence" />
+        <s:link source="Build_QBLAST_Put_URL:put_url" sink="QBLAST_Put:url" />
+        <s:link source="Extract_QBLAST_job_ID:job_id" sink="QBLAST_job_ID" />
+        <s:link source="QBLAST_Put:contents" sink="Extract_QBLAST_job_ID:qblast_output" />
+        <s:source name="BLAST_program">
+          <s:metadata>
+            <s:description>NCBI QBLAST program to use (see http://www.ncbi.nlm.nih.gov/BLAST/Doc/node43.html#labelPROGRAM).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="BLAST_database">
+          <s:metadata>
+            <s:description>Database to search (see http://www.ncbi.nlm.nih.gov/BLAST/Doc/node15.html#labelDATABASE).</s:description>
+          </s:metadata>
+        </s:source>
+        <s:source name="Query_sequence">
+          <s:metadata>
+            <s:description>Query sequence (as single string) or NCBI GI.</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="QBLAST_job_ID">
+          <s:metadata>
+            <s:mimeTypes>
+              <s:mimeType>text/html</s:mimeType>
+            </s:mimeTypes>
+            <s:description>NCBI QBLAST job identifer.</s:description>
+          </s:metadata>
+        </s:sink>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="QBLAST_Get">
+    <s:description>Check if the QBLAST job has finished, and get results.</s:description>
+    <s:workflow maxretries="100" retrydelay="10000">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:4af90393-1f74-4d15-9237-e4c8a7da6a4d" author="Hamish McWilliam" title="NCBI_QBLAST_Get">NCBI QBLAST Get command  (see http://www.ncbi.nlm.nih.gov/BLAST/Doc/node2.html):
+
+A. Get status of a QBLAST job.
+
+B. Get job result in "Text" format.</s:workflowdescription>
+        <s:processor name="Extract_QBLAST_status">
+          <s:description>Extract the job status from the QBLAST output.</s:description>
+          <s:beanshell>
+            <s:scriptvalue>import java.util.StringTokenizer;
+
+StringTokenizer tok1 = new StringTokenizer(qblast_output, "\n");
+qblast_status = "UNKNOWN";
+while(tok1.hasMoreElements()) {
+  line = tok1.nextElement();
+  if(line.startsWith("	Status=")) {
+    StringTokenizer tok2 = new StringTokenizer(line, " \n\t=");
+    while(tok2.hasMoreElements()) {
+      qblast_status = tok2.nextElement();
+    }
+  }
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">qblast_output</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">qblast_status</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Success">
+          <s:description>Fail is job not completed.</s:description>
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="Build_QBLAST_Get_URL">
+          <s:description>Build the URL to get the job status/results</s:description>
+          <s:beanshell>
+            <s:scriptvalue>get_url = "http://www.ncbi.nlm.nih.gov/blast/Blast.cgi?";
+get_url += "RID=" + job_id;
+get_url += "&amp;CMD=Get&amp;FORMAT_TYPE=Text";</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">job_id</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">get_url</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Is_done">
+          <s:description>Map the job status into true/false.</s:description>
+          <s:beanshell>
+            <s:scriptvalue>if(job_status.startsWith("READY")) {
+  is_done = "true";
+} else {
+  is_done = "false";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">job_status</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">is_done</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="QBLAST_Get">
+          <s:description>Get the status/result from QBLAST.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+        </s:processor>
+        <s:link source="QBLAST_job_ID" sink="Build_QBLAST_Get_URL:job_id" />
+        <s:link source="Build_QBLAST_Get_URL:get_url" sink="QBLAST_Get:url" />
+        <s:link source="Extract_QBLAST_status:qblast_status" sink="Is_done:job_status" />
+        <s:link source="Is_done:is_done" sink="Success:test" />
+        <s:link source="QBLAST_Get:contents" sink="Extract_QBLAST_status:qblast_output" />
+        <s:link source="Extract_QBLAST_status:qblast_status" sink="QBLAST_status" />
+        <s:link source="QBLAST_Get:contents" sink="QBLAST_result" />
+        <s:source name="QBLAST_job_ID">
+          <s:metadata>
+            <s:description>NCBI QBLAST job identifer.</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="QBLAST_result">
+          <s:metadata>
+            <s:description>NCBI QBLAST result in "Text" format. The output is similar to normal NCBI BLAST output but contains some HTML elements.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:sink name="QBLAST_status">
+          <s:metadata>
+            <s:description>NCBI QBLAST job status.</s:description>
+          </s:metadata>
+        </s:sink>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Sequence_or_ID_or_GI">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:bf15c1ae-dd9b-4d7d-ade4-bde9f337867b" author="Hamish McWilliam" title="Sequence_or_ID_or_GI">Get a sequence in fasta format given one of:
+
+1. An NCBI GI number (e.g. 75251068).
+
+2. An entry identifier in database:identifier format (e.g. uniprot:Q96247).
+
+3. A sequence entry in a format supported by EMBOSS seqret.</s:workflowdescription>
+        <s:processor name="Fail_if_GI">
+          <s:description>Fail if the sequence is a GI number.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+        </s:processor>
+        <s:processor name="Is_GI">
+          <s:description>Is the input a GI number?</s:description>
+          <s:beanshell>
+            <s:scriptvalue>//
+// Test if input is a GI number.
+//
+is_gi = "false";
+try {
+  if(Integer.valueOf(gi_id_seq) &gt; 0) {
+    is_gi = "true";
+  }
+}
+catch(NumberFormatException ex) {
+  is_gi = "false";
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">gi_id_seq</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">is_gi</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Fail_if_sequence_or_id">
+          <s:description>Fail is the sequence is not a GI number.</s:description>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="Get_fasta_from_GI">
+          <s:description>Get the sequence in fasta format for a GI number.</s:description>
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:fff530f8-b1f4-4ae0-b078-c3d23ee22e13" author="Hamish McWilliam" title="Get_fasta_from_GI">Given an NCBI GI number get the sequence from the entry in fasta format. Uses the NCBI eUtils (see http://eutils.ncbi.nlm.nih.gov/entrez/query/static/esoap_help.html).
+
+Note: XPath is used instead of XML splitters to avaoid a problem with cyclic references in the XML.</s:workflowdescription>
+              <s:processor name="Extract_seq">
+                <s:defaults>
+                  <s:default name="xpath">//*[local-name(.)='TSeq']/*[local-name(.)='TSeq_sequence']</s:default>
+                </s:defaults>
+                <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+              </s:processor>
+              <s:processor name="Extract_des">
+                <s:defaults>
+                  <s:default name="xpath">//*[local-name(.)='TSeq']/*[local-name(.)='TSeq_defline']</s:default>
+                </s:defaults>
+                <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+              </s:processor>
+              <s:processor name="Flatten_list">
+                <s:local>
+                  org.embl.ebi.escience.scuflworkers.java.FlattenList
+                  <s:extensions>
+                    <s:flattenlist s:depth="2" />
+                  </s:extensions>
+                </s:local>
+              </s:processor>
+              <s:processor name="XPath_From_Text">
+                <s:defaults>
+                  <s:default name="xpath">//*[local-name(.)='eFetchResultMS']/*[local-name(.)='eFetchResult']/*[local-name(.)='TSeqSet']/*[local-name(.)='TSeq']</s:default>
+                </s:defaults>
+                <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+              </s:processor>
+              <s:processor name="Flatten_list4">
+                <s:local>
+                  org.embl.ebi.escience.scuflworkers.java.FlattenList
+                  <s:extensions>
+                    <s:flattenlist s:depth="2" />
+                  </s:extensions>
+                </s:local>
+              </s:processor>
+              <s:processor name="parametersXML">
+                <s:defaults>
+                  <s:default name="db">nucleotide</s:default>
+                  <s:default name="id">75251068</s:default>
+                  <s:default name="rettype">fasta</s:default>
+                </s:defaults>
+                <s:local>
+                  org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+                  <s:extensions>
+                    <s:complextype optional="false" unbounded="false" typename="eFetchRequestMS" name="parameters" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}eFetchRequestMS">
+                      <s:elements>
+                        <s:basetype optional="true" unbounded="false" typename="string" name="db" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;db" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="id" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;id" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="WebEnv" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;WebEnv" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="query_key" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;query_key" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="tool" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;tool" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="email" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;email" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="retstart" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;retstart" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="retmax" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;retmax" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="rettype" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;rettype" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="strand" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;strand" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="seq_start" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;seq_start" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="seq_stop" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;seq_stop" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="complexity" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;complexity" />
+                        <s:basetype optional="true" unbounded="false" typename="string" name="report" qname="{http://www.ncbi.nlm.nih.gov/soap/eutils/efetch}&gt;eFetchRequestMS&gt;report" />
+                      </s:elements>
+                    </s:complextype>
+                  </s:extensions>
+                </s:local>
+              </s:processor>
+              <s:processor name="Build_fasta_seq">
+                <s:beanshell>
+                  <s:scriptvalue>fasta_seq = "&gt;" + accver + " " + des + "\n";
+fasta_seq += seq;</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">accver</s:beanshellinput>
+                    <s:beanshellinput s:syntactictype="'text/plain'">des</s:beanshellinput>
+                    <s:beanshellinput s:syntactictype="'text/plain'">seq</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">fasta_seq</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="Extract_accver">
+                <s:defaults>
+                  <s:default name="xpath">//*[local-name(.)='TSeq']/*[local-name(.)='TSeq_accver']</s:default>
+                </s:defaults>
+                <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+              </s:processor>
+              <s:processor name="Flatten_list2">
+                <s:local>
+                  org.embl.ebi.escience.scuflworkers.java.FlattenList
+                  <s:extensions>
+                    <s:flattenlist s:depth="2" />
+                  </s:extensions>
+                </s:local>
+              </s:processor>
+              <s:processor name="Flatten_list3">
+                <s:local>
+                  org.embl.ebi.escience.scuflworkers.java.FlattenList
+                  <s:extensions>
+                    <s:flattenlist s:depth="2" />
+                  </s:extensions>
+                </s:local>
+              </s:processor>
+              <s:processor name="Merge_string_list_to_string">
+                <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+              </s:processor>
+              <s:processor name="Flatten_list1">
+                <s:local>
+                  org.embl.ebi.escience.scuflworkers.java.FlattenList
+                  <s:extensions>
+                    <s:flattenlist s:depth="2" />
+                  </s:extensions>
+                </s:local>
+              </s:processor>
+              <s:processor name="run_eFetch_MS">
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://eutils.ncbi.nlm.nih.gov/entrez/eutils/soap/eutils.wsdl</s:wsdl>
+                  <s:operation>run_eFetch_MS</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:link source="GI" sink="parametersXML:id" />
+              <s:link source="Build_fasta_seq:fasta_seq" sink="Flatten_list3:inputlist" />
+              <s:link source="Extract_accver:nodelist" sink="Flatten_list2:inputlist" />
+              <s:link source="Extract_des:nodelist" sink="Flatten_list:inputlist" />
+              <s:link source="Extract_seq:nodelist" sink="Flatten_list1:inputlist" />
+              <s:link source="Flatten_list1:outputlist" sink="Build_fasta_seq:seq" />
+              <s:link source="Flatten_list2:outputlist" sink="Build_fasta_seq:accver" />
+              <s:link source="Flatten_list3:outputlist" sink="Flatten_list4:inputlist" />
+              <s:link source="Flatten_list4:outputlist" sink="Merge_string_list_to_string:stringlist" />
+              <s:link source="Flatten_list:outputlist" sink="Build_fasta_seq:des" />
+              <s:link source="Merge_string_list_to_string:concatenated" sink="Sequence_fasta" />
+              <s:link source="XPath_From_Text:nodelistAsXML" sink="Extract_accver:xml-text" />
+              <s:link source="XPath_From_Text:nodelistAsXML" sink="Extract_des:xml-text" />
+              <s:link source="XPath_From_Text:nodelistAsXML" sink="Extract_seq:xml-text" />
+              <s:link source="XPath_From_Text:nodelistAsXML" sink="Sequence_XML" />
+              <s:link source="parametersXML:output" sink="run_eFetch_MS:parameters" />
+              <s:link source="run_eFetch_MS:parameters" sink="XPath_From_Text:xml-text" />
+              <s:source name="GI">
+                <s:metadata>
+                  <s:description>NCBI GI number to get sequence from.</s:description>
+                </s:metadata>
+              </s:source>
+              <s:sink name="Sequence_fasta">
+                <s:metadata>
+                  <s:mimeTypes>
+                    <s:mimeType>text/xml</s:mimeType>
+                  </s:mimeTypes>
+                  <s:description>Sequence in fasta format.</s:description>
+                </s:metadata>
+              </s:sink>
+              <s:sink name="Sequence_XML">
+                <s:metadata>
+                  <s:description>Sequence in XML format from eFetch.</s:description>
+                </s:metadata>
+              </s:sink>
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:processor name="Sequence_or_ID">
+          <s:description>Get fasta formated sequence for an entry identifer or a sequence entry.</s:description>
+          <s:workflow>
+            <s:scufl version="0.2" log="0">
+              <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:70d8a2a8-a369-4824-879d-dbfa36fcecc8" author="Hamish McWilliam" title="Sequence_or_ID">Given a sequence or sequence entry identifer (e.g. uniprot:wap_rat), return the sequence in fasta format.
+
+If a sequence identifier, in database:identifier format, is input the EBI's WSDbfetch web service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch) is used to retrive the sequence in fasta format. Otherwise the input is assumed to be a sequence and if passed through the Soaplab EMBOSS seqret service to force the sequence into fasta format.</s:workflowdescription>
+              <s:processor name="Is_sequence">
+                <s:description>Return true if the input is a sequence or false if the input is a sequence identifer (e.g. uniprot:wap_rat).</s:description>
+                <s:beanshell>
+                  <s:scriptvalue>lineLen = sequence.indexOf("\n");
+if(lineLen &lt; 1) {
+  lineLen = sequence.length();
+}
+if(!sequence.startsWith("&gt;") &amp;&amp;
+   sequence.indexOf(":") &gt; 0 &amp;&amp;
+   sequence.indexOf(":") &lt; lineLen) {
+  is_sequence = "false";
+} else {
+  is_sequence = "true";
+}</s:scriptvalue>
+                  <s:beanshellinputlist>
+                    <s:beanshellinput s:syntactictype="'text/plain'">sequence</s:beanshellinput>
+                  </s:beanshellinputlist>
+                  <s:beanshelloutputlist>
+                    <s:beanshelloutput s:syntactictype="'text/plain'">is_sequence</s:beanshelloutput>
+                  </s:beanshelloutputlist>
+                  <s:dependencies s:classloader="iteration" />
+                </s:beanshell>
+              </s:processor>
+              <s:processor name="Fail_if_identifer">
+                <s:description>Fails if the workflow input is an identifier (i.e. is an actual sequence).</s:description>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+              </s:processor>
+              <s:processor name="Fail_if_sequence">
+                <s:description>Fails if the workflow input was a sequence (i.e. is an identifer).</s:description>
+                <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+              </s:processor>
+              <s:processor name="fetchData">
+                <s:description>Fetch the sequence in fasta format from the identifer using EBI's WSDbfetch service (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch).</s:description>
+                <s:defaults>
+                  <s:default name="format">fasta</s:default>
+                  <s:default name="style">raw</s:default>
+                </s:defaults>
+                <s:arbitrarywsdl>
+                  <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSDbfetch.wsdl</s:wsdl>
+                  <s:operation>fetchData</s:operation>
+                </s:arbitrarywsdl>
+              </s:processor>
+              <s:processor name="seqret">
+                <s:description>Format sequence into fasta format.</s:description>
+                <s:defaults>
+                  <s:default name="osformat">fasta</s:default>
+                </s:defaults>
+                <s:soaplabwsdl>http://www.ebi.ac.uk/soaplab/emboss4/services/edit.seqret</s:soaplabwsdl>
+              </s:processor>
+              <s:link source="Sequence_or_ID" sink="Is_sequence:sequence" />
+              <s:link source="Is_sequence:is_sequence" sink="Fail_if_identifer:test" />
+              <s:link source="Is_sequence:is_sequence" sink="Fail_if_sequence:test" />
+              <s:link source="Sequence_or_ID" sink="fetchData:query" />
+              <s:link source="Sequence_or_ID" sink="seqret:sequence_direct_data" />
+              <s:link source="fetchData:fetchDataReturn" sink="Sequence" />
+              <s:link source="seqret:outseq" sink="Sequence" />
+              <s:source name="Sequence_or_ID">
+                <s:metadata>
+                  <s:description>Either an actual sequence or an entry identifer in database:identifier format (e.g. uniprot:wap_rat).</s:description>
+                </s:metadata>
+              </s:source>
+              <s:sink name="Sequence">
+                <s:metadata>
+                  <s:description>Sequence in fasta format.</s:description>
+                </s:metadata>
+              </s:sink>
+              <s:coordination name="fetchData_BLOCKON_Fail_if_sequence">
+                <s:condition>
+                  <s:state>Completed</s:state>
+                  <s:target>Fail_if_sequence</s:target>
+                </s:condition>
+                <s:action>
+                  <s:target>fetchData</s:target>
+                  <s:statechange>
+                    <s:from>Scheduled</s:from>
+                    <s:to>Running</s:to>
+                  </s:statechange>
+                </s:action>
+              </s:coordination>
+              <s:coordination name="seqret_BLOCKON_Fail_if_identifer">
+                <s:condition>
+                  <s:state>Completed</s:state>
+                  <s:target>Fail_if_identifer</s:target>
+                </s:condition>
+                <s:action>
+                  <s:target>seqret</s:target>
+                  <s:statechange>
+                    <s:from>Scheduled</s:from>
+                    <s:to>Running</s:to>
+                  </s:statechange>
+                </s:action>
+              </s:coordination>
+            </s:scufl>
+          </s:workflow>
+        </s:processor>
+        <s:link source="Sequence_or_ID_or_GI" sink="Get_fasta_from_GI:GI" />
+        <s:link source="Sequence_or_ID_or_GI" sink="Is_GI:gi_id_seq" />
+        <s:link source="Sequence_or_ID_or_GI" sink="Sequence_or_ID:Sequence_or_ID" />
+        <s:link source="Get_fasta_from_GI:Sequence_fasta" sink="Sequence" />
+        <s:link source="Is_GI:is_gi" sink="Fail_if_GI:test" />
+        <s:link source="Is_GI:is_gi" sink="Fail_if_sequence_or_id:test" />
+        <s:link source="Sequence_or_ID:Sequence" sink="Sequence" />
+        <s:source name="Sequence_or_ID_or_GI">
+          <s:metadata>
+            <s:description>Input sequence, GI number or entry identifier.</s:description>
+          </s:metadata>
+        </s:source>
+        <s:sink name="Sequence">
+          <s:metadata>
+            <s:description>Sequence in fasta format.</s:description>
+          </s:metadata>
+        </s:sink>
+        <s:coordination name="Sequence_or_ID_BLOCKON_Fail_if_GI">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_GI</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Sequence_or_ID</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="Get_fasta_from_GI_BLOCKON_Fail_if_sequence_or_id">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_sequence_or_id</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Get_fasta_from_GI</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Reformat_sequence">
+    <s:beanshell>
+      <s:scriptvalue>//
+// Reformat fasta input sequence into raw sequence
+//
+
+import java.util.StringTokenizer;
+
+out_seq = "";
+StringTokenizer tok1 = new StringTokenizer(in_seq, "\n");
+while(tok1.hasMoreElements()) {
+  line = tok1.nextElement();
+  if(!line.startsWith("&gt;")) {
+    out_seq += line;
+  }
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">in_seq</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">out_seq</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="BLAST_program" sink="QBLAST_Put:BLAST_program" />
+  <s:link source="Search_database" sink="QBLAST_Put:BLAST_database" />
+  <s:link source="QBLAST_Put:QBLAST_job_ID" sink="QBLAST_Get:QBLAST_job_ID" />
+  <s:link source="Sequence_or_ID_or_GI" sink="Sequence_or_ID_or_GI:Sequence_or_ID_or_GI" />
+  <s:link source="Reformat_sequence:out_seq" sink="QBLAST_Put:Query_sequence" />
+  <s:link source="Sequence_or_ID_or_GI:Sequence" sink="Reformat_sequence:in_seq" />
+  <s:link source="QBLAST_Get:QBLAST_result" sink="NCBI_QBLAST_result" />
+  <s:link source="QBLAST_Put:QBLAST_job_ID" sink="NCBI_QBLAST_job_ID" />
+  <s:source name="Sequence_or_ID_or_GI">
+    <s:metadata>
+      <s:description>Input sequence. Either the actual sequence, an NCBI GI identifer (e.g. 75251068 or 1531757) or an entry identifier in database:identifer format (e.g. uniprot:AUX1_ARATH or embl:X98772).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Search_database">
+    <s:metadata>
+      <s:description>Database to search (e.g. nr or nt).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="BLAST_program">
+    <s:metadata>
+      <s:description>NCBI BLAST "program" to use for the search (e.g. blastp or blastn).</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="NCBI_QBLAST_job_ID">
+    <s:metadata>
+      <s:description>NCBI QBLAST job identifer.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="NCBI_QBLAST_result">
+    <s:metadata>
+      <s:description>NCBI BLAST result from QBLAST. This is similar to the normal NCBI BLAST output but contains some HTML/XML tags.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

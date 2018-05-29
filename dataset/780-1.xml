@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:872d2c3a-8e9a-4052-beef-a34f41f708f0" author="" title="getCityCoordinates" />
+  <s:processor name="composeURL">
+    <s:beanshell>
+      <s:scriptvalue>List vars = new ArrayList(Arrays.asList(this.variables));
+
+// vars.remove("variables");
+vars.remove("bsh");
+
+
+String url = "http://ws.geonames.org/wikipediaSearch?";
+
+for (String variable : vars) {
+   url = url + variable + "=" + eval(variable);
+}
+url = url + "&amp;maxRows=10"; // 
+
+// Chop of last &amp;
+url = url.substring(0, url.length());</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">q</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Get_web_page_from_URL">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="getLatAndLngfromXML">
+    <s:beanshell>
+      <s:scriptvalue>tempClat = xmlData.substring(xmlData.indexOf("&lt;lat&gt;")+5,xmlData.indexOf("&lt;/lat&gt;"));
+tempClng = xmlData.substring(xmlData.indexOf("&lt;lng&gt;")+5,xmlData.indexOf("&lt;/lng&gt;"));
+
+clat = tempClat.substring(0,tempClat.length()-2);
+clng = tempClng.substring(0,tempClng.length()-2);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">xmlData</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">clat</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">clng</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="capitalName" sink="composeURL:q" />
+  <s:link source="Get_web_page_from_URL:contents" sink="getLatAndLngfromXML:xmlData" />
+  <s:link source="composeURL:url" sink="Get_web_page_from_URL:url" />
+  <s:link source="Get_web_page_from_URL:contents" sink="xmlData" />
+  <s:link source="composeURL:url" sink="url" />
+  <s:link source="getLatAndLngfromXML:clat" sink="clat" />
+  <s:link source="getLatAndLngfromXML:clng" sink="clng" />
+  <s:source name="capitalName" />
+  <s:sink name="url" />
+  <s:sink name="clat" />
+  <s:sink name="clng" />
+  <s:sink name="xmlData" />
+</s:scufl>
+

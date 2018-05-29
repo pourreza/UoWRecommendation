@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:64f89a27-63d3-4fe0-8846-2000f5298b3d" author="myExperimentBeanshellCollection group." title="myExperimentBeanshellCollection">Public collection of generic Beanshells curated by the myExperimentBeanshellCollection group on myExperiment. Visit http://www.myexperiment.org for details and updates.
+
+To use this collection of beanshells in Taverna:
+* Right click "Available Processors" in the "Design Perspective"
+* Choose "Add new Workflow scavenger..."
+* Provide the URL to this beanshell collection on www.myExperiment.org or if you downloaded this to your hard disk, provide a "file" URL to the absolute path of this file
+  (On Linux/Unix/Mac: file:///some/path/on/my/disk/myExperimentBeanshellCollection.xml)
+  (On Windows:             file:///drive_letter:/My%20Documents/myExperimentBeanshellCollection.xml)
+* You can select Beanshells from this scavenger now and add them to your workflow like any other processor.</s:workflowdescription>
+  <s:processor name="DecodeBase64EncodedSVGZ">
+    <s:description>This Beanshell script first decodes the Base64 encoded input followed by unzipping. Originally designed for extracting SVG images from Base64 encoded SVGZ service outputs, but it could be used for parsing any other zipped and afterwards base64 encoded service output.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>//
+// Import modules;
+//
+import java.io.*;
+import java.util.zip.*;
+import java.io.ByteArrayInputStream;
+//
+// Main script.
+//
+String vError = new String("");
+String SVG = new String("");
+Decoded = "false";
+
+try {
+	
+	sun.misc.BASE64Decoder oDecoder = new sun.misc.BASE64Decoder();
+	byte[] vGzippedData = oDecoder.decodeBuffer(Base64EncSVGZ);
+	
+	ByteArrayInputStream oBAIS = new ByteArrayInputStream(vGzippedData);
+	GZIPInputStream oGIS = new GZIPInputStream(oBAIS);
+	
+	BufferedReader oBR = new BufferedReader(new InputStreamReader(oGIS));
+	String vLine;
+			
+	while ((vLine = oBR.readLine()) != null) {
+		//System.out.println(line);
+		SVG += vLine + System.getProperty("line.separator");
+	}
+	//System.out.println(vSVG);
+
+	Decoded = "true";
+
+} catch (IOException oError) {
+	vError = vError + "IO Error: ";
+	vError = vError + oError.getMessage();
+}
+
+Message = vError;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">Base64EncSVGZ</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">Message</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">Decoded</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/xml'">SVG</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="DownloadToDiskFromURLWithBasicAuth">
+    <s:description>This Beanshell downloads a file to disk. The standard download local Java widgets don't handle URLs with HTTP(S) Basic Authentication, but this Beanshell can. When a webserver uses BasicAuth, a login and password can be coded as part of the URL using the following syntax: http(s)://login:password@www.some.website/my/great/tool/result.xml. This beanshel extracts the login and password from the URL and supplies them automatically to the webserver. This prevents Taverna from showing popup dialogs requesting the login and password from the user as this will be problematic for large workflows.
+
+Please note that the path where the downloaded file will be stored must be an absolute path to a folder ended with a slash. (Slash backward on Windows or a slash forward on Linux/Unix/Mac OS X.) The filename for the result is automatically extracted from the URL.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>//
+// Import modules;
+//
+import java.io.*;
+import java.net.*;
+import java.util.regex.*;
+//
+// Main script.
+//
+String vError = "";
+Downloaded = "false";
+try {
+	// Get filename for the download from the URL.
+	String vFile = "download";	
+	String vPattern = ".*?([^/]+)$";
+	Pattern oPattern = Pattern.compile(vPattern);
+	Matcher oMatcher = oPattern.matcher(URL);
+	Boolean vHit = oMatcher.matches();
+	if (vHit) {
+		vFile = oMatcher.group(1);
+	} else {
+		vError = vError + "Error no filename found in URL.";				
+	}
+	// Connect to URL.
+	URL oURL = new URL(URL);
+	URLConnection oURLConnection = oURL.openConnection();
+	// Check if we are are dealing with a site 
+	// that uses basic http(s) authentication.
+	vPattern = "(\\w+://)??([^:]+):([^:@]+)@.*";
+	oPattern = Pattern.compile(vPattern);
+	oMatcher = oPattern.matcher(URL);
+	vHit = oMatcher.matches();
+	if (vHit) {
+		//String vProtocol = oMatcher.group(1);
+		String vUser = oMatcher.group(2);
+		String vPass = oMatcher.group(3);
+		String vAuth = vUser + ":" + vPass;
+		String vEncodedUserPassword = new sun.misc.BASE64Encoder().encode(vAuth.getBytes());
+		oURLConnection.setRequestProperty ("Authorization", "Basic " + vEncodedUserPassword);	
+	}
+	// Pump data to disk.	
+	InputStream oIS = oURLConnection.getInputStream();
+	String vFilePath = Path + vFile;
+	OutputStream oOS = new FileOutputStream(vFilePath);
+	synchronized (oIS) {
+		synchronized (oOS) {
+			byte[] oBuffer = new byte[256];
+			while (true) {
+				int vBytesRead = oIS.read(oBuffer);
+				if (vBytesRead == -1) break;
+				oOS.write(oBuffer, 0, vBytesRead);
+			}
+		}
+	}
+	oIS.close();
+	oOS.close();
+	Downloaded = "true";
+} catch (MalformedURLException oError) {
+	vError = vError + oError.getMessage();
+} catch (FileNotFoundException oError) {
+	vError = vError + "File not found.";
+} catch (PatternSyntaxException oError) {
+	vError = vError + "RegExp Error: ";
+	vError = vError + oError.getMessage();
+} catch (IOException oError) {
+	vError = vError + "IO Error: ";
+	vError = vError + oError.getMessage();
+}
+Message = vError;</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">URL</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">Path</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">Downloaded</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">Message</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="SelectItemsFromList">
+    <s:description>Allows the user to select items from a given list to be analysed by processors downstream from this Beanshell script as a step of the workflow.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>/**
+ * Class representing the selected values of this beanshell processor
+ */
+class SelectedValues
+{
+  ArrayList selectedValues;
+
+  SelectedValues()
+  {
+    selectedValues = new ArrayList();
+  }
+
+  synchronized void addToValues(ArrayList values)
+  {
+    for(int i = 0; i &lt; values.size(); i ++)
+      selectedValues.add(values.get(i));
+
+    notifyAll();
+  }
+
+  synchronized ArrayList getValues()
+  {
+    while (selectedValues.size() == 0)
+    {
+      try
+      {
+        wait();
+      }
+      catch (InterruptedException e)
+      {
+        e.printStackTrace();
+      }
+    }
+
+    return selectedValues;
+  }
+}
+
+/**
+ * Class representing the GUI for selecting the values to be
+ * processed by the remainder of the workflow.
+ */
+MultipleSelectWorkerGUI(ArrayList input, SelectedValues values)
+{
+  JList list;
+  DefaultListModel listModel;
+  final String submitString = "Submit";
+  JButton submitButton;
+  int[] accessions;
+  SelectedValues selectedValues;
+  ArrayList inputdata;
+  
+
+  void init()
+  {
+    super.frame = new JFrame("Select data for downstream analysis");
+    //Place window in centre of the screen
+    super.frame.setLocationRelativeTo(null);
+    pane = new JPanel(); 
+    super.frame.getContentPane().add(pane); 
+    pane.setLayout(new BorderLayout()); 
+
+    // Set up input data available for selection
+    listModel = new DefaultListModel();
+    for (int i = 0; i &lt; input.size(); i++)
+      listModel.addElement(input.get(i));
+    
+    selectedValues = values;
+
+    //Create the list and put it in a scroll pane
+    list = new JList(listModel);
+    list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+    list.setSelectedIndex(0);
+    list.addListSelectionListener(this);
+    list.setVisibleRowCount(10);
+    list.setSize(800,500);
+    list.setFixedCellHeight(20);
+
+    JScrollPane listScrollPane = new JScrollPane(list);
+
+    submitButton = new JButton(submitString);
+    submitButton.setActionCommand(submitString);
+    submitButton.addActionListener(this);
+
+    //Create a panel
+    JPanel buttonPane = new JPanel();
+    buttonPane.add(submitButton);
+    buttonPane.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+    pane.add(listScrollPane, BorderLayout.CENTER);
+    pane.add(buttonPane, BorderLayout.PAGE_END);
+
+    //frame.setSize(800,500);
+    frame.setVisible(true); 
+    frame.pack(); 
+  }
+
+  //This method is required by ListSelectionListener.
+  void valueChanged(ListSelectionEvent e)
+  {
+    if (!e.getValueIsAdjusting())
+    {
+      if (list.getSelectedIndex() == -1)
+      {
+        //No selection so disable fire button
+        submitButton.setEnabled(false);
+      }
+      else
+      {
+        //Selection made so enable the fire button.
+        submitButton.setEnabled(true);
+      }
+    }
+
+  }
+
+  // This method is called only if there is a valid selection
+  void actionPerformed(ActionEvent e)
+  {
+    ArrayList al = new ArrayList();
+
+    if (list.getSelectedIndices().length == 0)
+    {
+      // Nothing selected so disable firing
+      submitButton.setEnabled(false);
+    }
+    else
+    {
+      selectedItems = list.getSelectedIndices();
+      //System.out.println(selectedItems);
+      
+      for(int i = 0; i &lt; selectedItems.length; i++)
+      {
+        String str = listModel.elementAt(selectedItems[i]);
+        al.add(str);
+      }
+      
+      selectedValues.addToValues(al);
+      super.frame.dispose();
+
+    }
+  }
+
+  init(); 
+  return this; 
+}
+
+/**
+ * Wrapper for MultipleSelectWorkerGUI
+ */ 
+class WorkerWrapper extends Thread
+{
+  SelectedValues selectedValues;
+  ArrayList inputdata;
+
+  WorkerWrapper(ArrayList input, SelectedValues v)
+  {
+    inputdata = inputList;
+    selectedValues = v;
+  }
+
+  void run()
+  {
+    msw = MultipleSelectWorkerGUI(inputdata, selectedValues);
+  }
+}
+
+
+sv = new SelectedValues();
+wrapper = new WorkerWrapper(inputList, sv);
+wrapper.start();
+outputList = sv.getValues();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">inputList</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">outputList</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+</s:scufl>
+

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:8a8dd031-a973-44c5-acc1-0e74130f4a46" author="Stian Soiland-Reyes" title="REST access of xml.nig.ac.jp">See http://xml.nig.ac.jp/tutorial/rest/index.html and http://xml.nig.ac.jp/index.html#services
+
+This workflow has a beanshell script for composing the REST URL for the service at xml.nig.ac.jp. 
+
+The example invokes the getDDBJEntry(accession) method of the getEntry service at http://xml.nig.ac.jp/wabi/Method?serviceName=GetEntry&amp;mode=methodList&amp;lang=en - but the workflow can be modified to invoke any other service from http://xml.nig.ac.jp/index.html#services by modifying the "service" and "method" parameters to compose_URL.
+
+Any other input parameters to compose_URL are added to the URL as well, so if instead you want to invoke the method "analyzeParamAsync(query, param)" from the "ClustalW" service, first modify the "service" and "method" default parameters to "ClustalW" and "analyzeParamAsync", and then edit the beanshell script's input ports: Remove the "accession" port from compose_URL, then add "query" and "param". You don't need to modify the actual beanshell script as it picks up any declared input parameters.
+
+This pattern could probably be used for many REST services that work like xml.nig.ac.jp - but the disadvantage is that one has to manually read the documentations to figure out what the parameters are to be.</s:workflowdescription>
+  <s:processor name="Get_web_page_from_URL">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="compose_URL">
+    <s:defaults>
+      <s:default name="service">GetEntry</s:default>
+      <s:default name="method">getDDBJEntry</s:default>
+      <s:default name="accession">AB000100</s:default>
+    </s:defaults>
+    <s:beanshell>
+      <s:scriptvalue>List vars = new ArrayList(Arrays.asList(this.variables));
+
+// vars.remove("variables");
+vars.remove("bsh");
+
+
+String url = "http://xml.ddbj.nig.ac.jp/rest/Invoke?";
+
+for (String variable : vars) {
+   url = url + variable + "=" + eval(variable) + "&amp;";
+}
+
+
+// Chop of last &amp;
+url = url.substring(0, url.length());</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">service</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">method</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">accession</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="compose_URL:url" sink="Get_web_page_from_URL:url" />
+  <s:link source="Get_web_page_from_URL:contents" sink="data" />
+  <s:link source="compose_URL:url" sink="url" />
+  <s:sink name="url" />
+  <s:sink name="data" />
+</s:scufl>
+

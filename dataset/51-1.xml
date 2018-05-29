@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:W0TIAJ5S3K0" author="Tom Oinn" title="Example of a conditional execution workflow">If the input is true then the string 'foo' is emited, if false then 'bar'. Just a simple example to show how the monster works, so to speak.</s:workflowdescription>
+  <s:processor name="Fail_if_false">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+  </s:processor>
+  <s:processor name="Fail_if_true">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+  </s:processor>
+  <s:processor name="tempF" boring="true">
+    <s:stringconstant>77</s:stringconstant>
+  </s:processor>
+  <s:processor name="tempC" boring="true">
+    <s:stringconstant>25</s:stringconstant>
+  </s:processor>
+  <s:processor name="CtoF">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://developerdays.com/cgi-bin/tempconverter.exe/wsdl/ITempConverter</s:wsdl>
+      <s:operation>CtoF</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="FtoC">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://developerdays.com/cgi-bin/tempconverter.exe/wsdl/ITempConverter</s:wsdl>
+      <s:operation>FtoC</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="condition" sink="Fail_if_false:test" />
+  <s:link source="condition" sink="Fail_if_true:test" />
+  <s:link source="CtoF:return" sink="tempF" />
+  <s:link source="FtoC:return" sink="tempC" />
+  <s:link source="tempC:value" sink="CtoF:temp" />
+  <s:link source="tempF:value" sink="FtoC:temp" />
+  <s:source name="condition">
+    <s:metadata>
+      <s:description>Enter the string 'true' or 'false' here to show the conditional branching</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="tempF" />
+  <s:sink name="tempC" />
+  <s:coordination name="bar_BLOCKON_Fail_if_true">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Fail_if_true</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>tempC</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+  <s:coordination name="foo_BLOCKON_Fail_if_false">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>Fail_if_false</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>tempF</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

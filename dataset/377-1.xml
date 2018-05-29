@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:1ad906e0-6261-4f6c-98d8-7ac9b47d991f" author="" title="mustang" />
+  <s:processor name="1st_protein_structure">
+    <s:workflow>
+      <s:xscufllocation>http://www.myexperiment.org/workflows/167/download</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="2nd_protein_structure">
+    <s:workflow>
+      <s:xscufllocation>http://www.myexperiment.org/workflows/167/download</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="boxshade">
+    <s:description>Alignment pretty printer</s:description>
+    <s:knowarcjanitor>
+      <s:usecaseid>boxshade</s:usecaseid>
+    </s:knowarcjanitor>
+  </s:processor>
+  <s:processor name="mustang_2">
+    <s:description>Alignment of two protein structures</s:description>
+    <s:knowarcjanitor>
+      <s:usecaseid>mustang_2</s:usecaseid>
+    </s:knowarcjanitor>
+  </s:processor>
+  <s:link source="1st_protein_id" sink="1st_protein_structure:pdbID" />
+  <s:link source="2nd_protein_id" sink="2nd_protein_structure:pdbID" />
+  <s:link source="1st_protein_structure:pdbFlatFile" sink="1st_protein_structure" />
+  <s:link source="1st_protein_structure:pdbFlatFile" sink="mustang_2:pdb_structure_one" />
+  <s:link source="2nd_protein_structure:pdbFlatFile" sink="2nd_protein_structure" />
+  <s:link source="2nd_protein_structure:pdbFlatFile" sink="mustang_2:pdb_structure_two" />
+  <s:link source="boxshade:PostScript_file" sink="alignment_pretty" />
+  <s:link source="mustang_2:combined_structures" sink="alignment_overlay" />
+  <s:link source="mustang_2:structure_derived_alignment" sink="alignment_msf" />
+  <s:link source="mustang_2:structure_derived_alignment" sink="boxshade:Multiple_Sequence_Alignment_as_MSF" />
+  <s:source name="1st_protein_id" />
+  <s:source name="2nd_protein_id" />
+  <s:sink name="alignment_msf" />
+  <s:sink name="alignment_overlay" />
+  <s:sink name="alignment_pretty" />
+  <s:sink name="1st_protein_structure" />
+  <s:sink name="2nd_protein_structure" />
+</s:scufl>
+

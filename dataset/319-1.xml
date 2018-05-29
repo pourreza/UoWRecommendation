@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:N4RV9RBFGB0" author="" title="" />
+  <s:processor name="affy_probeset_in_region">
+    <s:description>Gets the probes that are in a region of a chromosome e.g. in a QTL</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:8555/axis/services/qtl_analysis.affy_probeset_in_region</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="markers" boring="true">
+    <s:stringconstant>D7Mit130, RH125910</s:stringconstant>
+  </s:processor>
+  <s:processor name="organism" boring="true">
+    <s:stringconstant>mus musculus</s:stringconstant>
+  </s:processor>
+  <s:processor name="getcurrentdatabase">
+    <s:description>Retrieves the current databases from ENSEMBL for a species</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:8555/axis/services/qtl_analysis.getcurrentdatabase</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="chromosome" boring="true">
+    <s:stringconstant>7</s:stringconstant>
+  </s:processor>
+  <s:processor name="measurementNames" boring="true">
+    <s:stringconstant>JW_culture_1_PostDrug_10hr_T3a_measurement, JW_culture_1_PostDrug_24hr_T4a_measurement</s:stringconstant>
+  </s:processor>
+  <s:processor name="format" boring="true">
+    <s:stringconstant>text</s:stringconstant>
+  </s:processor>
+  <s:processor name="hunt">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://localhost/maxdBrowse/geneHunt2.wsdl</s:wsdl>
+      <s:operation>hunt</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="arguments" boring="true">
+    <s:stringconstant>&lt;table&gt;Measurement&lt;/table&gt; &lt;format&gt;xml&lt;/format&gt; &lt;types&gt;RMA Normalised Expression&lt;/types&gt; &lt;spots&gt;Gene&lt;/spots&gt; &lt;ids&gt;0,1,2,3,7,8,9,10&lt;/ids&gt; &lt;geneids&gt;0,1,2,3&lt;/geneids&gt; &lt;action&gt;enumerate&lt;/action&gt;</s:stringconstant>
+  </s:processor>
+  <s:processor name="query">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://130.88.197.210/maxdBrowse/maxdBrowse.wsdl</s:wsdl>
+      <s:operation>query</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="result_type" boring="true">
+    <s:stringconstant>result</s:stringconstant>
+  </s:processor>
+  <s:link source="affy_probeset_in_region:output" sink="hunt:gene" />
+  <s:link source="arguments:value" sink="query:args" />
+  <s:link source="chromosome:value" sink="affy_probeset_in_region:chromosome_direct_data" />
+  <s:link source="format:value" sink="hunt:format" />
+  <s:link source="getcurrentdatabase:output" sink="affy_probeset_in_region:database_direct_data" />
+  <s:link source="hunt:return" sink="expression_data_for_gene_in_qtl" />
+  <s:link source="markers:value" sink="affy_probeset_in_region:markers_direct_data" />
+  <s:link source="measurementNames:value" sink="hunt:measurementNames" />
+  <s:link source="organism:value" sink="getcurrentdatabase:species" />
+  <s:link source="query:return" sink="affy_probeset_in_region:affy_list_direct_data" />
+  <s:link source="result_type:value" sink="query:resultType" />
+  <s:sink name="expression_data_for_gene_in_qtl" />
+</s:scufl>
+
+

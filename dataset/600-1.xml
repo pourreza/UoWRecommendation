@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:683f4d7c-8190-4c42-900c-37ec65811da4" author="" title="cql" />
+  <s:processor name="parametersXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="QueryRequest" name="parameters" qname="{http://gov.nih.nci.cagrid.data/DataService}QueryRequest">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="&gt;&gt;QueryRequest&gt;cqlQuery" name="cqlQuery" qname="{http://gov.nih.nci.cagrid.data/DataService}&gt;QueryRequest&gt;cqlQuery">
+              <s:elements>
+                <s:complextype optional="false" unbounded="false" typename="CQLQuery" name="CQLQuery" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;&gt;QueryRequest&gt;cqlQuery&gt;CQLQuery">
+                  <s:elements>
+                    <s:complextype optional="false" unbounded="false" typename="Object" name="Target" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;CQLQuery&gt;Target">
+                      <s:elements>
+                        <s:complextype optional="true" unbounded="false" typename="Attribute" name="Attribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Attribute">
+                          <s:elements />
+                        </s:complextype>
+                        <s:complextype optional="true" unbounded="false" typename="Association" name="Association" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Association">
+                          <s:elements />
+                        </s:complextype>
+                        <s:complextype optional="true" unbounded="false" typename="Group" name="Group" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Group">
+                          <s:elements>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Association" name="Association" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Association">
+                              <s:elementtype>
+                                <s:complextype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Association" optional="false" unbounded="false" typename="Association" name="" />
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Attribute" name="Attribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Attribute">
+                              <s:elementtype>
+                                <s:complextype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Attribute" optional="false" unbounded="false" typename="Attribute" name="" />
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Group" name="Group" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Group">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="Group" name="" qname="Group">
+                                  <s:elements>
+                                    <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Association" optional="true" unbounded="true" wrapped="false" typename="Association" name="Association" />
+                                    <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Attribute" optional="true" unbounded="true" wrapped="false" typename="Attribute" name="Attribute" />
+                                    <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Group" optional="true" unbounded="true" wrapped="false" typename="Group" name="Group" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                          </s:elements>
+                        </s:complextype>
+                      </s:elements>
+                    </s:complextype>
+                    <s:complextype optional="true" unbounded="false" typename="QueryModifier" name="QueryModifier" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;CQLQuery&gt;QueryModifier">
+                      <s:elements>
+                        <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="AttributeNames" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}QueryModifier&gt;AttributeNames">
+                          <s:elementtype>
+                            <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                          </s:elementtype>
+                        </s:arraytype>
+                        <s:basetype optional="true" unbounded="false" typename="string" name="DistinctAttribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}QueryModifier&gt;DistinctAttribute" />
+                      </s:elements>
+                    </s:complextype>
+                  </s:elements>
+                </s:complextype>
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Beanshell_1">
+    <s:beanshell>
+      <s:scriptvalue>String id = "";
+		int n1 = input.indexOf("SWISS-PROT:");
+		int n2 = input.indexOf('|', n1);
+		id = input.substring(n1+11, n2);
+String output = "&lt;ns1:CQLQuery xmlns:ns1=\"http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery\"&gt; &lt;ns1:Target name=\"edu.georgetown.pir.domain.ProteinSequence\"&gt;&lt;ns1:Group logicRelation=\"AND\"&gt;&lt;ns1:Attribute name=\"id\" predicate=\"LIKE\" value=\"%"+ id +"%\"/&gt;&lt;/ns1:Group&gt;&lt;/ns1:Target&gt;&lt;/ns1:CQLQuery&gt;";</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="parametersXML1">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="QueryRequest" name="parameters" qname="{http://gov.nih.nci.cagrid.data/DataService}QueryRequest">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="&gt;&gt;QueryRequest&gt;cqlQuery" name="cqlQuery" qname="{http://gov.nih.nci.cagrid.data/DataService}&gt;QueryRequest&gt;cqlQuery">
+              <s:elements>
+                <s:complextype optional="false" unbounded="false" typename="CQLQuery" name="CQLQuery" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;&gt;QueryRequest&gt;cqlQuery&gt;CQLQuery">
+                  <s:elements>
+                    <s:complextype optional="false" unbounded="false" typename="Object" name="Target" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;CQLQuery&gt;Target">
+                      <s:elements>
+                        <s:complextype optional="true" unbounded="false" typename="Attribute" name="Attribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Attribute">
+                          <s:elements />
+                        </s:complextype>
+                        <s:complextype optional="true" unbounded="false" typename="Association" name="Association" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Association">
+                          <s:elements />
+                        </s:complextype>
+                        <s:complextype optional="true" unbounded="false" typename="Group" name="Group" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Group">
+                          <s:elements>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Association" name="Association" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Association">
+                              <s:elementtype>
+                                <s:complextype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Association" optional="false" unbounded="false" typename="Association" name="" />
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Attribute" name="Attribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Attribute">
+                              <s:elementtype>
+                                <s:complextype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Attribute" optional="false" unbounded="false" typename="Attribute" name="" />
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Group" name="Group" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Group">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="Group" name="" qname="Group">
+                                  <s:elements>
+                                    <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Association" optional="true" unbounded="true" wrapped="false" typename="Association" name="Association" />
+                                    <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Attribute" optional="true" unbounded="true" wrapped="false" typename="Attribute" name="Attribute" />
+                                    <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Group" optional="true" unbounded="true" wrapped="false" typename="Group" name="Group" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                          </s:elements>
+                        </s:complextype>
+                      </s:elements>
+                    </s:complextype>
+                    <s:complextype optional="true" unbounded="false" typename="QueryModifier" name="QueryModifier" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;CQLQuery&gt;QueryModifier">
+                      <s:elements>
+                        <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="AttributeNames" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}QueryModifier&gt;AttributeNames">
+                          <s:elementtype>
+                            <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                          </s:elementtype>
+                        </s:arraytype>
+                        <s:basetype optional="true" unbounded="false" typename="string" name="DistinctAttribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}QueryModifier&gt;DistinctAttribute" />
+                      </s:elements>
+                    </s:complextype>
+                  </s:elements>
+                </s:complextype>
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="cqlQueryXML1">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="&gt;&gt;QueryRequest&gt;cqlQuery" name="cqlQuery" qname="{http://gov.nih.nci.cagrid.data/DataService}&gt;QueryRequest&gt;cqlQuery">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="CQLQuery" name="CQLQuery" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;&gt;QueryRequest&gt;cqlQuery&gt;CQLQuery">
+              <s:elements>
+                <s:complextype optional="false" unbounded="false" typename="Object" name="Target" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;CQLQuery&gt;Target">
+                  <s:elements>
+                    <s:complextype optional="true" unbounded="false" typename="Attribute" name="Attribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Attribute">
+                      <s:elements />
+                    </s:complextype>
+                    <s:complextype optional="true" unbounded="false" typename="Association" name="Association" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Association">
+                      <s:elements />
+                    </s:complextype>
+                    <s:complextype optional="true" unbounded="false" typename="Group" name="Group" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Group">
+                      <s:elements>
+                        <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Association" name="Association" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Association">
+                          <s:elementtype>
+                            <s:complextype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Association" optional="false" unbounded="false" typename="Association" name="" />
+                          </s:elementtype>
+                        </s:arraytype>
+                        <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Attribute" name="Attribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Attribute">
+                          <s:elementtype>
+                            <s:complextype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Attribute" optional="false" unbounded="false" typename="Attribute" name="" />
+                          </s:elementtype>
+                        </s:arraytype>
+                        <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Group" name="Group" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Group">
+                          <s:elementtype>
+                            <s:complextype optional="false" unbounded="false" typename="Group" name="" qname="Group">
+                              <s:elements>
+                                <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Association" optional="true" unbounded="true" wrapped="false" typename="Association" name="Association" />
+                                <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Attribute" optional="true" unbounded="true" wrapped="false" typename="Attribute" name="Attribute" />
+                                <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Group" optional="true" unbounded="true" wrapped="false" typename="Group" name="Group" />
+                              </s:elements>
+                            </s:complextype>
+                          </s:elementtype>
+                        </s:arraytype>
+                      </s:elements>
+                    </s:complextype>
+                  </s:elements>
+                </s:complextype>
+                <s:complextype optional="true" unbounded="false" typename="QueryModifier" name="QueryModifier" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;CQLQuery&gt;QueryModifier">
+                  <s:elements>
+                    <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="AttributeNames" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}QueryModifier&gt;AttributeNames">
+                      <s:elementtype>
+                        <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                      </s:elementtype>
+                    </s:arraytype>
+                    <s:basetype optional="true" unbounded="false" typename="string" name="DistinctAttribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}QueryModifier&gt;DistinctAttribute" />
+                  </s:elements>
+                </s:complextype>
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersXML2">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="QueryResponse" name="parameters" qname="{http://gov.nih.nci.cagrid.data/DataService}QueryResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="CQLQueryResultCollection" name="CQLQueryResultCollection" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLResultSet}&gt;QueryResponse&gt;CQLQueryResultCollection">
+              <s:elements>
+                <s:arraytype optional="true" unbounded="true" wrapped="false" typename="CQLObjectResult" name="ObjectResult" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLResultSet}CQLQueryResults&gt;ObjectResult">
+                  <s:elementtype>
+                    <s:complextype optional="false" unbounded="false" typename="CQLObjectResult" name="" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLResultSet}CQLObjectResult">
+                      <s:elements>
+                        <s:basetype optional="false" unbounded="false" typename="any" name="any" qname="any" />
+                      </s:elements>
+                    </s:complextype>
+                  </s:elementtype>
+                </s:arraytype>
+                <s:arraytype optional="true" unbounded="true" wrapped="false" typename="CQLIdentifierResult" name="IdentifierResult" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLResultSet}CQLQueryResults&gt;IdentifierResult">
+                  <s:elementtype>
+                    <s:complextype optional="false" unbounded="false" typename="CQLIdentifierResult" name="" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLResultSet}CQLIdentifierResult">
+                      <s:elements>
+                        <s:complextype optional="false" unbounded="false" typename="TBDIdentifier" name="Identifier" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLResultSet}CQLIdentifierResult&gt;Identifier">
+                          <s:elements />
+                        </s:complextype>
+                      </s:elements>
+                    </s:complextype>
+                  </s:elementtype>
+                </s:arraytype>
+                <s:arraytype optional="true" unbounded="true" wrapped="false" typename="CQLAttributeResult" name="AttributeResult" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLResultSet}CQLQueryResults&gt;AttributeResult">
+                  <s:elementtype>
+                    <s:complextype optional="false" unbounded="false" typename="CQLAttributeResult" name="" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLResultSet}CQLAttributeResult">
+                      <s:elements>
+                        <s:arraytype optional="false" unbounded="true" wrapped="false" typename="TargetAttribute" name="Attribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLResultSet}CQLAttributeResult&gt;Attribute">
+                          <s:elementtype>
+                            <s:complextype optional="false" unbounded="false" typename="TargetAttribute" name="" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLResultSet}TargetAttribute">
+                              <s:elements />
+                            </s:complextype>
+                          </s:elementtype>
+                        </s:arraytype>
+                      </s:elements>
+                    </s:complextype>
+                  </s:elementtype>
+                </s:arraytype>
+                <s:complextype optional="true" unbounded="false" typename="CQLCountResult" name="CountResult" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLResultSet}CQLQueryResults&gt;CountResult">
+                  <s:elements />
+                </s:complextype>
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Beanshell_2">
+    <s:beanshell>
+      <s:scriptvalue>String id = "";
+		int n1 = input.indexOf("protSequence=\"");
+		int n2 = input.indexOf('"', n1+14);
+		id = input.substring(n1+14, n2);
+String output = "&lt;ns1:CQLQuery xmlns:ns1=\"http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery\"&gt; &lt;ns1:Target name=\"gov.nih.nci.cabio.domain.ProteinSequence\"&gt;&lt;ns1:Group logicRelation=\"AND\"&gt;&lt;ns1:Attribute name=\"value\" predicate=\"LIKE\" value=\"%"+ id +"%\"/&gt;&lt;/ns1:Group&gt;&lt;/ns1:Target&gt;&lt;/ns1:CQLQuery&gt;";</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="parametersXML3">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="QueryRequest" name="parameters" qname="{http://gov.nih.nci.cagrid.data/DataService}QueryRequest">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="&gt;&gt;QueryRequest&gt;cqlQuery" name="cqlQuery" qname="{http://gov.nih.nci.cagrid.data/DataService}&gt;QueryRequest&gt;cqlQuery">
+              <s:elements>
+                <s:complextype optional="false" unbounded="false" typename="CQLQuery" name="CQLQuery" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;&gt;QueryRequest&gt;cqlQuery&gt;CQLQuery">
+                  <s:elements>
+                    <s:complextype optional="false" unbounded="false" typename="Object" name="Target" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;CQLQuery&gt;Target">
+                      <s:elements>
+                        <s:complextype optional="true" unbounded="false" typename="Attribute" name="Attribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Attribute">
+                          <s:elements />
+                        </s:complextype>
+                        <s:complextype optional="true" unbounded="false" typename="Association" name="Association" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Association">
+                          <s:elements />
+                        </s:complextype>
+                        <s:complextype optional="true" unbounded="false" typename="Group" name="Group" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Group">
+                          <s:elements>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Association" name="Association" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Association">
+                              <s:elementtype>
+                                <s:complextype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Association" optional="false" unbounded="false" typename="Association" name="" />
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Attribute" name="Attribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Attribute">
+                              <s:elementtype>
+                                <s:complextype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Attribute" optional="false" unbounded="false" typename="Attribute" name="" />
+                              </s:elementtype>
+                            </s:arraytype>
+                            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Group" name="Group" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Group">
+                              <s:elementtype>
+                                <s:complextype optional="false" unbounded="false" typename="Group" name="" qname="Group">
+                                  <s:elements>
+                                    <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Association" optional="true" unbounded="true" wrapped="false" typename="Association" name="Association" />
+                                    <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Attribute" optional="true" unbounded="true" wrapped="false" typename="Attribute" name="Attribute" />
+                                    <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Group" optional="true" unbounded="true" wrapped="false" typename="Group" name="Group" />
+                                  </s:elements>
+                                </s:complextype>
+                              </s:elementtype>
+                            </s:arraytype>
+                          </s:elements>
+                        </s:complextype>
+                      </s:elements>
+                    </s:complextype>
+                    <s:complextype optional="true" unbounded="false" typename="QueryModifier" name="QueryModifier" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;CQLQuery&gt;QueryModifier">
+                      <s:elements>
+                        <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="AttributeNames" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}QueryModifier&gt;AttributeNames">
+                          <s:elementtype>
+                            <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                          </s:elementtype>
+                        </s:arraytype>
+                        <s:basetype optional="true" unbounded="false" typename="string" name="DistinctAttribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}QueryModifier&gt;DistinctAttribute" />
+                      </s:elements>
+                    </s:complextype>
+                  </s:elements>
+                </s:complextype>
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="cqlQueryXML">
+    <s:defaults>
+      <s:default name="CQLQuery">&lt;ns1:CQLQuery xmlns:ns1="http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery"&gt;  &lt;ns1:Target name="org.labkey.cpas.client.ProtSequences"&gt;   &lt;ns1:Group logicRelation="AND"&gt;    &lt;ns1:Attribute name="description" predicate="LIKE" value="%P99999%"/&gt;   &lt;/ns1:Group&gt;  &lt;/ns1:Target&gt; &lt;/ns1:CQLQuery&gt;</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="&gt;&gt;QueryRequest&gt;cqlQuery" name="cqlQuery" qname="{http://gov.nih.nci.cagrid.data/DataService}&gt;QueryRequest&gt;cqlQuery">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="CQLQuery" name="CQLQuery" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;&gt;QueryRequest&gt;cqlQuery&gt;CQLQuery">
+              <s:elements>
+                <s:complextype optional="false" unbounded="false" typename="Object" name="Target" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;CQLQuery&gt;Target">
+                  <s:elements>
+                    <s:complextype optional="true" unbounded="false" typename="Attribute" name="Attribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Attribute">
+                      <s:elements />
+                    </s:complextype>
+                    <s:complextype optional="true" unbounded="false" typename="Association" name="Association" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Association">
+                      <s:elements />
+                    </s:complextype>
+                    <s:complextype optional="true" unbounded="false" typename="Group" name="Group" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Group">
+                      <s:elements>
+                        <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Association" name="Association" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Association">
+                          <s:elementtype>
+                            <s:complextype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Association" optional="false" unbounded="false" typename="Association" name="" />
+                          </s:elementtype>
+                        </s:arraytype>
+                        <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Attribute" name="Attribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Attribute">
+                          <s:elementtype>
+                            <s:complextype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Attribute" optional="false" unbounded="false" typename="Attribute" name="" />
+                          </s:elementtype>
+                        </s:arraytype>
+                        <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Group" name="Group" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Group">
+                          <s:elementtype>
+                            <s:complextype optional="false" unbounded="false" typename="Group" name="" qname="Group">
+                              <s:elements>
+                                <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Association" optional="true" unbounded="true" wrapped="false" typename="Association" name="Association" />
+                                <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Attribute" optional="true" unbounded="true" wrapped="false" typename="Attribute" name="Attribute" />
+                                <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Group" optional="true" unbounded="true" wrapped="false" typename="Group" name="Group" />
+                              </s:elements>
+                            </s:complextype>
+                          </s:elementtype>
+                        </s:arraytype>
+                      </s:elements>
+                    </s:complextype>
+                  </s:elements>
+                </s:complextype>
+                <s:complextype optional="true" unbounded="false" typename="QueryModifier" name="QueryModifier" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;CQLQuery&gt;QueryModifier">
+                  <s:elements>
+                    <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="AttributeNames" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}QueryModifier&gt;AttributeNames">
+                      <s:elementtype>
+                        <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                      </s:elementtype>
+                    </s:arraytype>
+                    <s:basetype optional="true" unbounded="false" typename="string" name="DistinctAttribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}QueryModifier&gt;DistinctAttribute" />
+                  </s:elements>
+                </s:complextype>
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="cqlQueryXML2">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="&gt;&gt;QueryRequest&gt;cqlQuery" name="cqlQuery" qname="{http://gov.nih.nci.cagrid.data/DataService}&gt;QueryRequest&gt;cqlQuery">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="CQLQuery" name="CQLQuery" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;&gt;QueryRequest&gt;cqlQuery&gt;CQLQuery">
+              <s:elements>
+                <s:complextype optional="false" unbounded="false" typename="Object" name="Target" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;CQLQuery&gt;Target">
+                  <s:elements>
+                    <s:complextype optional="true" unbounded="false" typename="Attribute" name="Attribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Attribute">
+                      <s:elements />
+                    </s:complextype>
+                    <s:complextype optional="true" unbounded="false" typename="Association" name="Association" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Association">
+                      <s:elements />
+                    </s:complextype>
+                    <s:complextype optional="true" unbounded="false" typename="Group" name="Group" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Group">
+                      <s:elements>
+                        <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Association" name="Association" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Association">
+                          <s:elementtype>
+                            <s:complextype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Association" optional="false" unbounded="false" typename="Association" name="" />
+                          </s:elementtype>
+                        </s:arraytype>
+                        <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Attribute" name="Attribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Attribute">
+                          <s:elementtype>
+                            <s:complextype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Object&gt;Attribute" optional="false" unbounded="false" typename="Attribute" name="" />
+                          </s:elementtype>
+                        </s:arraytype>
+                        <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Group" name="Group" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Group">
+                          <s:elementtype>
+                            <s:complextype optional="false" unbounded="false" typename="Group" name="" qname="Group">
+                              <s:elements>
+                                <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Association" optional="true" unbounded="true" wrapped="false" typename="Association" name="Association" />
+                                <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Attribute" optional="true" unbounded="true" wrapped="false" typename="Attribute" name="Attribute" />
+                                <s:arraytype id="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}Group&gt;Group" optional="true" unbounded="true" wrapped="false" typename="Group" name="Group" />
+                              </s:elements>
+                            </s:complextype>
+                          </s:elementtype>
+                        </s:arraytype>
+                      </s:elements>
+                    </s:complextype>
+                  </s:elements>
+                </s:complextype>
+                <s:complextype optional="true" unbounded="false" typename="QueryModifier" name="QueryModifier" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}&gt;CQLQuery&gt;QueryModifier">
+                  <s:elements>
+                    <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="AttributeNames" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}QueryModifier&gt;AttributeNames">
+                      <s:elementtype>
+                        <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                      </s:elementtype>
+                    </s:arraytype>
+                    <s:basetype optional="true" unbounded="false" typename="string" name="DistinctAttribute" qname="{http://CQL.caBIG/1/gov.nih.nci.cagrid.CQLQuery}QueryModifier&gt;DistinctAttribute" />
+                  </s:elements>
+                </s:complextype>
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="CPASQuery">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://cpas.nci.nih.gov:8080/wsrf/services/cagrid/CpasSvc?wsdl</s:wsdl>
+      <s:operation>query</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="GridPIRQuery">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://141.161.25.20:8080/wsrf/services/cagrid/GridPIR?wsdl</s:wsdl>
+      <s:operation>query</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="caBIOQuery">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://cabiogrid32.nci.nih.gov:80/wsrf/services/cagrid/CaBIO32GridSvc?wsdl</s:wsdl>
+      <s:operation>query</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="Beanshell_1:output" sink="cqlQueryXML1:CQLQuery" />
+  <s:link source="Beanshell_2:output" sink="cqlQueryXML2:CQLQuery" />
+  <s:link source="CPASQuery:parameters" sink="parametersXML2:input" />
+  <s:link source="cqlQueryXML1:output" sink="parametersXML1:cqlQuery" />
+  <s:link source="cqlQueryXML2:output" sink="parametersXML3:cqlQuery" />
+  <s:link source="cqlQueryXML:output" sink="parametersXML:cqlQuery" />
+  <s:link source="CPASQuery:parameters" sink="CPAS_Result" />
+  <s:link source="parametersXML1:output" sink="GridPIRQuery:parameters" />
+  <s:link source="parametersXML2:CQLQueryResultCollection" sink="Beanshell_1:input" />
+  <s:link source="parametersXML2:CQLQueryResultCollection" sink="Beanshell_2:input" />
+  <s:link source="parametersXML3:output" sink="caBIOQuery:parameters" />
+  <s:link source="parametersXML:output" sink="CPASQuery:parameters" />
+  <s:link source="GridPIRQuery:parameters" sink="GridPIR_Result" />
+  <s:link source="caBIOQuery:parameters" sink="caBIO_Result" />
+  <s:sink name="CPAS_Result" />
+  <s:sink name="GridPIR_Result" />
+  <s:sink name="caBIO_Result" />
+</s:scufl>
+

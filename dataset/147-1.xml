@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:fbdc48ce-671d-4066-95fd-669ac4e9d1c2" author="Franck Tanoh" title="Get cities by country name">Get all the cities supported by the 'Get Weather info' workflow.... just enter your country name as input.</s:workflowdescription>
+  <s:processor name="GetCitiesByCountry">
+    <s:description>Get all major cities by country name(full / part).</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.webservicex.com/globalweather.asmx?WSDL</s:wsdl>
+      <s:operation>GetCitiesByCountry</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="GetCitiesResult">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetCitiesByCountryResponse" name="parameters" qname="{http://www.webserviceX.NET}GetCitiesByCountryResponse">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="GetCitiesByCountryResult" qname="{http://www.webserviceX.NET}&gt;GetCitiesByCountryResponse&gt;GetCitiesByCountryResult" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="CountryName">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetCitiesByCountry" name="parameters" qname="{http://www.webserviceX.NET}GetCitiesByCountry">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="CountryName" qname="{http://www.webserviceX.NET}&gt;GetCitiesByCountry&gt;CountryName" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="Country" sink="CountryName:CountryName" />
+  <s:link source="CountryName:output" sink="GetCitiesByCountry:parameters" />
+  <s:link source="GetCitiesByCountry:parameters" sink="GetCitiesResult:input" />
+  <s:link source="GetCitiesResult:GetCitiesByCountryResult" sink="Cities" />
+  <s:source name="Country">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+      <s:description>input example: 
+Cote D'Ivoire</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="Cities">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

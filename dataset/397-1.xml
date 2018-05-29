@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:0dbff936-9e28-4fb3-bcb1-cf03cb7b3d28" author="Steffen Möller" title="dbfetch tutorial">This workflow eases entry in the world of Taverna with one of the key tasks - the retrieval of plain data. The dbfetch offers sequence and structure data from a large variety of sources. A first execution of this workflow informs about these in the "getSupportedDBs" output. Also the formats and styles are listed.  The two inputs allow for the specification of a query that leaves the format with "default" (which is different for every database, "native" would be a better fit), the style is always "raw". With the output being presented as a list of strings, which is very slow for larger entries, the list of lines are merged into single strings for each entry prior to the display.</s:workflowdescription>
+  <s:processor name="getSupportedDBs">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/ws/services/urn:Dbfetch?wsdl</s:wsdl>
+      <s:operation>getSupportedDBs</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getSupportedFormats">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/ws/services/urn:Dbfetch?wsdl</s:wsdl>
+      <s:operation>getSupportedFormats</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getSupportedStyles">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/ws/services/urn:Dbfetch?wsdl</s:wsdl>
+      <s:operation>getSupportedStyles</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="fetchBatch">
+    <s:defaults>
+      <s:default name="db">pdb</s:default>
+      <s:default name="ids">1mtu</s:default>
+      <s:default name="format">default</s:default>
+      <s:default name="style">raw</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/ws/services/urn:Dbfetch?wsdl</s:wsdl>
+      <s:operation>fetchBatch</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Merge_string_list_to_string">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:link source="DatabaseToQuery" sink="fetchBatch:db" />
+  <s:link source="GeneOrProteinSeeked" sink="fetchBatch:ids" />
+  <s:link source="fetchBatch:fetchBatchReturn" sink="Merge_string_list_to_string:stringlist" />
+  <s:link source="Merge_string_list_to_string:concatenated" sink="DataFetched" />
+  <s:link source="getSupportedDBs:getSupportedDBsReturn" sink="SupportedDBs" />
+  <s:link source="getSupportedFormats:getSupportedFormatsReturn" sink="SupportedFormats" />
+  <s:link source="getSupportedStyles:getSupportedStylesReturn" sink="SupportedStyles" />
+  <s:source name="GeneOrProteinSeeked">
+    <s:metadata>
+      <s:description>Identifier of database queried. Multiple entries should be retrieved by single comma-separated string. A possible input is "1mtu" for the database "pdb", or "P12345" for the database "uniprotkb", "P53_HUMAN" another, which should then appear as a second input.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="DatabaseToQuery">
+    <s:metadata>
+      <s:description>The database to query. Inspect the output of "SupportedDBs" for details. "uniprotkb" or "pdb" are possible values.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink mode="merge" name="SupportedDBs">
+    <s:metadata>
+      <s:description>List of strings, each listing the internal name of a well known database.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="SupportedFormats">
+    <s:metadata>
+      <s:description>List of strings, each mentioning a database and a comma separated list of formats that this database supports.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="SupportedStyles" />
+  <s:sink mode="merge" name="DataFetched">
+    <s:metadata>
+      <s:description>List of strings, each containing an entry of the database as a single string.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

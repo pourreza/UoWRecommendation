@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:2db92a5b-7d5d-4721-9619-39cd56a55424" author="Mark Borkum" title="QR code (matrix code) generator">The latest (and greatest) version of the QR code generator workflow.  This workflow uses the QR code service provided by the CombeChem project.</s:workflowdescription>
+  <s:processor name="qrcode">
+    <s:description>Creates QR Code</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://chemtools.chem.soton.ac.uk/websrv/qr/?wsdl</s:wsdl>
+      <s:operation>qrcode</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="url" sink="qrcode:qrcode_data_string" />
+  <s:link source="qrcode:qr_code" sink="qr_code" />
+  <s:link source="qrcode:qr_result" sink="status_code" />
+  <s:source name="url">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/plain</s:mimeType>
+      </s:mimeTypes>
+      <s:description>Uniform Resource Locator (URL) to be encoded as a QR code.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="qr_code">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>image/png</s:mimeType>
+      </s:mimeTypes>
+      <s:description>QR code rendered as a PNG file.  The dimensions of this PNG increase with the size of the input URL.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="status_code">
+    <s:metadata>
+      <s:description>Status code and/or error report from QR code service.  Returns 1 on success.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

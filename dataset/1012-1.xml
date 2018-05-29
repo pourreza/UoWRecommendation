@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:2PSRGO0WZ712" author="" title="Get TP53 Mutation Function Entries  And TP53 Cell Line Entries By MutAa And Codon Number">This workflow retrieves from two different databases two distinct set of entries starting from the same inputs data (i.e. the Mutated Aminoacid encoded at the codon in which the mutation occurred, and the Codon Number where the mutation occurs). 
+Input data: Mutant Amino Acid encoded at the codon in which the mutation occurred and Codon Number where the mutation is located.
+Special requirements on input data are:
+- the MutAA (Mutated Amino Acid) in three letters code (Gly, Ala, Trp, Phe etc.)
+- the Codon Number range is 1-393,
+- other values may lead to errors,
+- when specifying more than one MutAA or Codon Number, they must be in a unique input string but on distinct text lines</s:workflowdescription>
+  <s:processor name="Tp53CellLineLib" boring="true">
+    <s:stringconstant>tp53_cell_lines</s:stringconstant>
+  </s:processor>
+  <s:processor name="StringListSeparator" boring="true">
+    <s:stringconstant>\n</s:stringconstant>
+  </s:processor>
+  <s:processor name="Tp53MutantFunctionLib" boring="true">
+    <s:stringconstant>tp53_mutation_function1</s:stringconstant>
+  </s:processor>
+  <s:processor name="SplitStringIntoStringListForTp53CellLinesMutAA">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="SplitStringIntoStringListForTp53CellLinesCodonNumber">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="SplitStringIntoStringListFromMutationFunctionCodonNumber">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="IdsSeparator" boring="true">
+    <s:stringconstant>([A-Z0-9]*:)([0-9]*)</s:stringconstant>
+  </s:processor>
+  <s:processor name="SplitStringIntoStringListFornMutationFunctionMutAA">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="Beanshell_scripting_host">
+    <s:beanshell>
+      <s:scriptvalue>if (input_str.equals("Ala") ) {
+output_str = "A" ;
+} else if (input_str.equals("Arg") ) {
+output_str = "R" ;  
+} else if (input_str.equals("Asn") ) {
+output_str = "N" ;
+} else if (input_str.equals("Asp") ) {
+output_str = "D" ;
+} else if (input_str.equals("Cys") ) {
+output_str = "C" ;
+} else if (input_str.equals("Gln") ) {
+output_str = "Q" ;
+} else if  (input_str.equals("Glu") ) {
+output_str = "E" ;
+} else if (input_str.equals("Gly") ) {
+output_str = "G" ;
+} else if (input_str.equals("His") ) {
+output_str = "H" ;
+} else if (input_str.equals("Ile") ) {
+output_str = "I" ;
+} else if (input_str.equals("Leu") ) {
+output_str = "L" ;
+} else if (input_str.equals("Lys") ) {
+output_str = "K" ;
+} else if (input_str.equals("Met") ) {
+output_str = "M" ;
+} else if (input_str.equals("Phe") ) {
+output_str = "F" ;
+} else if (input_str.equals("Pro") ) {
+output_str = "P" ;
+} else if (input_str.equals("Ser") ) {
+output_str = "S" ;
+} else if (input_str.equals("Thr") ) {
+output_str = "T" ;
+} else if (input_str.equals("Trp") ) {
+output_str = "W" ;
+} else if (input_str.equals("Tyr") ) {
+output_str = "Y" ;
+} else if (input_str.equals("Val") ) {
+output_str = "V" ;
+} else if (input_str.equals("Asx") ) {
+output_str = "B" ;
+} else if (input_str.equals("Glx") ) {
+output_str = "Z" ;
+} else if (input_str.equals("X") ) {
+output_str = "X" ;
+} else if (input_str.equals("NA") ) {
+output_str = "NA" ;
+} else {
+output_str = "" ;
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">input_str</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">output_str</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="IdsTokenPosition" boring="true">
+    <s:stringconstant>2</s:stringconstant>
+  </s:processor>
+  <s:processor name="Tp53CellLineFieldsIntersection">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringSetIntersection</s:local>
+  </s:processor>
+  <s:processor name="ExtractIdsFromCellLineMutAA">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="Tp53MutationFunctionFieldsIntersection">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringSetIntersection</s:local>
+  </s:processor>
+  <s:processor name="ExtractIdsFromCellLineCodonNumbers">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="ExtractIdsFromMutationFunctionMutAA">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="ExtractIdsFromMutationFunctionCodonNumbers">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:processor name="GetTp53CellLineIdsByMutAa">
+    <s:description>Get tp53 gene mutation ids by type from IARC TP53 Database catalogue (see srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getIdsByMutaa</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53MutationFunctionEntryById">
+    <s:description>Get a complete entry from tp53 mutation function database using as input a mutation function id (see http://srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getP53MutationFunctionEntryById</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="getP53CellLinesStatusEntryById">
+    <s:description>Get a complete entry from tp53 cell lines status database using as input a cell line status id (see http://srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getP53CellLinesStatusEntryById</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="GetMutantFunctionIdsByMutAA">
+    <s:description>Get tp53 gene mutation ids by type from IARC TP53 Database catalogue (see srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getIdsByMutaa</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="GetTp53CellLineIdsByCodonNumber">
+    <s:description>Get ids  by codon number from IARC library (see srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getIdsByCodonNumber</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="GetMutantFunctionIdsByCodonNumber">
+    <s:description>Get ids  by codon number from IARC library (see srs.o2i.it/srs71/)</s:description>
+    <s:soaplabwsdl>http://bioinformatics.istge.it:8080/axis/services/o2i.getIdsByCodonNumber</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="CodonNumber" sink="GetMutantFunctionIdsByCodonNumber:codon" />
+  <s:link source="CodonNumber" sink="GetTp53CellLineIdsByCodonNumber:codon" />
+  <s:link source="MutAA" sink="Beanshell_scripting_host:input_str" />
+  <s:link source="MutAA" sink="GetTp53CellLineIdsByMutAa:mut_aa" />
+  <s:link source="ExtractIdsFromCellLineCodonNumbers:filteredlist" sink="Tp53CellLineFieldsIntersection:list2" />
+  <s:link source="ExtractIdsFromCellLineMutAA:filteredlist" sink="Tp53CellLineFieldsIntersection:list1" />
+  <s:link source="ExtractIdsFromMutationFunctionCodonNumbers:filteredlist" sink="Tp53MutationFunctionFieldsIntersection:list2" />
+  <s:link source="ExtractIdsFromMutationFunctionMutAA:filteredlist" sink="Tp53MutationFunctionFieldsIntersection:list1" />
+  <s:link source="GetMutantFunctionIdsByCodonNumber:result" sink="SplitStringIntoStringListFromMutationFunctionCodonNumber:string" />
+  <s:link source="GetMutantFunctionIdsByMutAA:result" sink="SplitStringIntoStringListFornMutationFunctionMutAA:string" />
+  <s:link source="GetTp53CellLineIdsByCodonNumber:result" sink="SplitStringIntoStringListForTp53CellLinesCodonNumber:string" />
+  <s:link source="GetTp53CellLineIdsByMutAa:result" sink="SplitStringIntoStringListForTp53CellLinesMutAA:string" />
+  <s:link source="IdsSeparator:value" sink="ExtractIdsFromCellLineCodonNumbers:regex" />
+  <s:link source="IdsSeparator:value" sink="ExtractIdsFromCellLineMutAA:regex" />
+  <s:link source="IdsSeparator:value" sink="ExtractIdsFromMutationFunctionCodonNumbers:regex" />
+  <s:link source="IdsSeparator:value" sink="ExtractIdsFromMutationFunctionMutAA:regex" />
+  <s:link source="IdsTokenPosition:value" sink="ExtractIdsFromCellLineCodonNumbers:group" />
+  <s:link source="IdsTokenPosition:value" sink="ExtractIdsFromCellLineMutAA:group" />
+  <s:link source="IdsTokenPosition:value" sink="ExtractIdsFromMutationFunctionCodonNumbers:group" />
+  <s:link source="IdsTokenPosition:value" sink="ExtractIdsFromMutationFunctionMutAA:group" />
+  <s:link source="MutAA" sink="GetMutantFunctionIdsByMutAA:mut_aa" />
+  <s:link source="SplitStringIntoStringListForTp53CellLinesCodonNumber:split" sink="ExtractIdsFromCellLineCodonNumbers:stringlist" />
+  <s:link source="SplitStringIntoStringListForTp53CellLinesMutAA:split" sink="ExtractIdsFromCellLineMutAA:stringlist" />
+  <s:link source="SplitStringIntoStringListFornMutationFunctionMutAA:split" sink="ExtractIdsFromMutationFunctionMutAA:stringlist" />
+  <s:link source="SplitStringIntoStringListFromMutationFunctionCodonNumber:split" sink="ExtractIdsFromMutationFunctionCodonNumbers:stringlist" />
+  <s:link source="StringListSeparator:value" sink="SplitStringIntoStringListForTp53CellLinesCodonNumber:regex" />
+  <s:link source="StringListSeparator:value" sink="SplitStringIntoStringListForTp53CellLinesMutAA:regex" />
+  <s:link source="StringListSeparator:value" sink="SplitStringIntoStringListFornMutationFunctionMutAA:regex" />
+  <s:link source="StringListSeparator:value" sink="SplitStringIntoStringListFornMutationFunctionMutAA:regex" />
+  <s:link source="StringListSeparator:value" sink="SplitStringIntoStringListFromMutationFunctionCodonNumber:regex" />
+  <s:link source="Tp53CellLineFieldsIntersection:intersection" sink="getP53CellLinesStatusEntryById:id" />
+  <s:link source="Tp53CellLineLib:value" sink="GetTp53CellLineIdsByCodonNumber:libs" />
+  <s:link source="Tp53CellLineLib:value" sink="GetTp53CellLineIdsByMutAa:libs" />
+  <s:link source="Tp53MutantFunctionLib:value" sink="GetMutantFunctionIdsByCodonNumber:libs" />
+  <s:link source="Tp53MutantFunctionLib:value" sink="GetMutantFunctionIdsByMutAA:libs" />
+  <s:link source="Tp53MutationFunctionFieldsIntersection:intersection" sink="getP53MutationFunctionEntryById:id" />
+  <s:link source="getP53CellLinesStatusEntryById:result" sink="TP53CellLineEntriesStatusCompleteOutput" />
+  <s:link source="getP53MutationFunctionEntryById:result" sink="TP53MutationFunctionEntriesCompleteOutput" />
+  <s:source name="MutAA" />
+  <s:source name="CodonNumber" />
+  <s:sink name="TP53MutationFunctionEntriesCompleteOutput" />
+  <s:sink name="TP53CellLineEntriesStatusCompleteOutput" />
+</s:scufl>
+

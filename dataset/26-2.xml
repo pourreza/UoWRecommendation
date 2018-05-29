@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:KC211UMOYL1345" author="Paul Fisher" title="Parse UniProt text file">This workflow performs a search through the SRS linking system to find the text files for a particular UniProt identifier. This UniProt text file is then parsed to extract a small list to summarise the file, primarily consisting of external identifiers.</s:workflowdescription>
+  <s:processor name="fieldName" boring="true">
+    <s:stringconstant>Alltext</s:stringconstant>
+  </s:processor>
+  <s:processor name="parse_uniprot">
+    <s:description>Extract information from a Uniprot text file including PubMed, InterPro, Pfam and other related accession numbers</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/seq_analysis.parse_uniprot</s:soaplabwsdl>
+  </s:processor>
+  <s:processor name="Uniprot_search">
+    <s:description>To be added</s:description>
+    <s:soaplabwsdl>http://phoebus.cs.man.ac.uk:1977/axis/services/uniprotsequence.uniprot</s:soaplabwsdl>
+  </s:processor>
+  <s:link source="UniProt_id" sink="Uniprot_search:searchterm" />
+  <s:link source="Uniprot_search:result" sink="parse_uniprot:file_direct_data" />
+  <s:link source="fieldName:value" sink="Uniprot_search:fieldname" />
+  <s:link source="parse_uniprot:output" sink="parsed_data" />
+  <s:source name="UniProt_id" />
+  <s:sink name="parsed_data" />
+</s:scufl>
+

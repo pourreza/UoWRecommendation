@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:VI9FMF5HBQ11" author="Peter Li - primary Creator [adapted by Paul Fisher]" title="Kegg metabolic pathway">A list of Kegg entires are supplied to the Kegg database which then retrieves the associated metabolic pathways for each entry supplied.
+
+e.g. Ids takes in a value of 351, whilst abbr takes in a value of hsa.
+
+Thus hsa:351 corresponds to neurodegenerative disorders and alzheimers disease pathways.
+
+[fisherp@cs.man.ac.uk]</s:workflowdescription>
+  <s:processor name="GETIMAGE">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebImageFetcher</s:local>
+  </s:processor>
+  <s:processor name="KEGGBASEURL" boring="true">
+    <s:stringconstant>http://soap.genome.ad.jp/tmp/</s:stringconstant>
+  </s:processor>
+  <s:processor name="GETPATHWAYS">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://soap.genome.ad.jp/KEGG.wsdl</s:wsdl>
+      <s:operation>mark_all_pathways_by_genes</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="GETPATHWAYS:return" sink="GETIMAGE:url" />
+  <s:link source="Ids" sink="GETPATHWAYS:oids" />
+  <s:link source="KEGGBASEURL:value" sink="GETIMAGE:base" />
+  <s:link source="abbr" sink="GETPATHWAYS:abbr" />
+  <s:link source="GETIMAGE:image" sink="KEGG_pathways" />
+  <s:source name="Ids" />
+  <s:source name="abbr" />
+  <s:sink name="KEGG_pathways" />
+</s:scufl>
+
+

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:b7b398cd-046b-4348-a82d-e75088d0f1c2" author="Hamish McWilliam" title="EBI_dbfetch_fetchBatch">From a list of sequence entry identifiers and a database name, fetch the sequences in fasta format using EBI's WSDbfetch service (see http://www.ebi.ac.uk/Tools/webservices/wsdl/WSDbfetch.wsdl).</s:workflowdescription>
+  <s:processor name="fetchBatch">
+    <s:description>Get a set of database entries (see http://www.ebi.ac.uk/Tools/webservices/services/dbfetch#fetchbatch_db_ids_format_style)</s:description>
+    <s:defaults>
+      <s:default name="format">fasta</s:default>
+      <s:default name="style">raw</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/Tools/webservices/wsdl/WSDbfetch.wsdl</s:wsdl>
+      <s:operation>fetchBatch</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Format_list_for_dbfetch">
+    <s:description>Reformat the list of identifiers into a comma-delimited string for use with fetchBatch.</s:description>
+    <s:defaults>
+      <s:default name="seperator">,</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:link source="Database" sink="fetchBatch:db" />
+  <s:link source="ID_list" sink="Format_list_for_dbfetch:stringlist" />
+  <s:link source="Format_list_for_dbfetch:concatenated" sink="fetchBatch:ids" />
+  <s:link source="fetchBatch:fetchBatchReturn" sink="Sequences" />
+  <s:source name="ID_list">
+    <s:metadata>
+      <s:description>List of entry identifers from a specific database.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Database">
+    <s:metadata>
+      <s:description>Name of the database to which the identifiers belong. For example "uniprot".</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="Sequences">
+    <s:metadata>
+      <s:description>Set of sequences in fasta format.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

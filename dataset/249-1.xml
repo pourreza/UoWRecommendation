@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:ad7e8c0b-b602-4004-ab94-3f96a65bef73" author="Hamish McWilliam" title="EBI_Whatizit">Perform a text-mining analysis of an input text document using the EBI's Whatizit tool (http://www.ebi.ac.uk/webservices/whatizit/info.jsf).
+
+Whatizit provides a number of text-mining pipelines which can can detect various terms of biological interest in text documents. For example finding gene names and mapping them to UniProtKB identifiers, finding chemical terms and mapping them to ChEBI, etc.</s:workflowdescription>
+  <s:processor name="contact">
+    <s:description>Process an input text document using a Whatizit pipeline.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/webservices/whatizit/ws?wsdl</s:wsdl>
+      <s:operation>contact</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Input_params">
+    <s:description>Build the input parameters data structure. Wraps the Whatizit pipeline name and the text document.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="contact" name="parameters" qname="{http://www.ebi.ac.uk/webservices/whatizit/ws}contact">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="pipelineName" qname="contact&gt;pipelineName" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="text" qname="contact&gt;text" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="convertToHtml" qname="contact&gt;convertToHtml" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Unwrap_result">
+    <s:description>Unwrap the XML result.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="contactResponse" name="parameters" qname="{http://www.ebi.ac.uk/webservices/whatizit/ws}contactResponse">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="return" qname="contactResponse&gt;return" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="Analysis_pipeline" sink="Input_params:pipelineName" />
+  <s:link source="Input_params:output" sink="contact:parameters" />
+  <s:link source="Text" sink="Input_params:text" />
+  <s:link source="Unwrap_result:return" sink="Whatizit_result" />
+  <s:link source="contact:parameters" sink="Unwrap_result:input" />
+  <s:source name="Analysis_pipeline">
+    <s:metadata>
+      <s:description>Name of the Whatizit text-mining pipeline to use. For example: whatizitSwissprot
+
+See the results of the getPipelinesStatus() method for a complete list of the available pipelines and their status.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Text">
+    <s:metadata>
+      <s:description>Input text to process.
+
+For example: NPY, BRCA1, Brca2 and Ca2</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="Whatizit_result">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/xml</s:mimeType>
+      </s:mimeTypes>
+      <s:description>Whatizit analysis result.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

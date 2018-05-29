@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:41C9I9O4UM0" author="Kieren Lythgow" title="Biomart Protein Sequence Retrieval">This workflow queries Biomart to retrieve the Ensembl gene id, protein id, gene name, description and amino acid sequence from the Ensembl Homo sapiens dataset. The user needs to specify a defined chromosomal region i.e. Chromo = 1, Start = 100000000, End = 250000000. This returns all unique entries in FASTA format.</s:workflowdescription>
+  <s:processor name="hsapiens_gene_ensembl">
+    <s:description>Homo sapiens genes (NCBI36)</s:description>
+    <s:biomart>
+      <biomart:MartQuery xmlns:biomart="http://org.embl.ebi.escience/xscufl-biomart/0.1alpha">
+        <biomart:MartService location="http://www.biomart.org/biomart/martservice" />
+        <biomart:MartDataset displayName="Homo sapiens genes (NCBI36)" name="hsapiens_gene_ensembl" type="TableSet" initialBatchSize="200" maximumBatchSize="50000" visible="false" interface="default" modified="2008-11-27 16:08:08">
+          <biomart:MartURLLocation database="ensembl_mart_52" default="1" displayName="ENSEMBL 52 GENES (SANGER UK)" host="www.biomart.org" includeDatasets="" martUser="" name="ensembl" path="/biomart/martservice" port="80" serverVirtualSchema="default" virtualSchema="default" visible="1" redirect="0" />
+        </biomart:MartDataset>
+        <biomart:Query virtualSchemaName="default" count="0" uniqueRows="1" softwareVersion="0.7" formatter="FASTA" header="1" requestId="taverna">
+          <biomart:Dataset name="hsapiens_gene_ensembl">
+            <biomart:Attribute name="ensembl_gene_id" />
+            <biomart:Attribute name="ensembl_peptide_id" />
+            <biomart:Attribute name="external_gene_id" />
+            <biomart:Attribute name="description" />
+            <biomart:Attribute name="peptide" />
+            <biomart:Filter name="chromosome_name" value="1" />
+            <biomart:Filter name="end" value="10000000" />
+            <biomart:Filter name="start" value="1" />
+          </biomart:Dataset>
+        </biomart:Query>
+      </biomart:MartQuery>
+    </s:biomart>
+  </s:processor>
+  <s:link source="Chromo" sink="hsapiens_gene_ensembl:hsapiens_gene_ensembl.chromosome_name_filter" />
+  <s:link source="End" sink="hsapiens_gene_ensembl:hsapiens_gene_ensembl.end_filter" />
+  <s:link source="Start" sink="hsapiens_gene_ensembl:hsapiens_gene_ensembl.start_filter" />
+  <s:link source="hsapiens_gene_ensembl:hsapiens_gene_ensembl" sink="Proteins" />
+  <s:source name="Chromo" />
+  <s:source name="Start" />
+  <s:source name="End" />
+  <s:sink name="Proteins" />
+</s:scufl>
+

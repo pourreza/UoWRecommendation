@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:ccb4147c-7dea-42eb-8de9-83074a1928a3" author="Thomas Kuhn" title="Reaction Enumeration Workflow">This workflow performs a reaction enumeration. Therefore it loads a generic reaction rxn file and two educt lists. This SD-Files contains molecules for the enumeration. The products of the enumerated reaction are stored as Mol Files and a PDF will be created which contains the product molecules.</s:workflowdescription>
+  <s:processor name="ReactionEnumerator">
+    <s:cdk>org.openscience.cdk.applications.taverna.reactionenumerator.ReactionEnumerator</s:cdk>
+  </s:processor>
+  <s:processor name="File_Reader">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.io.FileReader
+      <s:extensions>
+        <s:filereader>
+          <s:filenamelist />
+        </s:filereader>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="File_Reader1">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.io.FileReader
+      <s:extensions>
+        <s:filereader>
+          <s:filenamelist />
+        </s:filereader>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Read_MDL_RXN_File">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.io.ReadMDLRXNFile
+      <s:extensions>
+        <s:rxnfilereader>
+          <s:filenamelist />
+        </s:rxnfilereader>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Write_MDL_Mol_File_to_File">
+    <s:cdk>org.openscience.cdk.applications.taverna.io.WriteToMDLMolFile</s:cdk>
+  </s:processor>
+  <s:processor name="Create_PDF_File_with_2D_Structures">
+    <s:cdk>org.openscience.cdk.applications.taverna.renderers.CreatePDFWith2DStructures</s:cdk>
+  </s:processor>
+  <s:link source="File_Reader1:resultStructure" sink="ReactionEnumerator:reactantTwo" />
+  <s:link source="File_Reader:resultStructure" sink="ReactionEnumerator:reactantOne" />
+  <s:link source="ReactionEnumerator:productStructures" sink="Create_PDF_File_with_2D_Structures:inputStructures" />
+  <s:link source="ReactionEnumerator:productStructures" sink="Write_MDL_Mol_File_to_File:inputStructures" />
+  <s:link source="Read_MDL_RXN_File:resultReaction" sink="ReactionEnumerator:reaction" />
+</s:scufl>
+

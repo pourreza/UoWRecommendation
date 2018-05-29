@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:451af9b4-f7a7-43f9-b926-823e24458652" author="Mikołaj Rybiński" title="mathPlot Web service" />
+  <s:processor name="setOptionXmlList">
+    <s:beanshell>
+      <s:scriptvalue>source(new URL("http://bioputer.mimuw.edu.pl/tav4sb/workflows/setOptionXmlList.bsh"));</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">input</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/xml')">output</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="mathPlotParamsXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="mathPlotParams" name="mathPlotParams" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}mathPlotParams">
+          <s:elements>
+            <s:arraytype optional="false" unbounded="false" wrapped="false" typename="PlotAxis" name="axis" qname="&gt;mathPlotParams&gt;axis">
+              <s:elementtype>
+                <s:basetype optional="false" unbounded="false" typename="string" name="PlotAxis" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}PlotAxis" />
+              </s:elementtype>
+            </s:arraytype>
+            <s:arraytype optional="false" unbounded="true" wrapped="false" typename="ArrayOfPoint" name="data" qname="&gt;mathPlotParams&gt;data">
+              <s:elementtype>
+                <s:arraytype optional="false" unbounded="false" wrapped="true" typename="ArrayOfPoint" name="ArrayOfPoint" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}ArrayOfPoint">
+                  <s:elementtype>
+                    <s:arraytype optional="false" unbounded="false" wrapped="true" typename="Point" name="ArrayOfstring" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}Point">
+                      <s:elementtype>
+                        <s:basetype optional="false" unbounded="false" typename="string" name="NumericValue" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}NumericValue" />
+                      </s:elementtype>
+                    </s:arraytype>
+                  </s:elementtype>
+                </s:arraytype>
+              </s:elementtype>
+            </s:arraytype>
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Option" name="option" qname="&gt;mathPlotParams&gt;option">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="Option" name="" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}Option">
+                  <s:elements>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="name" qname="Option&gt;name" />
+                    <s:complextype optional="false" unbounded="false" typename="MathType" name="value" qname="Option&gt;value">
+                      <s:elements />
+                    </s:complextype>
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="mathPlotResultXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="mathPlotResult" name="mathPlotResult" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}mathPlotResult">
+          <s:elements>
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="Plot" name="plot" qname="&gt;mathPlotResult&gt;plot">
+              <s:elementtype>
+                <s:basetype optional="false" unbounded="false" typename="base64Binary" name="Plot" qname="{http://bioputer.mimuw.edu.pl/tav4sb/services/xsd/mathematica}Plot" />
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Decode_base64_to_byte">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.DecodeBase64</s:local>
+  </s:processor>
+  <s:processor name="mathPlot">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://bioputer.mimuw.edu.pl/tav4sb/services/wsdl</s:wsdl>
+      <s:operation>mathPlot</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="axisList" sink="mathPlotParamsXML:axis" />
+  <s:link source="dataXmlList" sink="mathPlotParamsXML:data" />
+  <s:link source="mathPlot:mathPlotResult" sink="mathPlotResultXML:input" />
+  <s:link source="mathPlotParamsXML:output" sink="mathPlot:mathPlotParams" />
+  <s:link source="mathPlotResultXML:plot" sink="Decode_base64_to_byte:base64" />
+  <s:link source="optionList" sink="setOptionXmlList:input" />
+  <s:link source="setOptionXmlList:output" sink="mathPlotParamsXML:option" />
+  <s:link source="Decode_base64_to_byte:bytes" sink="plots" />
+  <s:source name="axisList">
+    <s:metadata>
+      <s:description>List of two or three axes names to be drawn. Axes names are used to select cooridnates, by name, from the data series points. Order on the list determines which axis will be abscissa and which ordinate.
+
+Example value (3D plot with abscissas 't' and 'u' and ordinate 'f'):
+    t
+    u
+    f</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="optionList">
+    <s:metadata>
+      <s:description>List of plot options in the pseudo-Mathematica rules format, i.e.
+    OptionName -&gt; OptionValue
+List will be converted to appropriate XML format. Allowed option value types are number, string, Mathematica symbol or heterogeneous list of any of those types . These are represented as:
+    n.
+    "text"
+    Symbol
+    { el1, el2, ... }
+repectively, i.e. text containing '.' character is treated as a number (e.g. '1.', '2.5', etc.), quoted text is interpreted as a string, plain text w/o '.' character is interpreted as a Mathematica symbol and curly brackets delimit list, which elements are comma-separated. ATTENTION: comas and quotes inside of the string must be escaped with backslash (i.e. "\," or "\""); you can also escape curly brackets for consistency but it's not mandatory.
+
+Among available options are any of Mathematica options aceptable by the:
+ * ListPlot (http://reference.wolfram.com/mathematica/ref/ListPlot.html),
+ * ListPlot3D (http://reference.wolfram.com/mathematica/ref/ListPlot3D.html), and
+ * Legend (http://reference.wolfram.com/mathematica/PlotLegends/ref/Legend.html)
+functions options, except of the PlotStyle option.
+
+PlotStyle option is constructed from the following convenience options (default values in brackets):
+ * MarkerColor (-&gt; Automatic): color for points markers and, if no ColorFunction given, also color for lines (2D) or surfaces (3D); this can be either pre-defined Mathematica color symbol or RGB values list,
+ * OpacityLevel (-&gt; 1.): opacity level if lines and surfaces (parameter for Mathematica Opacity function),
+ * ThicknessLevel (-&gt; 5.): thickness of 2D plot lines (1000 times parameter value for Mathematica Thickness function),
+ * DashingType (-&gt; Infinity): type of 2D plot lines (either pre-defined: Dashed, Dotted, DotDashed or parameter for Mathematica Dashing function).
+
+Other, notable options are:
+ * PlotLabel (-&gt; None): title of the plot,
+ * AxesLabel (by default axes names): axes labels,
+ * LabelStyle (-&gt; Bold): axes labels boldness,
+ * PlotLegend (by default list with data series name attributes if given): data series names in legend,
+ * LegendSize (-&gt; Automatic), LegendPosition (-&gt; {1.1, -0.25}), LegendTextSpace (-&gt; Automatic [2D], -&gt; 5 [3D]): legend size, position, and text space respectively,
+ * Joined (-&gt; True [2D]): flag indicating wether to join markers (plot lines) in the 2D plot,
+ * PlotMarkers (-&gt; {Automatic, Small} [2D]): what markers to draw at the points plotted, e.g. None,
+ * ColorFunction (-&gt; None [2D], -&gt; "TemperatureMap" [3D]): coloring scheme (name from the Mathematica ColorData) of lines (2D) or surfaces (3D); if not None, overrides MarkerColor option,
+ * Mesh (-&gt; None [3D]): additional mesh specification on the surface; mesh is drawn on each of the surfaces and is always depicted as black lines,
+ * ViewPoint (-&gt; {1, -2, 1.3} [3D]): specification of the 3D plot orientation,
+ * PlotRange (-&gt; Full): specification of the visible plot range.
+
+
+Example value (3D plot with three data series):
+    AxesLabel -&gt; { "t [s]", "u(0)", "f(t\, u(0))" }
+    PlotLabel -&gt; "Function f of time t and initial condition u(0) for multiplier 1/2, 1, and 2."
+    PlotLegend -&gt; None
+    MarkerColor -&gt; { Gray, Red, {0.5,0.5,0.5} }
+    Mesh -&gt; All
+    OpacityLevel -&gt; { 0.2, 1., 0.2 }</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="dataXmlList">
+    <s:metadata>
+      <s:description>List of data series repesented as &lt;data&gt; XML tags, containing &lt;point&gt; tags, i.e. list of
+&lt;data [name="data_series_name"]&gt;
+    &lt;point&gt;
+        &lt;coordinate name="coordinate_1_name"&gt;value_1&lt;/coordinate&gt;
+        ...
+        &lt;coordinate name="coordinate_N_name"&gt;-value_N&lt;/coordinate&gt;
+    &lt;/point&gt;
+    ...
+&lt;/data&gt;
+
+Points from data series will be projected according to selected axes names. Data name attribute is optional, and, if given, will be used to create plot legend (explicit 'PlotLegend' option have precedence).
+
+Example value (one data series XML):
+
+&lt;data name="id"&gt;
+    &lt;point&gt;
+        &lt;coordinate name="t"&gt;1&lt;/coordinate&gt;
+        &lt;coordinate name="u"&gt;1&lt;/coordinate&gt;
+        &lt;coordinate name="f"&gt;1&lt;/coordinate&gt;
+    &lt;/point&gt;
+    &lt;point&gt;
+        &lt;coordinate name="t"&gt;2&lt;/coordinate&gt;
+        &lt;coordinate name="u"&gt;2&lt;/coordinate&gt;
+        &lt;coordinate name="f"&gt;2&lt;/coordinate&gt;
+    &lt;/point&gt;
+    &lt;point&gt;
+        &lt;coordinate name="t"&gt;3&lt;/coordinate&gt;
+        &lt;coordinate name="u"&gt;3&lt;/coordinate&gt;
+        &lt;coordinate name="f"&gt;3&lt;/coordinate&gt;
+    &lt;/point&gt;
+    &lt;point&gt;
+        &lt;coordinate name="t"&gt;1&lt;/coordinate&gt;
+        &lt;coordinate name="u"&gt;3&lt;/coordinate&gt;
+        &lt;coordinate name="f"&gt;1&lt;/coordinate&gt;
+    &lt;/point&gt;
+&lt;/data&gt;</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="plots">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>image/png</s:mimeType>
+        <s:mimeType>text/plain</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

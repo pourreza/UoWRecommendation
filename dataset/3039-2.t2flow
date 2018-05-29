@@ -1,0 +1,2232 @@
+<workflow xmlns="http://taverna.sf.net/2008/xml/t2flow" version="1" producedBy="taverna-2.4.0"><dataflow id="dbf6fa3b-2f2c-4661-8a54-041578bee7bc" role="top"><name>Check_registry_for_w</name><inputPorts /><outputPorts><port><name>notInRegistry</name><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>List of table names which are part of the HEC but not registred in the HELIO registry
+
+Type: String list</text>
+      </annotationBean>
+      <date>2012-07-24 14:35:28.703 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain></annotations></port><port><name>notInHEC</name><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>List of table names which are not part of the HEC but  registred in the HELIO registry
+
+Type: String list</text>
+      </annotationBean>
+      <date>2012-07-24 14:35:44.906 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain></annotations></port></outputPorts><processors><processor><name>Get_Web_Page_from_URL</name><inputPorts><port><name>url</name><depth>0</depth></port></inputPorts><outputPorts><port><name>contents</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>localworker-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.localworker.LocalworkerActivity</class><inputMap><map from="url" to="url" /></inputMap><outputMap><map from="contents" to="contents" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.localworker.LocalworkerActivityConfigurationBean xmlns="">
+  <inputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>url</name>
+      <depth>0</depth>
+      <mimeTypes>
+        <string>'text/x-taverna-web-url'</string>
+      </mimeTypes>
+      <handledReferenceSchemes />
+      <translatedElementType>java.lang.String</translatedElementType>
+      <allowsLiteralValues>true</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>base</name>
+      <depth>0</depth>
+      <mimeTypes>
+        <string>'text/x-taverna-web-url'</string>
+      </mimeTypes>
+      <handledReferenceSchemes />
+      <translatedElementType>java.lang.String</translatedElementType>
+      <allowsLiteralValues>true</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+  </inputs>
+  <outputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+      <name>contents</name>
+      <depth>0</depth>
+      <mimeTypes>
+        <string>'text/plain,text/html'</string>
+      </mimeTypes>
+      <granularDepth>0</granularDepth>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+  </outputs>
+  <classLoaderSharing>workflow</classLoaderSharing>
+  <localDependencies />
+  <artifactDependencies />
+  <script>if ((url == void) || (url == null)) {
+	throw new RuntimeException("The url must be specified");
+}
+
+URL inputURL = null;
+if (base != void) {
+  inputURL = new URL(new URL(base), url);
+}
+else {
+  inputURL = new URL(url);
+}
+URLConnection con = inputURL.openConnection();
+InputStream in = con.getInputStream();
+
+StringBuffer result = new StringBuffer();
+BufferedReader reader;
+
+String encoding = con.getContentEncoding();
+if (encoding == null) {
+  reader = new BufferedReader(new InputStreamReader(in));
+} else {
+  reader = new BufferedReader(new InputStreamReader(in, encoding));
+}
+String line = null;
+String NEWLINE = System.getProperty("line.separator");
+while ((line = reader.readLine()) != null) {
+	result.append(line);
+	result.append(NEWLINE);
+}
+
+reader.close();
+contents = result.toString();
+</script>
+  <dependencies />
+  <localworkerName>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</localworkerName>
+</net.sf.taverna.t2.activities.localworker.LocalworkerActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="url" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>url_value</name><inputPorts /><outputPorts><port><name>value</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>stringconstant-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.stringconstant.StringConstantActivity</class><inputMap /><outputMap><map from="value" to="value" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.stringconstant.StringConstantConfigurationBean xmlns="">
+  <value>http://msslkz.mssl.ucl.ac.uk/helio_registry/viewResourceEntry_body.jsp?XML=true&amp;IVORN=ivo%3A%2F%2Fhelio-vo.eu%2Fhec</value>
+</net.sf.taverna.t2.activities.stringconstant.StringConstantConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy /></iteration></iterationStrategyStack></processor><processor><name>SQLSelect</name><inputPorts><port><name>sql_select</name><depth>0</depth></port></inputPorts><outputPorts><port><name>response</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>wsdl-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.wsdl.WSDLActivity</class><inputMap><map from="sql_select" to="sql_select" /></inputMap><outputMap><map from="response" to="response" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.wsdl.WSDLActivityConfigurationBean xmlns="">
+  <wsdl>http://festung1.oats.inaf.it:8080/helio-hec/HelioTavernaService?wsdl</wsdl>
+  <operation>SQLSelect</operation>
+</net.sf.taverna.t2.activities.wsdl.WSDLActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="sql_select" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>SQLSelect_sql_select</name><inputPorts><port><name>FROM</name><depth>1</depth></port><port><name>WHAT</name><depth>1</depth></port></inputPorts><outputPorts><port><name>output</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>wsdl-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.wsdl.xmlsplitter.XMLInputSplitterActivity</class><inputMap><map from="WHAT" to="WHAT" /><map from="FROM" to="FROM" /></inputMap><outputMap><map from="output" to="output" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.wsdl.xmlsplitter.XMLSplitterConfigurationBean xmlns="">
+  <inputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>WHAT</name>
+      <depth>1</depth>
+      <mimeTypes class="java.util.Collections$SingletonList">
+        <element class="string">l('text/plain')</element>
+      </mimeTypes>
+      <allowsLiteralValues>false</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>FROM</name>
+      <depth>1</depth>
+      <mimeTypes class="java.util.Collections$SingletonList">
+        <element class="string">l('text/plain')</element>
+      </mimeTypes>
+      <allowsLiteralValues>false</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>WHERE</name>
+      <depth>0</depth>
+      <mimeTypes class="java.util.Collections$SingletonList">
+        <element class="string">'text/plain'</element>
+      </mimeTypes>
+      <allowsLiteralValues>false</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>ORDER_BY</name>
+      <depth>0</depth>
+      <mimeTypes class="java.util.Collections$SingletonList">
+        <element class="string">'text/plain'</element>
+      </mimeTypes>
+      <allowsLiteralValues>false</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>LIMIT</name>
+      <depth>0</depth>
+      <mimeTypes class="java.util.Collections$SingletonList">
+        <element class="string">'text/plain'</element>
+      </mimeTypes>
+      <allowsLiteralValues>false</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>OFFSET</name>
+      <depth>0</depth>
+      <mimeTypes class="java.util.Collections$SingletonList">
+        <element class="string">'text/plain'</element>
+      </mimeTypes>
+      <allowsLiteralValues>false</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+  </inputs>
+  <outputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+      <name>output</name>
+      <depth>0</depth>
+      <mimeTypes class="java.util.Collections$SingletonList">
+        <element class="string">'text/xml'</element>
+      </mimeTypes>
+      <granularDepth>0</granularDepth>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+  </outputs>
+  <wrappedTypeXML>&lt;s:extensions xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha"&gt;&lt;s:complextype optional="false" unbounded="false" typename="SQLSelect" name="sql_select" qname="{http://helio-vo.eu/xml/QueryService/v0.1}SQLSelect"&gt;&lt;s:elements&gt;&lt;s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="WHAT" qname="SQLSelect&amp;gt;WHAT"&gt;&lt;s:elementtype&gt;&lt;s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" /&gt;&lt;/s:elementtype&gt;&lt;/s:arraytype&gt;&lt;s:arraytype optional="false" unbounded="true" wrapped="false" typename="string" name="FROM" qname="SQLSelect&amp;gt;FROM"&gt;&lt;s:elementtype&gt;&lt;s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" /&gt;&lt;/s:elementtype&gt;&lt;/s:arraytype&gt;&lt;s:basetype optional="true" unbounded="false" typename="string" name="WHERE" qname="SQLSelect&amp;gt;WHERE" /&gt;&lt;s:basetype optional="true" unbounded="false" typename="string" name="ORDER_BY" qname="SQLSelect&amp;gt;ORDER_BY" /&gt;&lt;s:basetype optional="true" unbounded="false" typename="int" name="LIMIT" qname="SQLSelect&amp;gt;LIMIT" /&gt;&lt;s:basetype optional="true" unbounded="false" typename="int" name="OFFSET" qname="SQLSelect&amp;gt;OFFSET" /&gt;&lt;/s:elements&gt;&lt;/s:complextype&gt;&lt;/s:extensions&gt;</wrappedTypeXML>
+</net.sf.taverna.t2.activities.wsdl.xmlsplitter.XMLSplitterConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="FROM" depth="1" /><port name="WHAT" depth="1" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>FROM_value</name><inputPorts /><outputPorts><port><name>value</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>stringconstant-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.stringconstant.StringConstantActivity</class><inputMap /><outputMap><map from="value" to="value" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.stringconstant.StringConstantConfigurationBean xmlns="">
+  <value>catalogues</value>
+</net.sf.taverna.t2.activities.stringconstant.StringConstantConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy /></iteration></iterationStrategyStack></processor><processor><name>WHAT_value</name><inputPorts /><outputPorts><port><name>value</name><depth>0</depth><granularDepth>0</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>stringconstant-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.stringconstant.StringConstantActivity</class><inputMap /><outputMap><map from="value" to="value" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.stringconstant.StringConstantConfigurationBean xmlns="">
+  <value>table_name</value>
+</net.sf.taverna.t2.activities.stringconstant.StringConstantConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy /></iteration></iterationStrategyStack></processor><processor><name>XPath_Service</name><inputPorts><port><name>xml_text</name><depth>0</depth></port></inputPorts><outputPorts><port><name>nodelist</name><depth>1</depth><granularDepth>1</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>xpath-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.xpath.XPathActivity</class><inputMap><map from="xml_text" to="xml_text" /></inputMap><outputMap><map from="nodelist" to="nodelist" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.xpath.XPathActivityConfigurationBean xmlns="">
+  <xmlDocument>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;ri:Resource xmlns:ri="http://www.ivoa.net/xml/RegistryInterface/v1.0" xmlns:cea="http://www.ivoa.net/xml/CEA/v1.0rc1" xmlns:va="http://www.ivoa.net/xml/VOApplication/v1.0rc1" xmlns:vr="http://www.ivoa.net/xml/VOResource/v1.0" xmlns:vs="http://www.ivoa.net/xml/VODataService/v1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" created="2011-03-03T16:38:59" status="active" updated="2011-10-24T14:00:11" xsi:type="vs:CatalogService"&gt;
+        &lt;title xmlns:vg="http://www.ivoa.net/xml/VORegistry/v1.0"&gt;Heliophysics Event Catalogue&lt;/title&gt;
+        &lt;identifier xmlns:vg="http://www.ivoa.net/xml/VORegistry/v1.0"&gt;ivo://helio-vo.eu/hec&lt;/identifier&gt;
+        &lt;curation xmlns:vg="http://www.ivoa.net/xml/VORegistry/v1.0"&gt;
+            &lt;publisher&gt;Vineeth T Shetty&lt;/publisher&gt;
+            &lt;creator&gt;
+                &lt;name/&gt;
+            &lt;/creator&gt;
+            &lt;contact&gt;
+                &lt;name&gt;Vineeth T Shetty&lt;/name&gt;
+                &lt;email&gt;vts@mssl.ucl.ac.uk&lt;/email&gt;
+            &lt;/contact&gt;
+        &lt;/curation&gt;
+        &lt;content xmlns:vg="http://www.ivoa.net/xml/VORegistry/v1.0"&gt;
+            &lt;subject&gt;hec r3 service details&lt;/subject&gt;
+            &lt;description&gt;Heliophysics Event Catalogue Description&lt;/description&gt;
+            &lt;referenceURL&gt;http://www.astrogrid.org/&lt;/referenceURL&gt;
+            &lt;type&gt;Other&lt;/type&gt;
+            &lt;contentLevel&gt;Research&lt;/contentLevel&gt;
+        &lt;/content&gt;
+        &lt;capability xmlns:cap="urn:astrogrid:schema:Capabilities" xmlns:cs="http://www.ivoa.net/xml/ConeSearch/v1.0" standardID="ivo://helio-vo.eu/std/FullQuery/v0.2"&gt;
+            &lt;interface xsi:type="vs:ParamHTTP"&gt;
+                &lt;accessURL use="full"&gt;http://festung1.oats.inaf.it:8080/helio-hec/HelioQueryService&lt;/accessURL&gt;
+            &lt;/interface&gt;
+            &lt;interface xsi:type="vr:WebService"&gt;
+                &lt;accessURL use="full"&gt;http://festung1.oats.inaf.it:8080/helio-hec/HelioService&lt;/accessURL&gt;
+                &lt;accessURL use="full"&gt;http://festung3.oats.inaf.it:8080/helio-hec/HelioService&lt;/accessURL&gt;
+            &lt;/interface&gt;
+        &lt;/capability&gt;
+        &lt;capability xmlns:cap="urn:astrogrid:schema:Capabilities" xmlns:cs="http://www.ivoa.net/xml/ConeSearch/v1.0" standardID="ivo://ivoa.net/std/VOSI#capabilities"&gt;
+            &lt;interface xsi:type="vs:ParamHTTP"&gt;
+                &lt;accessURL use="full"&gt;http://festung1.oats.inaf.it:8080/helio-hec/VOSI/capabilities&lt;/accessURL&gt;
+                &lt;queryType&gt;GET&lt;/queryType&gt;
+                &lt;resultType&gt;application/xml&lt;/resultType&gt;
+            &lt;/interface&gt;
+        &lt;/capability&gt;
+        &lt;capability standardID="ivo://helio-vo.eu/std/FullQuery/Soap/v1.0"&gt;
+            &lt;interface xsi:type="vr:WebService"&gt;
+                &lt;accessURL use="full"&gt;http://festung1.oats.inaf.it:8080/helio-hec/HelioService&lt;/accessURL&gt;
+                &lt;accessURL use="full"&gt;http://festung3.oats.inaf.it:8080/helio-hec/HelioService&lt;/accessURL&gt;
+            &lt;/interface&gt;
+        &lt;/capability&gt;
+        &lt;capability standardID="ivo://helio-vo.eu/std/FullQuery/v1.0"&gt;
+            &lt;interface xsi:type="vs:ParamHTTP"&gt;
+                &lt;accessURL use="full"&gt;http://festung1.oats.inaf.it:8080/helio-hec/HelioQueryService&lt;/accessURL&gt;
+                &lt;accessURL use="full"&gt;http://festung3.oats.inaf.it:8080/helio-hec/HelioQueryService&lt;/accessURL&gt;
+            &lt;/interface&gt;
+        &lt;/capability&gt;
+        &lt;capability standardID="ivo://helio-vo.eu/std/LongFullQuery/Soap/v1.0"&gt;
+            &lt;interface xsi:type="vr:WebService"&gt;
+                &lt;accessURL use="full"&gt;http://festung1.oats.inaf.it:8080/helio-hec/HelioLongQueryService&lt;/accessURL&gt;
+                &lt;accessURL use="full"&gt;http://festung3.oats.inaf.it:8080/helio-hec/HelioLongQueryService&lt;/accessURL&gt;
+            &lt;/interface&gt;
+        &lt;/capability&gt;
+        &lt;capability standardID="ivo://helio-vo.eu/std/LongFullQuery/v1.0"&gt;
+            &lt;interface xsi:type="vs:ParamHTTP"&gt;
+                &lt;accessURL use="full"&gt;http://festung1.oats.inaf.it:8080/helio-hec/LongRunningQueryService&lt;/accessURL&gt;
+                &lt;accessURL use="full"&gt;http://festung3.oats.inaf.it:8080/helio-hec/LongRunningQueryService&lt;/accessURL&gt;
+            &lt;/interface&gt;
+        &lt;/capability&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;wind_waves_type_ii_burst&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;time_end&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;freq_start&lt;/name&gt;
+                &lt;description&gt;freq_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;freq_end&lt;/name&gt;
+                &lt;description&gt;freq_end&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;loc&lt;/name&gt;
+                &lt;description&gt;loc&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nar&lt;/name&gt;
+                &lt;description&gt;nar&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;xray_class&lt;/name&gt;
+                &lt;description&gt;xray_class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_cme&lt;/name&gt;
+                &lt;description&gt;time_cme&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;pa_central&lt;/name&gt;
+                &lt;description&gt;pa_central&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;pa_width&lt;/name&gt;
+                &lt;description&gt;pa_width&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;speed&lt;/name&gt;
+                &lt;description&gt;speed&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;rem&lt;/name&gt;
+                &lt;description&gt;rem&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;drao_10cm_flux&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sfu_observed&lt;/name&gt;
+                &lt;description&gt;observed solar flux units&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sfu_adjusted&lt;/name&gt;
+                &lt;description&gt;adjusted solar flux units&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sfu_series_d&lt;/name&gt;
+                &lt;description&gt;series d solar flux units&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;gle_list&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;rem&lt;/name&gt;
+                &lt;description&gt;Remarks&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;istp_solar_wind_cat&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;time_end&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;category&lt;/name&gt;
+                &lt;description&gt;category&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;spacecraft&lt;/name&gt;
+                &lt;description&gt;spacecraft&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;rem&lt;/name&gt;
+                &lt;description&gt;rem&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;wind_imf_ips&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;stereo_euvi_catalog&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;time_end&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;loc&lt;/name&gt;
+                &lt;description&gt;loc&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;cadence&lt;/name&gt;
+                &lt;description&gt;cadence&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;spacecraft&lt;/name&gt;
+                &lt;description&gt;spacecraft&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;xray_class&lt;/name&gt;
+                &lt;description&gt;xray_class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;rhessi_peak_range&lt;/name&gt;
+                &lt;description&gt;rhessi_peak_range&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;rhessi_peak_count&lt;/name&gt;
+                &lt;description&gt;rhessi_peak_count&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;rem&lt;/name&gt;
+                &lt;description&gt;rem&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;cme_event_source&lt;/name&gt;
+                &lt;description&gt;cme_event_source&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;soho_camp&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sohoc_num&lt;/name&gt;
+                &lt;description&gt;SoHO Campaign number&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sohoc_name&lt;/name&gt;
+                &lt;description&gt;SoHO Campaign name&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sohoc_type&lt;/name&gt;
+                &lt;description&gt;SoHO Campaign type&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sohoc_obj&lt;/name&gt;
+                &lt;description&gt;SoHO Campaign objective&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sohoc_coord&lt;/name&gt;
+                &lt;description&gt;SoHO Campaign coordinators&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sohoc_part&lt;/name&gt;
+                &lt;description&gt;SoHO Campaign participants&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sohoc_comm&lt;/name&gt;
+                &lt;description&gt;SoHO Campaign comments&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;eit_list&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;previmg_time&lt;/name&gt;
+                &lt;description&gt;Previous Image Time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;img_time&lt;/name&gt;
+                &lt;description&gt;Image Time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;quality&lt;/name&gt;
+                &lt;description&gt;Quality Rating&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;latitude&lt;/name&gt;
+                &lt;description&gt;heliographic latitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude&lt;/name&gt;
+                &lt;description&gt;heliographic longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;speed_planeofsky&lt;/name&gt;
+                &lt;description&gt;Plane-of-Sky Speed&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;speed_proj&lt;/name&gt;
+                &lt;description&gt;Projected Speed&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;pa_central&lt;/name&gt;
+                &lt;description&gt;polar angle [deg]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;description&lt;/name&gt;
+                &lt;description&gt;event description&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;goes_xray_flare&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;ntime_start&lt;/name&gt;
+                &lt;description&gt;selection start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_peak&lt;/name&gt;
+                &lt;description&gt;event peak time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;ntime_end&lt;/name&gt;
+                &lt;description&gt;selection end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nar&lt;/name&gt;
+                &lt;description&gt;active region number&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;latitude&lt;/name&gt;
+                &lt;description&gt;heliographic latitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude&lt;/name&gt;
+                &lt;description&gt;heliographic longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;long_carr&lt;/name&gt;
+                &lt;description&gt;Carrington longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;xray_class&lt;/name&gt;
+                &lt;description&gt;x-ray importance class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;optical_class&lt;/name&gt;
+                &lt;description&gt;optical importance class&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;ssc_list&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nstn_A&lt;/name&gt;
+                &lt;description&gt;Number stations reporting an A event&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nstn_B&lt;/name&gt;
+                &lt;description&gt;Number stations reporting an B event&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nstn_C&lt;/name&gt;
+                &lt;description&gt;Number stations reporting an C event&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nsi&lt;/name&gt;
+                &lt;description&gt;Number of stations reporting an "si" event&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;tsrs_event_list&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_peak&lt;/name&gt;
+                &lt;description&gt;time_peak&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;time_end&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;freq&lt;/name&gt;
+                &lt;description&gt;freq&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;cpp&lt;/name&gt;
+                &lt;description&gt;cpp&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;ps&lt;/name&gt;
+                &lt;description&gt;ps&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sfu_max&lt;/name&gt;
+                &lt;description&gt;sfu_max&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;radio_class&lt;/name&gt;
+                &lt;description&gt;radio_class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;rem&lt;/name&gt;
+                &lt;description&gt;rem&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;file&lt;/name&gt;
+                &lt;description&gt;file&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;catalogues&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;table_name&lt;/name&gt;
+                &lt;description&gt;table_name&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;description&lt;/name&gt;
+                &lt;description&gt;description&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;type&lt;/name&gt;
+                &lt;description&gt;type&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;status&lt;/name&gt;
+                &lt;description&gt;status&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_from&lt;/name&gt;
+                &lt;description&gt;time_from&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_to&lt;/name&gt;
+                &lt;description&gt;time_to&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;yohkoh_sxt_trace_list&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;link&lt;/name&gt;
+                &lt;description&gt;The location of the SXT PFI file at ISAS&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start_sxt&lt;/name&gt;
+                &lt;description&gt;Times of the first flare mode SXT images&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end_sxt&lt;/name&gt;
+                &lt;description&gt;Times of the last flare mode SXT images&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;xray_class&lt;/name&gt;
+                &lt;description&gt;x-ray importance class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;n_img&lt;/name&gt;
+                &lt;description&gt;Number of flare mode SXT images&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;x_arcsec_sxt&lt;/name&gt;
+                &lt;description&gt;Coord. X (arcsec from disk center) of the center of the 6th SXT flare mode image&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;y_arcsec_sxt&lt;/name&gt;
+                &lt;description&gt;Coord. Y (arcsec from disk center) of the center of the 6th SXT flare mode image&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_sxt_trace&lt;/name&gt;
+                &lt;description&gt;Time of the TRACE image closest to time_start_sxt&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;wl_dom&lt;/name&gt;
+                &lt;description&gt;Wavelength at which the greatest number of images is taken&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;x_arcsec&lt;/name&gt;
+                &lt;description&gt;x position [arcsec]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;y_arcsec&lt;/name&gt;
+                &lt;description&gt;y position [arcsec]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;n171&lt;/name&gt;
+                &lt;description&gt;Number of TRACE images at 171 A&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;n195&lt;/name&gt;
+                &lt;description&gt;Number of TRACE images at 195 A&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;n284&lt;/name&gt;
+                &lt;description&gt;Number of TRACE images at 284 A&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;n1600&lt;/name&gt;
+                &lt;description&gt;Number of TRACE images at 1600 A&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;n1216&lt;/name&gt;
+                &lt;description&gt;Number of TRACE images at 1216 A&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nwl&lt;/name&gt;
+                &lt;description&gt;Number of TRACE images at WL&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;wind_imf_bow_shock&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;last_bs_crossing&lt;/name&gt;
+                &lt;description&gt;last_bs_crossing&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;last_bs_flag&lt;/name&gt;
+                &lt;description&gt;last_bs_flag&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;first_hr_kept&lt;/name&gt;
+                &lt;description&gt;first_hr_kept&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;first_hr_flag&lt;/name&gt;
+                &lt;description&gt;first_hr_flag&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;last_hr_kept&lt;/name&gt;
+                &lt;description&gt;last_hr_kept&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;last_hr_flag&lt;/name&gt;
+                &lt;description&gt;last_hr_flag&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;first_bs_crossing&lt;/name&gt;
+                &lt;description&gt;first_bs_crossing&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;first_bs_flag&lt;/name&gt;
+                &lt;description&gt;first_bs_flag&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;time_end&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;solar_wind_event&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sw_list&lt;/name&gt;
+                &lt;description&gt;solar wind list index&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;bzn&lt;/name&gt;
+                &lt;description&gt;Interplanetary magnetic B-field North (GSM coordinate system)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;bzs&lt;/name&gt;
+                &lt;description&gt;Interplanetary magnetic B-field South (GSM coordinate system)&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;eyc&lt;/name&gt;
+                &lt;description&gt;Change of the "y" component of the Interplanetary Electric Field&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;hss&lt;/name&gt;
+                &lt;description&gt;High Speed Stream&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;imc&lt;/name&gt;
+                &lt;description&gt;Interplanetary Magnetic Cloud&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;ir&lt;/name&gt;
+                &lt;description&gt;Interaction Region&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;is_&lt;/name&gt;
+                &lt;description&gt;Interplanetary Fast Shock&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;lss&lt;/name&gt;
+                &lt;description&gt;Low Speed Stream&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;pc&lt;/name&gt;
+                &lt;description&gt;Pressure Change&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sbc&lt;/name&gt;
+                &lt;description&gt;Sector Boundaries Crossing, also heliospheric current sheet crossing&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;misc&lt;/name&gt;
+                &lt;description&gt;Miscellaneous Events&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;w&lt;/name&gt;
+                &lt;description&gt;WIND&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;i8&lt;/name&gt;
+                &lt;description&gt;IMP-8&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;ace&lt;/name&gt;
+                &lt;description&gt;ACE&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;rem&lt;/name&gt;
+                &lt;description&gt;Remarks&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;bas_magnetic_storms&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_peak&lt;/name&gt;
+                &lt;description&gt;event peak time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;dst&lt;/name&gt;
+                &lt;description&gt;magnetic field [nT]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;hduration&lt;/name&gt;
+                &lt;description&gt;duration [h]&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;srs_list&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nar&lt;/name&gt;
+                &lt;description&gt;active region number&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;latitude&lt;/name&gt;
+                &lt;description&gt;heliographic latitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude&lt;/name&gt;
+                &lt;description&gt;heliographic longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;long_carr&lt;/name&gt;
+                &lt;description&gt;Carrington longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;area&lt;/name&gt;
+                &lt;description&gt;area&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;zurich_class&lt;/name&gt;
+                &lt;description&gt;Zurich classification&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;p_value&lt;/name&gt;
+                &lt;description&gt;p value&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;c_value&lt;/name&gt;
+                &lt;description&gt;c value&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;long_extent&lt;/name&gt;
+                &lt;description&gt;longitudinal extension&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;n_spots&lt;/name&gt;
+                &lt;description&gt;number of sunspots&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;mag_class&lt;/name&gt;
+                &lt;description&gt;mag class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;region_type&lt;/name&gt;
+                &lt;description&gt;active region type&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;ulysses_swoops_icme&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;time_end&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;latitude&lt;/name&gt;
+                &lt;description&gt;latitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude&lt;/name&gt;
+                &lt;description&gt;longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;r&lt;/name&gt;
+                &lt;description&gt;r&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;v_p&lt;/name&gt;
+                &lt;description&gt;v_p&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;v_p_err&lt;/name&gt;
+                &lt;description&gt;v_p_err&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;b&lt;/name&gt;
+                &lt;description&gt;b&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;b_err&lt;/name&gt;
+                &lt;description&gt;b_err&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;wind_solar_wind_times&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;time_end&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;lasco_cme_list&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;pa_central&lt;/name&gt;
+                &lt;description&gt;polar angle [deg]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;description&lt;/name&gt;
+                &lt;description&gt;event description&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;forbush_list&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sc&lt;/name&gt;
+                &lt;description&gt;forbush sc&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;fe_magn&lt;/name&gt;
+                &lt;description&gt;forbush fe_magn&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;kpmax&lt;/name&gt;
+                &lt;description&gt;forbush kpmax&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;dstmin&lt;/name&gt;
+                &lt;description&gt;forbush dstmin&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;bimf_m&lt;/name&gt;
+                &lt;description&gt;forbush bimf_m&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;vsw_max&lt;/name&gt;
+                &lt;description&gt;forbush vsw_max&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;axy_min&lt;/name&gt;
+                &lt;description&gt;forbush axy_min&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;az_r&lt;/name&gt;
+                &lt;description&gt;forbush az_r&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;tmin&lt;/name&gt;
+                &lt;description&gt;forbush tmin&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;dmin&lt;/name&gt;
+                &lt;description&gt;forbush dmin&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;tdmn&lt;/name&gt;
+                &lt;description&gt;forbush tdmn&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;aftob&lt;/name&gt;
+                &lt;description&gt;forbush aftob&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;tilt&lt;/name&gt;
+                &lt;description&gt;forbush tilt&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;halpha_flares_event&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_peak&lt;/name&gt;
+                &lt;description&gt;event peak time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nar&lt;/name&gt;
+                &lt;description&gt;active region number&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;latitude&lt;/name&gt;
+                &lt;description&gt;heliographic latitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude&lt;/name&gt;
+                &lt;description&gt;heliographic longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;long_carr&lt;/name&gt;
+                &lt;description&gt;Carrington longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;xray_class&lt;/name&gt;
+                &lt;description&gt;x-ray importance class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;optical_class&lt;/name&gt;
+                &lt;description&gt;optical importance class&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;soho_pm_ips&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;doy_start&lt;/name&gt;
+                &lt;description&gt;doy_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;zone&lt;/name&gt;
+                &lt;description&gt;zone&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;rem&lt;/name&gt;
+                &lt;description&gt;rem&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;hessi_flare&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_peak&lt;/name&gt;
+                &lt;description&gt;event peak time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nar&lt;/name&gt;
+                &lt;description&gt;active region number&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;x_arcsec&lt;/name&gt;
+                &lt;description&gt;x position [arcsec]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;y_arcsec&lt;/name&gt;
+                &lt;description&gt;y position [arcsec]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;radial_arcsec&lt;/name&gt;
+                &lt;description&gt;sun radius [arcsec]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;duration&lt;/name&gt;
+                &lt;description&gt;duration [s]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;count_sec_peak&lt;/name&gt;
+                &lt;description&gt;peak of counts per sec [s-1]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;total_count&lt;/name&gt;
+                &lt;description&gt;total counts&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;energy_kev&lt;/name&gt;
+                &lt;description&gt;energy [keV]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;flare_number&lt;/name&gt;
+                &lt;description&gt;flare id number&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;dsd_list&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;radio_10cm&lt;/name&gt;
+                &lt;description&gt;radio emission at 10 cm&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;sesc_ssn&lt;/name&gt;
+                &lt;description&gt;sesc sunspot number&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;ss_area&lt;/name&gt;
+                &lt;description&gt;sunspot area&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;new_regions&lt;/name&gt;
+                &lt;description&gt;new regions&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;stan_smf&lt;/name&gt;
+                &lt;description&gt;stan smf&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;xray_bkg&lt;/name&gt;
+                &lt;description&gt;x-ray bkg&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;c_flares&lt;/name&gt;
+                &lt;description&gt;class C flares&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;m_flares&lt;/name&gt;
+                &lt;description&gt;class M flares&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;x_flares&lt;/name&gt;
+                &lt;description&gt;class X flares&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;opts_flares&lt;/name&gt;
+                &lt;description&gt;opts flares&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;opt1_flares&lt;/name&gt;
+                &lt;description&gt;opt1 flares&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;opt2_flares&lt;/name&gt;
+                &lt;description&gt;opt2 flares&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;opt3_flares&lt;/name&gt;
+                &lt;description&gt;opt3 flares&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;sgas_event&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;ntime_start&lt;/name&gt;
+                &lt;description&gt;selection start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_peak&lt;/name&gt;
+                &lt;description&gt;event peak time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;ntime_end&lt;/name&gt;
+                &lt;description&gt;selection end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nar&lt;/name&gt;
+                &lt;description&gt;active region number&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;latitude&lt;/name&gt;
+                &lt;description&gt;heliographic latitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude&lt;/name&gt;
+                &lt;description&gt;heliographic longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;long_carr&lt;/name&gt;
+                &lt;description&gt;Carrington longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;xray_class&lt;/name&gt;
+                &lt;description&gt;x-ray importance class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;optical_class&lt;/name&gt;
+                &lt;description&gt;optical importance class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;radio_245mhz&lt;/name&gt;
+                &lt;description&gt;radio emission at 245 MHz&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;radio_10cm&lt;/name&gt;
+                &lt;description&gt;radio emission at 10 cm&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;radio_sweep_ii&lt;/name&gt;
+                &lt;description&gt;radio sweep type II&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;radio_sweep_iv&lt;/name&gt;
+                &lt;description&gt;radio sweep type IV&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;swf&lt;/name&gt;
+                &lt;description&gt;short wave fade&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;noaa_proton_event&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_peak&lt;/name&gt;
+                &lt;description&gt;event peak time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nar&lt;/name&gt;
+                &lt;description&gt;active region number&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;latitude&lt;/name&gt;
+                &lt;description&gt;heliographic latitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude&lt;/name&gt;
+                &lt;description&gt;heliographic longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;proton_flux&lt;/name&gt;
+                &lt;description&gt;proton flux units&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;assoc_cme&lt;/name&gt;
+                &lt;description&gt;associated CME&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;assoc_flare_pk&lt;/name&gt;
+                &lt;description&gt;peak time for associated flare&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;xray_class&lt;/name&gt;
+                &lt;description&gt;xray importance class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;optical_class&lt;/name&gt;
+                &lt;description&gt;optical importance class&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;aastar_list&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_peak&lt;/name&gt;
+                &lt;description&gt;event peak time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;hduration&lt;/name&gt;
+                &lt;description&gt;duration [h]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;aastar_max&lt;/name&gt;
+                &lt;description&gt;max AA* magnetic index&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;aastar_ave&lt;/name&gt;
+                &lt;description&gt;ave AA* magnetic index&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;aastar_sum&lt;/name&gt;
+                &lt;description&gt;sum AA* magnetic index&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;hi_event&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;date&lt;/name&gt;
+                &lt;description&gt;date&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;instrument&lt;/name&gt;
+                &lt;description&gt;instrument&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;speed&lt;/name&gt;
+                &lt;description&gt;speed&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;speed_err&lt;/name&gt;
+                &lt;description&gt;speed_err&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude&lt;/name&gt;
+                &lt;description&gt;longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude_err&lt;/name&gt;
+                &lt;description&gt;longitude_err&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_1au&lt;/name&gt;
+                &lt;description&gt;time_1au&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;yohkoh_flare_list&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_peak&lt;/name&gt;
+                &lt;description&gt;event peak time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nar&lt;/name&gt;
+                &lt;description&gt;active region number&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;latitude&lt;/name&gt;
+                &lt;description&gt;heliographic latitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude&lt;/name&gt;
+                &lt;description&gt;heliographic longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;xray_class&lt;/name&gt;
+                &lt;description&gt;x-ray importance class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;optical_class&lt;/name&gt;
+                &lt;description&gt;optical importance class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;hxt_lo&lt;/name&gt;
+                &lt;description&gt;HXT lo&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;hxt_m1&lt;/name&gt;
+                &lt;description&gt;HXT m1&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;hxt_m2&lt;/name&gt;
+                &lt;description&gt;HXT m2&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;hxt_hi&lt;/name&gt;
+                &lt;description&gt;HXT hi&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;rem&lt;/name&gt;
+                &lt;description&gt;Remarks&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;yoh_event&lt;/name&gt;
+                &lt;description&gt;Yohkoh event&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;gevloc_flares&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;xray_class&lt;/name&gt;
+                &lt;description&gt;xray_class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;loc&lt;/name&gt;
+                &lt;description&gt;loc&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;imp8_solar_wind_times&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;time_end&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;latest_gev_flare&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_peak&lt;/name&gt;
+                &lt;description&gt;time_peak&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;time_end&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;nar&lt;/name&gt;
+                &lt;description&gt;nar&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;latitude&lt;/name&gt;
+                &lt;description&gt;latitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude&lt;/name&gt;
+                &lt;description&gt;longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;xray_class&lt;/name&gt;
+                &lt;description&gt;xray_class&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;optical_class&lt;/name&gt;
+                &lt;description&gt;optical_class&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;wind_imf_mag_cloud&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;doy_start&lt;/name&gt;
+                &lt;description&gt;doy_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;time_end&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;doy_end&lt;/name&gt;
+                &lt;description&gt;doy_end&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;code&lt;/name&gt;
+                &lt;description&gt;code&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;quality&lt;/name&gt;
+                &lt;description&gt;quality&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;kso_flare&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start_m&lt;/name&gt;
+                &lt;description&gt;event start time modifier&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_peak&lt;/name&gt;
+                &lt;description&gt;event peak time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_peak_m&lt;/name&gt;
+                &lt;description&gt;event peak modifier&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end_m&lt;/name&gt;
+                &lt;description&gt;event end time modifier&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;latitude&lt;/name&gt;
+                &lt;description&gt;heliographic latitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude&lt;/name&gt;
+                &lt;description&gt;heliographic longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;long_carr&lt;/name&gt;
+                &lt;description&gt;Carrington longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;optical_class&lt;/name&gt;
+                &lt;description&gt;optical importance class&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;hi_cme_list&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;instrument&lt;/name&gt;
+                &lt;description&gt;instrument&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;time_end&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;data_gap&lt;/name&gt;
+                &lt;description&gt;data_gap&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;cme_type&lt;/name&gt;
+                &lt;description&gt;cme_type&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;brightness&lt;/name&gt;
+                &lt;description&gt;brightness&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;pa_central&lt;/name&gt;
+                &lt;description&gt;pa_central&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;pa_width&lt;/name&gt;
+                &lt;description&gt;pa_width&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_onset&lt;/name&gt;
+                &lt;description&gt;time_onset&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;not_in_list&lt;/name&gt;
+                &lt;description&gt;not_in_list&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;linear_speed&lt;/name&gt;
+                &lt;description&gt;linear_speed&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude&lt;/name&gt;
+                &lt;description&gt;longitude&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;longitude_err&lt;/name&gt;
+                &lt;description&gt;longitude_err&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_1au&lt;/name&gt;
+                &lt;description&gt;time_1au&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;description&lt;/name&gt;
+                &lt;description&gt;description&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;waves_exp_wind_stereo&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;time_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;time_end&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;identifier&lt;/name&gt;
+                &lt;description&gt;identifier&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;freq_start&lt;/name&gt;
+                &lt;description&gt;freq_start&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;freq_end&lt;/name&gt;
+                &lt;description&gt;freq_end&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;dyn_spec&lt;/name&gt;
+                &lt;description&gt;dyn_spec&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;rem&lt;/name&gt;
+                &lt;description&gt;rem&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;apstar_list&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_peak&lt;/name&gt;
+                &lt;description&gt;event peak time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;hduration&lt;/name&gt;
+                &lt;description&gt;duration [h]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;apstar_max&lt;/name&gt;
+                &lt;description&gt;max Ap* magnetic index&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;apstar_ave&lt;/name&gt;
+                &lt;description&gt;ave Ap* magnetic index&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;apstar_sum&lt;/name&gt;
+                &lt;description&gt;sum Ap* magnetic index&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;lasco_cme_cat&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;pa_central&lt;/name&gt;
+                &lt;description&gt;polar angle [deg]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;pa_measure&lt;/name&gt;
+                &lt;description&gt;polar angle measure [deg]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;pa_width&lt;/name&gt;
+                &lt;description&gt;polar angle width [deg]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;linear_speed&lt;/name&gt;
+                &lt;description&gt;linear speed [km/sec]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;speed2_init&lt;/name&gt;
+                &lt;description&gt;2nd order initial speed [km/sec]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;speed2_final&lt;/name&gt;
+                &lt;description&gt;2nd order final speed [km/sec]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;speed2_20r&lt;/name&gt;
+                &lt;description&gt;2nd order speed at 20 R [km/sec]&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;acceleration&lt;/name&gt;
+                &lt;description&gt;acceleration [km/sec^2]&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+        &lt;table xmlns:tab="urn:astrogrid:schema:TableMetadata"&gt;
+            &lt;name&gt;sidc_sunspot_number&lt;/name&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_start&lt;/name&gt;
+                &lt;description&gt;event start time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;time_end&lt;/name&gt;
+                &lt;description&gt;event end time&lt;/description&gt;
+            &lt;/column&gt;
+            &lt;column&gt;
+                &lt;name&gt;ssn&lt;/name&gt;
+                &lt;description&gt;sunspot number&lt;/description&gt;
+            &lt;/column&gt;
+        &lt;/table&gt;
+    &lt;/ri:Resource&gt;</xmlDocument>
+  <xpathExpression>/ri:Resource/table/name</xpathExpression>
+  <xpathNamespaceMap>
+    <entry>
+      <string>cea</string>
+      <string>http://www.ivoa.net/xml/CEA/v1.0rc1</string>
+    </entry>
+    <entry>
+      <string>ri</string>
+      <string>http://www.ivoa.net/xml/RegistryInterface/v1.0</string>
+    </entry>
+    <entry>
+      <string>vr</string>
+      <string>http://www.ivoa.net/xml/VOResource/v1.0</string>
+    </entry>
+    <entry>
+      <string>vs</string>
+      <string>http://www.ivoa.net/xml/VODataService/v1.0</string>
+    </entry>
+    <entry>
+      <string>va</string>
+      <string>http://www.ivoa.net/xml/VOApplication/v1.0rc1</string>
+    </entry>
+    <entry>
+      <string>xsi</string>
+      <string>http://www.w3.org/2001/XMLSchema-instance</string>
+    </entry>
+  </xpathNamespaceMap>
+</net.sf.taverna.t2.activities.xpath.XPathActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="xml_text" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>XPath_Service_2</name><inputPorts><port><name>xml_text</name><depth>0</depth></port></inputPorts><outputPorts><port><name>nodelist</name><depth>1</depth><granularDepth>1</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>xpath-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.xpath.XPathActivity</class><inputMap><map from="xml_text" to="xml_text" /></inputMap><outputMap><map from="nodelist" to="nodelist" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.xpath.XPathActivityConfigurationBean xmlns="">
+  <xmlDocument>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;helio:queryResponse xmlns:helio="http://helio-vo.eu/xml/QueryService/v0.1"&gt;&lt;VOTABLE xmlns="http://www.ivoa.net/xml/VOTable/v1.1" version="1.1"&gt;
+&lt;RESOURCE&gt;
+&lt;DESCRIPTION/&gt;
+&lt;INFO name="QUERY_STATUS" value="OK"/&gt;
+&lt;INFO name="EXECUTED_AT" value="2012-07-24 14:07:39"/&gt;
+&lt;INFO name="MAX_RECORD_ALLOWED" value="2000"/&gt;
+&lt;INFO name="QUERY_STRING"&gt;SELECT table_name FROM catalogues   LIMIT 2000&lt;/INFO&gt;
+&lt;INFO name="QUERY_URL"&gt;http://festung1.oats.inaf.it:8080/helio-hec/HelioQueryService?&amp;amp;FROM=catalogues&lt;/INFO&gt;
+&lt;TABLE name="hec-catalogues"&gt;
+&lt;FIELD arraysize="*" datatype="char" name="table_name"/&gt;
+&lt;DATA&gt;
+&lt;TABLEDATA&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;ngdc_halpha_flare&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;soho_lasco_cme&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;stereo_hi_cme&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;goes_sxr_flare&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;noaa_energetic_event&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;ngdc_apstar_storm&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;aad_gle&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;ngdc_aastar_storm&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;ngdc_ssc&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;goes_proton_event&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;cme_forbush_event&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;wind_stereo_ii_iv_radioburst&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;yohkoh_hxr_flare&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;soho_eit_wave_transient&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;stereo_hi_sw_transient&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;wind_mfi_mag_cloud&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;istp_sw_event&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;rhessi_hxr_flare&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;solar_sep_event&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;tsrs_solar_radio_event&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;kso_halpha_flare&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;soho_pm_ip_shock&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;seeds_soho&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;cactus_stereob_cme&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;cactus_stereob_flow&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;wind_mfi_ip_shock&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;wind_typeii_soho_cme&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;ulysses_swoops_icme&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;nmdb_gle_list&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;cactus_all&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;cactus_stereoa_cme&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;seeds_stb&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;seeds_sta&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;cactus_soho_flow&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;cactus_stereoa_flow&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;stereo_euvi_event&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;cactus_soho_cme&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;ulysses_grb_xray_flare&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;halo_cme_flare_magnetic_storm&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;mars_earth_icme&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;wind_ace_sir&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;goes_flare_sep_event&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;timed_see_flare&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;hfc_wind_waves&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;ulysses_hxr_flare&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;ulysses_hxr_flare_farside&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;goes_flare_no_sep_radio_cme&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;stereo_impactplastic_icme&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;stereoa_impactplastic_sir&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;stereob_impactplastic_sir&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;stereoa_impactplastic_shock&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;stereob_impactplastic_shock&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;icme_earth_cycle23&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;cme_inner_heliosphere&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;seeds_cme&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;noaa_daily_solar_data&lt;/TD&gt;
+  &lt;/TR&gt;
+  &lt;TR&gt;
+    &lt;TD&gt;noaa_active_region_summary&lt;/TD&gt;
+  &lt;/TR&gt;
+&lt;/TABLEDATA&gt;
+&lt;/DATA&gt;
+&lt;/TABLE&gt;
+&lt;/RESOURCE&gt;
+&lt;/VOTABLE&gt;
+&lt;/helio:queryResponse&gt;</xmlDocument>
+  <xpathExpression>/helio:queryResponse/default:VOTABLE/default:RESOURCE/default:TABLE/default:DATA/default:TABLEDATA/default:TR/default:TD</xpathExpression>
+  <xpathNamespaceMap>
+    <entry>
+      <string>default</string>
+      <string>http://www.ivoa.net/xml/VOTable/v1.1</string>
+    </entry>
+    <entry>
+      <string>helio</string>
+      <string>http://helio-vo.eu/xml/QueryService/v0.1</string>
+    </entry>
+  </xpathNamespaceMap>
+</net.sf.taverna.t2.activities.xpath.XPathActivityConfigurationBean></configBean><annotations /></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="xml_text" depth="0" /></cross></strategy></iteration></iterationStrategyStack></processor><processor><name>String_List_Difference</name><inputPorts><port><name>list1</name><depth>1</depth></port><port><name>list2</name><depth>1</depth></port></inputPorts><outputPorts><port><name>notIn1</name><depth>1</depth><granularDepth>1</granularDepth></port><port><name>notIn2</name><depth>1</depth><granularDepth>1</granularDepth></port></outputPorts><annotations /><activities><activity><raven><group>net.sf.taverna.t2.activities</group><artifact>localworker-activity</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.activities.localworker.LocalworkerActivity</class><inputMap><map from="list2" to="list2" /><map from="list1" to="list1" /></inputMap><outputMap><map from="notIn2" to="notIn2" /><map from="notIn1" to="notIn1" /></outputMap><configBean encoding="xstream"><net.sf.taverna.t2.activities.localworker.LocalworkerActivityConfigurationBean xmlns="">
+  <inputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>list1</name>
+      <depth>1</depth>
+      <mimeTypes>
+        <string>l('text/plain')</string>
+      </mimeTypes>
+      <handledReferenceSchemes />
+      <translatedElementType>java.lang.String</translatedElementType>
+      <allowsLiteralValues>true</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+      <name>list2</name>
+      <depth>1</depth>
+      <mimeTypes>
+        <string>l('text/plain')</string>
+      </mimeTypes>
+      <handledReferenceSchemes />
+      <translatedElementType>java.lang.String</translatedElementType>
+      <allowsLiteralValues>true</allowsLiteralValues>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityInputPortDefinitionBean>
+  </inputs>
+  <outputs>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+      <name>notIn1</name>
+      <depth>1</depth>
+      <mimeTypes />
+      <granularDepth>1</granularDepth>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+    <net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+      <name>notIn2</name>
+      <depth>1</depth>
+      <mimeTypes />
+      <granularDepth>1</granularDepth>
+    </net.sf.taverna.t2.workflowmodel.processor.activity.config.ActivityOutputPortDefinitionBean>
+  </outputs>
+  <classLoaderSharing>workflow</classLoaderSharing>
+  <localDependencies />
+  <artifactDependencies />
+  <script>List notIn1 = new ArrayList();
+List notIn2 = new ArrayList();
+
+for (Iterator i = list1.iterator(); i.hasNext();) {
+	Object o = i.next();
+	if (!list2.contains(o)) {
+		notIn2.add(o);
+	}
+}
+for (Iterator i = list2.iterator(); i.hasNext();) {
+	Object o = i.next();
+	if (!list1.contains(o)) {
+		notIn1.add(o);
+	}
+}
+</script>
+  <dependencies />
+  <localworkerName>org.embl.ebi.escience.scuflworkers.java.StringSetDifference</localworkerName>
+</net.sf.taverna.t2.activities.localworker.LocalworkerActivityConfigurationBean></configBean><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.HostInstitution">
+        <text>UserNameHere</text>
+      </annotationBean>
+      <date>2012-07-24 14:33:11.562 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain></annotations></activity></activities><dispatchStack><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Parallelize</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig xmlns="">
+  <maxJobs>1</maxJobs>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ParallelizeConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.ErrorBounce</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Failover</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Retry</class><configBean encoding="xstream"><net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig xmlns="">
+  <backoffFactor>1.0</backoffFactor>
+  <initialDelay>1000</initialDelay>
+  <maxDelay>5000</maxDelay>
+  <maxRetries>0</maxRetries>
+</net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.RetryConfig></configBean></dispatchLayer><dispatchLayer><raven><group>net.sf.taverna.t2.core</group><artifact>workflowmodel-impl</artifact><version>1.4</version></raven><class>net.sf.taverna.t2.workflowmodel.processor.dispatch.layers.Invoke</class><configBean encoding="xstream"><null xmlns="" /></configBean></dispatchLayer></dispatchStack><iterationStrategyStack><iteration><strategy><cross><port name="list1" depth="1" /><port name="list2" depth="1" /></cross></strategy></iteration></iterationStrategyStack></processor></processors><conditions /><datalinks><datalink><sink type="processor"><processor>Get_Web_Page_from_URL</processor><port>url</port></sink><source type="processor"><processor>url_value</processor><port>value</port></source></datalink><datalink><sink type="processor"><processor>SQLSelect</processor><port>sql_select</port></sink><source type="processor"><processor>SQLSelect_sql_select</processor><port>output</port></source></datalink><datalink><sink type="processor"><processor>SQLSelect_sql_select</processor><port>FROM</port></sink><source type="processor"><processor>FROM_value</processor><port>value</port></source></datalink><datalink><sink type="processor"><processor>SQLSelect_sql_select</processor><port>WHAT</port></sink><source type="processor"><processor>WHAT_value</processor><port>value</port></source></datalink><datalink><sink type="processor"><processor>XPath_Service</processor><port>xml_text</port></sink><source type="processor"><processor>Get_Web_Page_from_URL</processor><port>contents</port></source></datalink><datalink><sink type="processor"><processor>XPath_Service_2</processor><port>xml_text</port></sink><source type="processor"><processor>SQLSelect</processor><port>response</port></source></datalink><datalink><sink type="processor"><processor>String_List_Difference</processor><port>list1</port></sink><source type="processor"><processor>XPath_Service</processor><port>nodelist</port></source></datalink><datalink><sink type="processor"><processor>String_List_Difference</processor><port>list2</port></sink><source type="processor"><processor>XPath_Service_2</processor><port>nodelist</port></source></datalink><datalink><sink type="dataflow"><port>notInRegistry</port></sink><source type="processor"><processor>String_List_Difference</processor><port>notIn1</port></source></datalink><datalink><sink type="dataflow"><port>notInHEC</port></sink><source type="processor"><processor>String_List_Difference</processor><port>notIn2</port></source></datalink></datalinks><annotations><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.DescriptiveTitle">
+        <text>Check registry for wrongly registed and un registered HEC tables</text>
+      </annotationBean>
+      <date>2012-07-24 14:24:08.421 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>dbf6fa3b-2f2c-4661-8a54-041578bee7bc</identification>
+      </annotationBean>
+      <date>2012-07-24 14:35:45.0 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.FreeTextDescription">
+        <text>HELIO registry contains a list of tables available in the HEC. The HEC contains a table with available talbes itself. This workflow shows the differences between these two lists.</text>
+      </annotationBean>
+      <date>2012-07-24 14:25:24.109 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>10b5037c-92a5-4982-a334-845741c99187</identification>
+      </annotationBean>
+      <date>2012-07-24 14:04:46.15 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.Author">
+        <text>Anja Le Blanc</text>
+      </annotationBean>
+      <date>2012-07-24 14:23:35.265 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>dac723fa-8493-4b9d-abdb-672f2bdf292d</identification>
+      </annotationBean>
+      <date>2012-07-24 14:25:24.265 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>be8bd912-4b2a-4be1-8712-00cb83f51e60</identification>
+      </annotationBean>
+      <date>2012-07-24 14:26:48.968 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>d54ea3da-2470-4502-b65e-c25f45cc6341</identification>
+      </annotationBean>
+      <date>2012-07-24 14:09:36.625 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>cb10fdeb-fb3d-4d87-9bea-195e5674fa9c</identification>
+      </annotationBean>
+      <date>2012-07-24 14:33:16.15 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>1b238a96-6f04-479c-9aa0-1495c75973bb</identification>
+      </annotationBean>
+      <date>2012-07-24 14:26:27.343 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>3e4135e9-591e-42d3-8b9a-8bd945dbecac</identification>
+      </annotationBean>
+      <date>2012-07-24 14:11:09.921 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>cf641e99-6986-4ee5-a5a9-408cf7e1388d</identification>
+      </annotationBean>
+      <date>2012-07-24 14:32:47.0 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2><annotation_chain_2_2 encoding="xstream"><net.sf.taverna.t2.annotation.AnnotationChainImpl xmlns="">
+  <annotationAssertions>
+    <net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+      <annotationBean class="net.sf.taverna.t2.annotation.annotationbeans.IdentificationAssertion">
+        <identification>6de554fb-76cd-4f00-903b-b23bab30ebd9</identification>
+      </annotationBean>
+      <date>2012-07-24 14:07:41.265 UTC</date>
+      <creators />
+      <curationEventList />
+    </net.sf.taverna.t2.annotation.AnnotationAssertionImpl>
+  </annotationAssertions>
+</net.sf.taverna.t2.annotation.AnnotationChainImpl></annotation_chain_2_2></annotations></dataflow></workflow>

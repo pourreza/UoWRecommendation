@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:8c2cfd1f-a6e7-445b-a353-0946d7d467cd" author="Pieter B.T. Neerincx, Blaise T.F. Alako and Jack A.M. Leunissen." title="GeneIlluminator_Disambiguate">Example workflow demonstrating how to use GeneIlluminator_Disambiguate, a synchronous BioMOBY service for gene symbol disambiguation. If a gene symbol is ambiguous this service provides GI_Clusters describing which different genes, sharing the same symbol, exist in different parts of the tree of life. Provides also gene symbol aliases associated to the input gene symbol. (This is the same output as the one from the GeneIlluminator_GetClusters service.) In addition this service takes an Organism object as input and disambiguates the gene symbol in the context of that organism by assigning the gene symbol for the given organism to one of the GI_Clusters.
+  
+Visit http://www.bioinformatics.nl/gi/ for more info about GeneIlluminator.
+
+GeneIlluminator services use a secure connection over HTTPS. To make this work you *must* import our SSL certificates in your local Java keystores. More information can be found on https://www.bioinformatics.nl/phenolink/home/
+  </s:workflowdescription>
+  <s:processor name="GeneIlluminator_Disambiguate">
+    <s:description>Synchronous BioMOBY service for gene symbol disambiguation. If a gene symbol is ambiguous this service provides GI_Clusters describing which different genes sharing the same symbol exist in different parts of the tree of life. Provides also gene symbol aliases associated to the input gene symbol. (This is the same output as the one from the GeneIlluminator_GetClusters service.) In addition this service takes an Organism object as input and disambiguates the gene symbol in the context of that organism: GeneIlluminator_Disambiguate assigns the gene symbol for the given organism to one of the GI_Clusters.</s:description>
+    <s:biomobywsdl>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>GeneIlluminator_Disambiguate</s:serviceName>
+      <s:authorityName>www.bioinformatics.nl</s:authorityName>
+    </s:biomobywsdl>
+  </s:processor>
+  <s:processor name="Parse_Moby_Data_GI_ClusterAssignment">
+    <s:description>Processor to parse the datatype GI_ClusterAssignment</s:description>
+    <s:biomobyparser>
+      <s:endpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:endpoint>
+      <s:datatype>GI_ClusterAssignment</s:datatype>
+      <s:articleName>gi_clusterassignment</s:articleName>
+      <s:description>Processor to parse the datatype GI_ClusterAssignment</s:description>
+    </s:biomobyparser>
+  </s:processor>
+  <s:processor name="Organism">
+    <s:description>An organism object.</s:description>
+    <s:defaults>
+      <s:default name="article name">organism</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Organism</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:processor name="Object">
+    <s:description>an object</s:description>
+    <s:defaults>
+      <s:default name="article name">gene_symbol</s:default>
+    </s:defaults>
+    <s:biomobyobject>
+      <s:mobyEndpoint>http://moby.ucalgary.ca/moby/MOBY-Central.pl</s:mobyEndpoint>
+      <s:serviceName>Object</s:serviceName>
+      <s:authorityName />
+    </s:biomobyobject>
+  </s:processor>
+  <s:link source="GeneSymbol" sink="Object:id" />
+  <s:link source="GeneIlluminator_Disambiguate:GI_ClusterAssignment(gi_clusterassignment)" sink="Parse_Moby_Data_GI_ClusterAssignment:mobyData('GI_ClusterAssignment')" />
+  <s:link source="Object:mobyData" sink="GeneIlluminator_Disambiguate:Object(gene_symbol)" />
+  <s:link source="Organism" sink="Organism:id" />
+  <s:link source="Organism:mobyData" sink="GeneIlluminator_Disambiguate:Organism(organism)" />
+  <s:link source="GeneIlluminator_Disambiguate:GI_Cluster(Collection - 'gi_clusters')" sink="GI_Clusters" />
+  <s:link source="GeneIlluminator_Disambiguate:GI_ClusterAssignment(gi_clusterassignment)" sink="GI_ClusterAssignment" />
+  <s:link source="Parse_Moby_Data_GI_ClusterAssignment:gi_clusterassignment_'gene_symbol'_id" sink="ca_gene_symbol_id" />
+  <s:link source="Parse_Moby_Data_GI_ClusterAssignment:gi_clusterassignment_'gi_cluster'_id" sink="ca_cluster_id" />
+  <s:link source="Parse_Moby_Data_GI_ClusterAssignment:gi_clusterassignment_'organism'_id" sink="ca_organism_id" />
+  <s:link source="Parse_Moby_Data_GI_ClusterAssignment:gi_clusterassignment_'probability'" sink="ca_probability" />
+  <s:source name="GeneSymbol">
+    <s:metadata>
+      <s:description>Your potentially ambiguous gene symbol of interest or one of it's aliases.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Organism">
+    <s:metadata>
+      <s:description>Species in scientific latin notation. For example: Home sapiens.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="GI_ClusterAssignment">
+    <s:metadata>
+      <s:description>BioMoby object that assigns a gene symbol for a certain species of interest to a GeneIlluminator Cluster with a certain probability. Hence, given the species of interest, this GeneIlluminator ClusterAssignment together with the associated GeneIlluminator Cluster describe:
+1. The most likely function for your gene.
+2. The aliases used for this gene. These aliases might contain ambiguous symbols.
+3. Comparing the aliases with the gene symbols of the other clusters will allow you to extract unambiguous gene symbols if there are any.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="GI_Clusters">
+    <s:metadata>
+      <s:description>BioMoby collection (list) of objects describing clusters of gene symbols that were mentioned in databases / literature in the same "context". Each cluster has:
+1. One or more genes with a gene symbol. All genes and their symbols listed for the same cluster are aliases. These gene symbols might be ambiguous.
+2. One or more fuctional descriptions. These are the terms that describe the context where the gene symbol was mentioned and that were used for the clustering.
+3. One or more clades, identified by IDs from the NCBI Taxonomy. These clades are the last common ancestors (LCAs) of those parts of the tree of life where the gene symbols for this cluster are mentioned in the context of the functional descriptions for this cluster.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="ca_gene_symbol_id" />
+  <s:sink name="ca_organism_id" />
+  <s:sink name="ca_probability" />
+  <s:sink name="ca_cluster_id" />
+</s:scufl>
+

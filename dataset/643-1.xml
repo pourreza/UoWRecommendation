@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:7c908eb7-6994-402a-b1cb-6d5f7beb443d" author="Andrea Wiggins" title="Rich Get Richer">This workflow is a replication of the analysis from an OSCon 2004 presentation by Megan Conklin, entitled "Do the Rich Get Richer?" to demonstrate scale-free distribution of FLOSS developers among projects.
+
+The workflow retrieves the current number of active developers (for the most recent calculation of said statistic) from the FLOSSmole database. It summarizes and plots the distribution of developers to projects, on both a straight and log-log scale. It also generates a flat list of the developer counts for visualization in other software.</s:workflowdescription>
+  <s:processor name="delist_dev_numbers">
+    <s:description>Changes the number of developers from the list format into a delimited format.</s:description>
+    <s:defaults>
+      <s:default name="seperator">,</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="get_developer_data">
+    <s:description>SQL query to fetch developer data from the FLOSSmole database. Retrieves data for all projects which have available data in the database. Please inquire from ossmole-discuss@lists.sourceforge.net for database access.</s:description>
+    <s:defaults>
+      <s:default name="url">jdbc:mysql://thor.sdsc.edu/ossmole_next</s:default>
+      <s:default name="driver">com.mysql.jdbc.Driver</s:default>
+      <s:default name="sql">SELECT active_developers FROM ossmole_merged.project_alltime_statistics WHERE active_developers IS NOT NULL</s:default>
+      <s:default name="provideXml">FALSE</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.jdbc.SQLQueryWorker</s:local>
+  </s:processor>
+  <s:processor name="flatten_dev_numbers">
+    <s:description>Flattens the SQL list.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="output_points">
+    <s:description>Produces a list of the data points for plotting with other software.</s:description>
+    <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+      ##A. Wiggins 2008
+
+devnum &lt;- read.csv(textConnection(dev_nums),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+points &lt;- as.matrix(summary.factor(dev_num))
+
+point_list &lt;- paste(capture.output(points), collapse="\n")
+      <s:rshellInputPortList>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_nums</s:rshellInputPort>
+      </s:rshellInputPortList>
+      <s:rshellOutputPortList>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">point_list</s:rshellOutputPort>
+      </s:rshellOutputPortList>
+    </s:rshell>
+  </s:processor>
+  <s:processor name="plot_distribution">
+    <s:description>Plots the distributions of developers to projects on a straight scale.</s:description>
+    <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+      ## A. Wiggins  7/14/08
+## Plot distribution of numbers of developers
+
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+## plot the data
+png(dist_plot, width=800);
+#dist_plot &lt;- hist(dev_num,col="red",main="Distribution of Number of Developers in FLOSS Projects",xlab="Number of Developers",ylab="Projects")
+
+datapoints &lt;- as.table(summary.factor(dev_num))
+dist_plot &lt;- plot(datapoints,xlim=range(dev_num),col="blue",type="o",main="Distribution of Number of Developers in FLOSS Projects",xlab="Number of Developers (links)",ylab="Number of Projects (nodes)",pch=20)
+
+dev.off()
+      <s:rshellInputPortList>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+      </s:rshellInputPortList>
+      <s:rshellOutputPortList>
+        <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">dist_plot</s:rshellOutputPort>
+      </s:rshellOutputPortList>
+    </s:rshell>
+  </s:processor>
+  <s:processor name="log_plot">
+    <s:description>Plots the distribution of developers to projects on a log-log scale.</s:description>
+    <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+      ## A. Wiggins  7/14/08
+## Plot distribution of numbers of developers
+
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+## plot the data
+png(log_plot, width=800);
+datapoints &lt;- as.vector(summary.factor(dev_num))
+
+log_plot &lt;- plot(datapoints,log="xy",col="blue",type="o",xlim=c(1,1000),main="Distribution of Number of Developers in FLOSS Projects",xlab="Number of Developers (links)",ylab="Number of Projects (nodes)",pch=20)
+
+
+dev.off()
+      <s:rshellInputPortList>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+      </s:rshellInputPortList>
+      <s:rshellOutputPortList>
+        <s:rshellOutputPort s:syntacticType="'image/png'" s:symanticType="PNG_FILE">log_plot</s:rshellOutputPort>
+      </s:rshellOutputPortList>
+    </s:rshell>
+  </s:processor>
+  <s:processor name="distribution_summary">
+    <s:description>Calculates summary statistics for the distribution.</s:description>
+    <s:rshell s:hostname="localhost" s:port="6311" s:username="" s:password="" s:keepSessionAlive="false">
+      ## A. Wiggins 7/14/08
+## Script to provide a summary of the distribution of developer numbers
+
+## read the data
+devnum &lt;- read.csv(textConnection(dev_numbers),header=FALSE,row.names=NULL)
+dev_num &lt;- as.vector(devnum, mode="integer")
+
+## summarize the data
+dev_dist &lt;-paste(capture.output(summary(dev_num)), collapse="\n")
+      <s:rshellInputPortList>
+        <s:rshellInputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_numbers</s:rshellInputPort>
+      </s:rshellInputPortList>
+      <s:rshellOutputPortList>
+        <s:rshellOutputPort s:syntacticType="'text/plain'" s:symanticType="STRING">dev_dist</s:rshellOutputPort>
+      </s:rshellOutputPortList>
+    </s:rshell>
+    <s:iterationstrategy>
+      <i:iterator xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10" name="dev_numbers" />
+    </s:iterationstrategy>
+  </s:processor>
+  <s:link source="delist_dev_numbers:concatenated" sink="distribution_summary:dev_numbers" />
+  <s:link source="delist_dev_numbers:concatenated" sink="log_plot:dev_numbers" />
+  <s:link source="delist_dev_numbers:concatenated" sink="output_points:dev_nums" />
+  <s:link source="delist_dev_numbers:concatenated" sink="plot_distribution:dev_numbers" />
+  <s:link source="flatten_dev_numbers:outputlist" sink="delist_dev_numbers:stringlist" />
+  <s:link source="get_developer_data:resultList" sink="flatten_dev_numbers:inputlist" />
+  <s:link source="distribution_summary:dev_dist" sink="Summary" />
+  <s:link source="log_plot:log_plot" sink="LogPlot" />
+  <s:link source="output_points:point_list" sink="PointList" />
+  <s:link source="plot_distribution:dist_plot" sink="DistributionPlot" />
+  <s:sink name="Summary">
+    <s:metadata>
+      <s:description>Descriptive stats summary of developer-project distribution.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="DistributionPlot">
+    <s:metadata>
+      <s:description>PNG plot of the distribution of developers to projects.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="LogPlot">
+    <s:metadata>
+      <s:description>PNG graphic plot of log-log distribution of developers to projects.</s:description>
+    </s:metadata>
+  </s:sink>
+  <s:sink name="PointList">
+    <s:metadata>
+      <s:description>List of points for plotting in other software.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

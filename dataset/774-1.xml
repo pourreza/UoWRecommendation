@@ -1,0 +1,878 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:a4942d92-faef-4fa5-abba-f8645908e4d0" author="Ingo Wassink" title="Test SOAP/WSDL Service Availability">This workflow tests for all Taverna workflows stored at myExperiment wether the SOAP/WSDL services used still exists. For each SOAP/WSDL service it checks wether the WSDL file is still accessible and whether the operation is still exists.
+
+The output is among others a report of 
+* accessible services and operation,
+* operations which WSDL file is not accessible,
+* operations which WSDL file still exists, but the operation is not defined anymore.
+
+The last set needs to be checked by hand, because this workflow currently does not check correctly WSDL files that use import statements, because these import statements are ignored. This means that many of the operations not found exists, but are defined in imported WSDL files.</s:workflowdescription>
+  <s:processor name="Flatten_NotExistingUrl">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Flatten_ExistingUrlButOperationNot">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="MergeURLS">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="Merge_NotExistingUrl">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="generateIDs">
+    <s:beanshell>
+      <s:scriptvalue>workflowIDs = new ArrayList();
+
+int firstIndex = Integer.parseInt(firstId);
+int lastIndex = Integer.parseInt(lastId);
+
+for(int i = firstIndex; i&lt;=lastIndex; i++){
+  workflowIDs.add(i);
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">firstId</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="'text/plain'">lastId</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">workflowIDs</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Different_Count_Size">
+    <s:beanshell>
+      <s:scriptvalue>length = list.size();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">list</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">length</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="GetAnalysedWorkflows">
+    <s:beanshell>
+      <s:scriptvalue>analysedURLS = new ArrayList();
+for(int index = 0; index&lt;urls.size(); index++){
+  if(!scufl.get(index).equals("")){
+    analysedURLS.add(urls.get(index));
+  }
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">urls</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">scufl</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">analysedURLS</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Count_Size">
+    <s:beanshell>
+      <s:scriptvalue>length = list.size();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">list</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">length</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="createRTable">
+    <s:beanshell>
+      <s:scriptvalue>StringBuffer buffer = new StringBuffer();
+
+Iterator locationsIterator = locations.iterator();
+Iterator countsIterator = counts.iterator();
+Iterator statesIterator = states.iterator();
+
+buffer.append("Location").append("\t").
+       append("Count").append("\t").
+       append("State").append("\n");
+
+while(locationsIterator.hasNext()){
+buffer.append(locationsIterator.next()).append("\t").
+       append(countsIterator.next()).append("\t").
+       append(statesIterator.next()).append("\n");
+}
+
+rTable = buffer.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">locations</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">counts</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">states</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">rTable</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="generateURL">
+    <s:beanshell>
+      <s:scriptvalue>url = "http://www.myexperiment.org/workflows/" + id + "/download";</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">id</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="FilterAndCount">
+    <s:beanshell>
+      <s:scriptvalue>Map locationMap = new HashMap();
+
+for(String location : locations){
+  if(locationMap.containsKey(location)){
+    Integer count = (Integer) locationMap.get(location);
+    locationMap.put(location, new Integer(count + 1));
+  } else{
+    locationMap.put(location, new Integer(1));
+  }
+}
+
+List uniqueLocations = new ArrayList(locationMap.keySet());
+List counts = new ArrayList();
+for(Object location : uniqueLocations){
+  counts.add(locationMap.get(location));
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">locations</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">uniqueLocations</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">counts</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="Merge_ExistingUrlAndOperation">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="Merge_ExistingUrlBotOperationNot">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="Flatten_list">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Flatten_ExistingUrlAndOperation">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Flatten_Records">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.FlattenList
+      <s:extensions>
+        <s:flattenlist s:depth="2" />
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Merge_Records">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringListMerge</s:local>
+  </s:processor>
+  <s:processor name="Analyse_Location">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:a4942d92-faef-4fa5-abba-f8645908e4d0" author="" title="test" />
+        <s:processor name="Operation_exists">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+        </s:processor>
+        <s:processor name="Operation_does_NOT_exists">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="available" boring="true">
+          <s:stringconstant>available</s:stringconstant>
+        </s:processor>
+        <s:processor name="operation_unavailable" boring="true">
+          <s:stringconstant>operation_unavailable</s:stringconstant>
+        </s:processor>
+        <s:processor name="URL_exists">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+        </s:processor>
+        <s:processor name="URL_does_NOT_exists">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="location_unavailable" boring="true">
+          <s:stringconstant>location_unavailable</s:stringconstant>
+        </s:processor>
+        <s:processor name="isEmptyList">
+          <s:beanshell>
+            <s:scriptvalue>isEmpty = Boolean.toString(nodes.size() == 0);</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="l('text/plain')">nodes</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">isEmpty</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="EchoExistingURLAndOperation">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.EchoList</s:local>
+        </s:processor>
+        <s:processor name="IsEmpty">
+          <s:beanshell>
+            <s:scriptvalue>isEmpty = Boolean.toString(string.matches("^\\s*$"));</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">string</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">isEmpty</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="MyXPathFromText">
+          <s:beanshell>
+            <s:scriptvalue>import org.dom4j.Document;
+import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
+
+List nodes = new ArrayList();
+
+try{
+SAXReader reader = new SAXReader(false);
+reader.setIncludeInternalDTDDeclarations(false);
+reader.setIncludeExternalDTDDeclarations(false);
+Document document = reader.read(new StringReader(xml));
+document.normalize();
+List nodelist = document.selectNodes(xpath);
+
+
+for(Object o : nodelist){
+  nodes.add(((Node) o).getStringValue());
+}
+}catch(Exception e){
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">xml</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">xpath</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="l('text/plain')">nodes</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="EmptyList">
+          <s:beanshell>
+            <s:scriptvalue>list = new ArrayList();</s:scriptvalue>
+            <s:beanshellinputlist />
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">list</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="EmptyExistingURLAndOperation">
+          <s:beanshell>
+            <s:scriptvalue>list = new ArrayList();</s:scriptvalue>
+            <s:beanshellinputlist />
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">list</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="EmptyExistingURLButOperationNot">
+          <s:beanshell>
+            <s:scriptvalue>list = new ArrayList();</s:scriptvalue>
+            <s:beanshellinputlist />
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="l('text/plain')">list</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="GenerateXpath">
+          <s:beanshell>
+            <s:scriptvalue>xpath = 
+"//*[local-name()='binding']/*[local-name()='operation'][@name='"
+ + operation + "']/@name";</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">operation</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">xpath</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="EmptyNotExistingURL">
+          <s:beanshell>
+            <s:scriptvalue>list = new ArrayList();</s:scriptvalue>
+            <s:beanshellinputlist />
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">list</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="DownloadFile">
+          <s:defaults>
+            <s:default name="url">http://4xml.nig.ac.jp/wsdl/Ensembl.wsdl</s:default>
+          </s:defaults>
+          <s:beanshell>
+            <s:scriptvalue>StringBuffer buffer = new StringBuffer();
+URLConnection conn = null;
+BufferedReader  reader= null;
+try {
+	URL url = new URL(url);
+	conn = url.openConnection();
+	reader = new BufferedReader (new InputStreamReader(
+		conn.getInputStream()));
+	String line = null;
+	while ((line = reader.readLine()) != null) {
+		buffer.append(line).append("\n");
+	}
+} catch (Exception exception) {
+	exception.printStackTrace();
+} finally {
+	try {
+		if (reader != null) {
+			reader.close();
+		}
+	} catch (IOException ioe) {
+	}
+}
+
+content = buffer.toString();</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">url</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">content</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="SplitLocation">
+          <s:beanshell>
+            <s:scriptvalue>int index = location.lastIndexOf(":");
+url = location.substring(0,index);
+operation = location.substring(index+1);</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">location</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">url</s:beanshelloutput>
+              <s:beanshelloutput s:syntactictype="'text/plain'">operation</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="EchoNotExistingURL">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.EchoList</s:local>
+        </s:processor>
+        <s:processor name="EchoExistingURLButOperationNot">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.EchoList</s:local>
+        </s:processor>
+        <s:link source="DownloadFile:content" sink="IsEmpty:string" />
+        <s:link source="IsEmpty:isEmpty" sink="URL_does_NOT_exists:test" />
+        <s:link source="IsEmpty:isEmpty" sink="URL_exists:test" />
+        <s:link source="MyXPathFromText:nodes" sink="isEmptyList:nodes" />
+        <s:link source="SplitLocation:operation" sink="GenerateXpath:operation" />
+        <s:link source="SplitLocation:url" sink="DownloadFile:url" />
+        <s:link source="isEmptyList:isEmpty" sink="Operation_does_NOT_exists:test" />
+        <s:link source="isEmptyList:isEmpty" sink="Operation_exists:test" />
+        <s:link source="location" sink="EchoExistingURLAndOperation:inputlist" />
+        <s:link source="location" sink="EchoExistingURLButOperationNot:inputlist" />
+        <s:link source="location" sink="EchoNotExistingURL:inputlist" />
+        <s:link source="location" sink="SplitLocation:location" />
+        <s:link source="DownloadFile:content" sink="MyXPathFromText:xml" />
+        <s:link source="EchoExistingURLAndOperation:outputlist" sink="existingUrlAndOperation" />
+        <s:link source="EchoExistingURLButOperationNot:outputlist" sink="existingUrlButOperationNot" />
+        <s:link source="EchoNotExistingURL:outputlist" sink="notExistingUrl" />
+        <s:link source="EmptyExistingURLAndOperation:list" sink="existingUrlAndOperation" />
+        <s:link source="EmptyExistingURLButOperationNot:list" sink="existingUrlButOperationNot" />
+        <s:link source="EmptyList:list" sink="existingUrlAndOperation" />
+        <s:link source="EmptyList:list" sink="existingUrlButOperationNot" />
+        <s:link source="EmptyNotExistingURL:list" sink="notExistingUrl" />
+        <s:link source="GenerateXpath:xpath" sink="MyXPathFromText:xpath" />
+        <s:link source="available:value" sink="status" />
+        <s:link source="location_unavailable:value" sink="status" />
+        <s:link source="operation_unavailable:value" sink="status" />
+        <s:source name="location" />
+        <s:sink name="notExistingUrl" />
+        <s:sink name="existingUrlAndOperation" />
+        <s:sink name="existingUrlButOperationNot" />
+        <s:sink name="status" />
+        <s:coordination name="EchoNotExisting_BLOCKON_Fail_if_false">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>URL_does_NOT_exists</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>EchoNotExistingURL</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="GenerateXpath_BLOCKON_URL_exists">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>URL_exists</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>GenerateXpath</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="EchoExistingURLButOperationNot_BLOCKON_Operation_does_NOT_exists">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Operation_does_NOT_exists</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>EchoExistingURLButOperationNot</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="EchoExistingURLAndOperation_BLOCKON_Operation_exists">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Operation_exists</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>EchoExistingURLAndOperation</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="EmptyNotExistingURL_BLOCKON_URL_exists">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>URL_exists</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>EmptyNotExistingURL</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="EmptyExistingURLButOperationNot_BLOCKON_Operation_exists">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Operation_exists</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>EmptyExistingURLButOperationNot</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="EmptyExistingURLAndOperation_BLOCKON_Operation_does_NOT_exists">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Operation_does_NOT_exists</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>EmptyExistingURLAndOperation</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="EmptyList_BLOCKON_URL_does_NOT_exists">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>URL_does_NOT_exists</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>EmptyList</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="location_unavailable_BLOCKON_URL_does_NOT_exists">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>URL_does_NOT_exists</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>location_unavailable</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="operation_unavailable_BLOCKON_Operation_does_NOT_exists">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Operation_does_NOT_exists</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>operation_unavailable</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="available_BLOCKON_Operation_exists">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Operation_exists</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>available</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="CreateWorkflowLog">
+    <s:beanshell>
+      <s:scriptvalue>logRecords = new ArrayList();
+for(String operation : wsdlOperations){
+  logRecords.add(operation + "\t" + url);
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">url</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">wsdlOperations</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">logRecords</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+    <s:iterationstrategy>
+      <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+        <i:iterator name="wsdlOperations" />
+        <i:iterator name="url" />
+      </i:dot>
+    </s:iterationstrategy>
+  </s:processor>
+  <s:processor name="Analyse_Single_Workflow" workers="20">
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:2e6f49f6-b166-4780-9a30-55c5514075ea" author="" title="analyseWFS" />
+        <s:processor name="emptyString" boring="true">
+          <s:stringconstant />
+        </s:processor>
+        <s:processor name="Fail_if_false">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:processor name="Fail_if_true">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+        </s:processor>
+        <s:processor name="echoWorkflowContent">
+          <s:beanshell>
+            <s:scriptvalue>output = input;</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">output</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="emptyList">
+          <s:beanshell>
+            <s:scriptvalue>list = new ArrayList();</s:scriptvalue>
+            <s:beanshellinputlist />
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="l('text/plain')">list</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="getWSDLOperation">
+          <s:defaults>
+            <s:default name="xpath">//*[local-name()='arbitrarywsdl']/*[local-name()='operation']/text()</s:default>
+          </s:defaults>
+          <s:beanshell>
+            <s:scriptvalue>import org.dom4j.Document;
+import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
+
+SAXReader reader = new SAXReader(false);
+reader.setIncludeInternalDTDDeclarations(false);
+reader.setIncludeExternalDTDDeclarations(false);
+Document document = reader.read(new StringReader(xml));
+document.normalize();
+List nodelist = document.selectNodes(xpath);
+
+List nodes = new ArrayList();
+for(Object o : nodelist){
+  nodes.add(((Node) o).getStringValue());
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">xml</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">xpath</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">nodes</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="getWSDLLocation">
+          <s:defaults>
+            <s:default name="xpath">//*[local-name()='arbitrarywsdl']/*[local-name()='wsdl']/text()</s:default>
+          </s:defaults>
+          <s:beanshell>
+            <s:scriptvalue>import org.dom4j.Document;
+import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
+
+SAXReader reader = new SAXReader(false);
+reader.setIncludeInternalDTDDeclarations(false);
+reader.setIncludeExternalDTDDeclarations(false);
+Document document = reader.read(new StringReader(xml));
+document.normalize();
+List nodelist = document.selectNodes(xpath);
+
+List nodes = new ArrayList();
+for(Object o : nodelist){
+  nodes.add(((Node) o).getStringValue());
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">xml</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">xpath</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">nodes</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="append_WSDLLocation">
+          <s:defaults>
+            <s:default name="string2">:</s:default>
+          </s:defaults>
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+        </s:processor>
+        <s:processor name="isScufl">
+          <s:beanshell>
+            <s:scriptvalue>import javax.swing.*;
+
+isEmpty = new Boolean(input.indexOf("s:scufl") &gt;= 0).toString();</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">input</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">isEmpty</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="readWorkflowFromNet">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+          <s:alternate>
+            <s:stringconstant />
+            <s:outputmap key="contents" value="value" />
+          </s:alternate>
+        </s:processor>
+        <s:processor name="append_OperationName">
+          <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+          <s:iterationstrategy>
+            <i:dot xmlns:i="http://org.embl.ebi.escience/xscufliteration/0.1beta10">
+              <i:iterator name="string1" />
+              <i:iterator name="string2" />
+            </i:dot>
+          </s:iterationstrategy>
+        </s:processor>
+        <s:link source="append_WSDLLocation:output" sink="append_OperationName:string1" />
+        <s:link source="getWSDLLocation:nodes" sink="append_WSDLLocation:string1" />
+        <s:link source="getWSDLOperation:nodes" sink="append_OperationName:string2" />
+        <s:link source="isScufl:isEmpty" sink="Fail_if_false:test" />
+        <s:link source="isScufl:isEmpty" sink="Fail_if_true:test" />
+        <s:link source="readWorkflowFromNet:contents" sink="echoWorkflowContent:input" />
+        <s:link source="workflowUrl" sink="readWorkflowFromNet:url" />
+        <s:link source="append_OperationName:output" sink="wsdlOperations" />
+        <s:link source="echoWorkflowContent:output" sink="scufl" />
+        <s:link source="emptyList:list" sink="wsdlOperations" />
+        <s:link source="emptyString:value" sink="scufl" />
+        <s:link source="readWorkflowFromNet:contents" sink="getWSDLLocation:xml" />
+        <s:link source="readWorkflowFromNet:contents" sink="getWSDLOperation:xml" />
+        <s:link source="readWorkflowFromNet:contents" sink="isScufl:input" />
+        <s:source name="workflowUrl" />
+        <s:sink name="scufl" />
+        <s:sink name="wsdlOperations" />
+        <s:coordination name="emptyString_BLOCKON_Fail_if_true">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_true</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>emptyString</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="echoScufl_BLOCKON_Fail_if_false">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_false</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>echoWorkflowContent</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="emptyList_BLOCKON_Fail_if_true">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_true</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>emptyList</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="getWSDLLocation2_BLOCKON_Fail_if_false">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_false</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>getWSDLLocation</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="getWSDLOperation2_BLOCKON_Fail_if_false">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Fail_if_false</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>getWSDLOperation</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="getWSDLOperation2_BLOCKON_getWSDLLocation2">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>getWSDLLocation</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>getWSDLOperation</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Analyse_Location:existingUrlAndOperation" sink="Flatten_ExistingUrlAndOperation:inputlist" />
+  <s:link source="Analyse_Location:existingUrlButOperationNot" sink="Flatten_ExistingUrlButOperationNot:inputlist" />
+  <s:link source="Analyse_Location:notExistingUrl" sink="Flatten_NotExistingUrl:inputlist" />
+  <s:link source="Analyse_Location:status" sink="createRTable:states" />
+  <s:link source="Analyse_Single_Workflow:scufl" sink="GetAnalysedWorkflows:scufl" />
+  <s:link source="Analyse_Single_Workflow:wsdlOperations" sink="CreateWorkflowLog:wsdlOperations" />
+  <s:link source="Analyse_Single_Workflow:wsdlOperations" sink="Flatten_list:inputlist" />
+  <s:link source="CreateWorkflowLog:logRecords" sink="Flatten_Records:inputlist" />
+  <s:link source="FilterAndCount:counts" sink="createRTable:counts" />
+  <s:link source="FilterAndCount:uniqueLocations" sink="Analyse_Location:location" />
+  <s:link source="FilterAndCount:uniqueLocations" sink="Different_Count_Size:list" />
+  <s:link source="FilterAndCount:uniqueLocations" sink="createRTable:locations" />
+  <s:link source="FirstID" sink="generateIDs:firstId" />
+  <s:link source="Flatten_ExistingUrlAndOperation:outputlist" sink="Merge_ExistingUrlAndOperation:stringlist" />
+  <s:link source="Flatten_ExistingUrlButOperationNot:outputlist" sink="Merge_ExistingUrlBotOperationNot:stringlist" />
+  <s:link source="Flatten_NotExistingUrl:outputlist" sink="Merge_NotExistingUrl:stringlist" />
+  <s:link source="Flatten_Records:outputlist" sink="Merge_Records:stringlist" />
+  <s:link source="LastID" sink="generateIDs:lastId" />
+  <s:link source="Count_Size:length" sink="NumWSDLServices" />
+  <s:link source="Different_Count_Size:length" sink="NumDifferentWSDLServices" />
+  <s:link source="Flatten_list:outputlist" sink="Count_Size:list" />
+  <s:link source="Flatten_list:outputlist" sink="FilterAndCount:locations" />
+  <s:link source="GetAnalysedWorkflows:analysedURLS" sink="MergeURLS:stringlist" />
+  <s:link source="MergeURLS:concatenated" sink="WorkflowsAnalysed" />
+  <s:link source="Merge_ExistingUrlAndOperation:concatenated" sink="ExistingURLAndOperation" />
+  <s:link source="Merge_ExistingUrlBotOperationNot:concatenated" sink="ExistingURLButOperationNot" />
+  <s:link source="createRTable:rTable" sink="RTable" />
+  <s:link source="generateIDs:workflowIDs" sink="generateURL:id" />
+  <s:link source="generateURL:url" sink="Analyse_Single_Workflow:workflowUrl" />
+  <s:link source="generateURL:url" sink="CreateWorkflowLog:url" />
+  <s:link source="generateURL:url" sink="GetAnalysedWorkflows:urls" />
+  <s:link source="Merge_NotExistingUrl:concatenated" sink="NotExistingURL" />
+  <s:link source="Merge_Records:concatenated" sink="WorkflowRecords" />
+  <s:source name="FirstID">
+    <s:metadata>
+      <s:description>The id of the first workflow to be checked (normally 0). This is the ID used by myExperiment (in the URL). 
+
+For example in http://www.myexperiment.org/workflows/648/download, then the workflow ID is 648</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="LastID">
+    <s:metadata>
+      <s:description>The id of the last workflow to be checked (normally 0). This is the ID used by myExperiment (in the URL). 
+
+For example in http://www.myexperiment.org/workflows/648/download, then the workflow ID is 648</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="NumWSDLServices" />
+  <s:sink name="NumDifferentWSDLServices" />
+  <s:sink name="NotExistingURL" />
+  <s:sink name="ExistingURLButOperationNot" />
+  <s:sink name="ExistingURLAndOperation" />
+  <s:sink name="RTable" />
+  <s:sink name="WorkflowsAnalysed" />
+  <s:sink name="WorkflowRecords" />
+</s:scufl>
+

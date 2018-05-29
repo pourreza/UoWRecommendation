@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:61408ed9-6774-4f5f-ae5a-a119431b7a6c" author="Egon Willighagen" title="Extract_GetCompoundDetails_with_xpath" />
+  <s:processor name="GetCompoundDetails">
+    <s:description>Return specified compound details.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.chemspider.com/MassSpecAPI.asmx?WSDL</s:wsdl>
+      <s:operation>GetCompoundDetails</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="XPath_From_Text">
+    <s:defaults>
+      <s:default name="xpath">//*[local-name(.)='GetCompoundDetailsResult']</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.xml.XPathTextWorker</s:local>
+  </s:processor>
+  <s:processor name="parametersXML2">
+    <s:defaults>
+      <s:default name="cmp_id">613</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="GetCompoundDetails" name="parameters" qname="{http://www.chemspider.com/}GetCompoundDetails">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="cmp_id" qname="{http://www.chemspider.com/}&gt;GetCompoundDetails&gt;cmp_id" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="GetCompoundDetails:parameters" sink="XPath_From_Text:xml-text" />
+  <s:link source="XPath_From_Text:nodelistAsXML" sink="out" />
+  <s:link source="parametersXML2:output" sink="GetCompoundDetails:parameters" />
+  <s:sink name="out" />
+</s:scufl>
+

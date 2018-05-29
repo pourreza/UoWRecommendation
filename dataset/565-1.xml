@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:baf26a73-b4d0-4267-ae8f-badc08df0668" author="Thomas Kuhn" title="Get ART2A classification result showing the different origins of the vectors">This workflow load an ART2A classifcation results and creates a diagram showing the origin allocation within the different cluster or classes. This is usable for performing a chemical diversity analysis. The result is stored within an PDF which contains a diagram and a table of the classification result.</s:workflowdescription>
+  <s:processor name="Get_classification_result_consider_different_origins">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.qsar.model.ART2AClassificator.tools.GetART2AClassificationResultWithDifferentOriginsAsCSV
+      <s:extensions>
+        <s:ART2AGetNumberOfCluster>
+          <s:filenamelist>
+            <s:filenames s:filename="" />
+          </s:filenamelist>
+        </s:ART2AGetNumberOfCluster>
+        <s:art2aresultfoldernames foldername="" />
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Get_molecule_ID_s_and_origin_from_database">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.database.pgchem.GetMoleculeIDsAndOriginFromDB
+      <s:extensions>
+        <s:GetMoleculesFromDB>
+          <DBConnectionPostgres>
+            <DBURL>jdbc:postgresql://localhost/cdktaverna</DBURL>
+            <DBUserName></DBUserName>
+            <DBUserPassword></DBUserPassword>
+            <SQLQuery>SELECT id, origin, originalid FROM molecules</SQLQuery>
+          </DBConnectionPostgres>
+        </s:GetMoleculesFromDB>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:link source="Get_molecule_ID_s_and_origin_from_database:moleculeIDs" sink="Get_classification_result_consider_different_origins:MoleculeIDList" />
+  <s:link source="Get_molecule_ID_s_and_origin_from_database:origin" sink="Get_classification_result_consider_different_origins:MoleculeOriginList" />
+</s:scufl>
+

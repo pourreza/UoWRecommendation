@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:d830e6fe-49e7-4e5d-8a88-c0c0f5969494" author="" title="polling" />
+  <s:processor name="startJob">
+    <s:defaults>
+      <s:default name="duration">20</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.mygrid.org.uk/menagerie/xfire/Primatives-re?wsdl</s:wsdl>
+      <s:operation>startJob</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="PollStatus">
+    <s:workflow maxretries="1000" retrydelay="1000" critical="true">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:3fbde43d-044d-45d5-b603-b96e275d6229" author="" title="Untitled workflow #23" />
+        <s:processor name="pollJob">
+          <s:arbitrarywsdl>
+            <s:wsdl>http://www.mygrid.org.uk/menagerie/xfire/Primatives-re?wsdl</s:wsdl>
+            <s:operation>pollJob</s:operation>
+          </s:arbitrarywsdl>
+        </s:processor>
+        <s:processor name="CheckStatus">
+          <s:beanshell>
+            <s:scriptvalue>isComplete = status.equals("COMPLETE").toString();</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">status</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">isComplete</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="iteration" />
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="Fail_if_false">
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfFalse</s:local>
+        </s:processor>
+        <s:link source="jobID" sink="pollJob:jobID" />
+        <s:link source="CheckStatus:isComplete" sink="Fail_if_false:test" />
+        <s:link source="pollJob:out" sink="CheckStatus:status" />
+        <s:link source="pollJob:out" sink="status" />
+        <s:source name="jobID" />
+        <s:sink name="status" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="jobResult">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.mygrid.org.uk/menagerie/xfire/Primatives-re?wsdl</s:wsdl>
+      <s:operation>jobResult</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="jobResult:out" sink="result" />
+  <s:link source="startJob:out" sink="PollStatus:jobID" />
+  <s:link source="startJob:out" sink="jobResult:jobID" />
+  <s:sink name="result" />
+  <s:coordination name="jobResult_BLOCKON_Nested_Workflow">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>PollStatus</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>jobResult</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

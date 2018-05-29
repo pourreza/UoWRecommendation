@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:bf7b07d2-12fe-43e1-9187-e80c091bc9e1" author="Hamish McWilliam" title="EBI_OLS_TermInfo">Get details of an ontology term given its identifer.
+
+This workflow uses the EBI's Ontology Lookup Service (OLS) to get the details of the ontology term. The OLS suports a wide range of biological and bioinformatic ontologies. See http://www.ebi.ac.uk/ontology-lookup/ for more information.</s:workflowdescription>
+  <s:processor name="getTermMetadata">
+    <s:description>Get term metadata from OLS.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://www.ebi.ac.uk/ontology-lookup/OntologyQuery.wsdl</s:wsdl>
+      <s:operation>getTermMetadata</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Input_parameters">
+    <s:description>Build the input parameters structure.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getTermMetadata" name="parameters" qname="{http://www.ebi.ac.uk/ontology-lookup/OntologyQuery}getTermMetadata">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="termId" qname="{http://www.ebi.ac.uk/ontology-lookup/OntologyQuery}&gt;getTermMetadata&gt;termId" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="ontologyName" qname="{http://www.ebi.ac.uk/ontology-lookup/OntologyQuery}&gt;getTermMetadata&gt;ontologyName" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Unwrap_result">
+    <s:description>Unwrap the result.</s:description>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="getTermMetadataResponse" name="parameters" qname="{http://www.ebi.ac.uk/ontology-lookup/OntologyQuery}getTermMetadataResponse">
+          <s:elements>
+            <s:arraytype optional="false" unbounded="false" wrapped="false" typename="Map" name="getTermMetadataReturn" qname="{http://www.ebi.ac.uk/ontology-lookup/OntologyQuery}&gt;getTermMetadataResponse&gt;getTermMetadataReturn">
+              <s:elementtype>
+                <s:complextype optional="false" unbounded="false" typename="mapItem" name="" qname="{http://xml.apache.org/xml-soap}mapItem">
+                  <s:elements>
+                    <s:basetype optional="false" unbounded="false" typename="anyType" name="key" qname="{http://xml.apache.org/xml-soap}mapItem&gt;key" />
+                    <s:basetype optional="false" unbounded="false" typename="anyType" name="value" qname="{http://xml.apache.org/xml-soap}mapItem&gt;value" />
+                  </s:elements>
+                </s:complextype>
+              </s:elementtype>
+            </s:arraytype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="Input_parameters:output" sink="getTermMetadata:parameters" />
+  <s:link source="Ontology_Id" sink="Input_parameters:termId" />
+  <s:link source="Unwrap_result:getTermMetadataReturn" sink="Ontology_term" />
+  <s:link source="getTermMetadata:parameters" sink="Unwrap_result:input" />
+  <s:source name="Ontology_Id">
+    <s:metadata>
+      <s:description>Ontology term identifier to retrive information about. For example: GO:0008150.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="Ontology_term">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>text/plain</s:mimeType>
+      </s:mimeTypes>
+      <s:description>Details of the ontology term.</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

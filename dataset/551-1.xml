@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:7aef73f4-9784-4c80-bb7e-619a86c57346" author="Thomas Kuhn" title="Iterative loading of molecules from database with aromaticity detection">This workflow loads molecules from a database in an iterative manner using the SQL commands LIMIT and OFFSET.
+After the loading each molecule goes through an atom typing perception before the Hueckel Aromaticity Detector tries to detect the aromaticity. All id of the aromatic molecules will be written wo a text file.</s:workflowdescription>
+  <s:processor name="Iterative_Molecule_from_database_reader">
+    <s:cdk>
+      org.openscience.cdk.applications.taverna.database.pgchem.IterativeMoleculeFromDBReader
+      <s:extensions>
+        <s:IterativeMoleculeFromDBReader>
+          <DBConnectionPostgres>
+            <DBURL>jdbc:postgresql://localhost/cdk-taverna</DBURL>
+            <DBUserName></DBUserName>
+            <DBUserPassword></DBUserPassword>
+            <SQLQuery>SELECT * FROM molecules ORDER BY id LIMIT ? OFFSET ?</SQLQuery>
+          </DBConnectionPostgres>
+        </s:IterativeMoleculeFromDBReader>
+      </s:extensions>
+    </s:cdk>
+  </s:processor>
+  <s:processor name="Nested_Workflow">
+    <s:workflow maxretries="1000000">
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:1bcdb2b0-666b-4bd4-ae64-be78ab75c55f" author="" title="aromaticitydetectionsubworkflow" />
+        <s:processor name="Iterative_File_Writer">
+          <s:cdk>
+            org.openscience.cdk.applications.taverna.io.iterative.IterativeFileWriter
+            <s:extensions>
+              <s:filewriter s:filename="log_moleculeIDsOfAromaticMolecules.txt" />
+            </s:extensions>
+          </s:cdk>
+        </s:processor>
+        <s:processor name="Fail_if_true">
+          <s:local critical="true">org.embl.ebi.escience.scuflworkers.java.FailIfTrue</s:local>
+        </s:processor>
+        <s:processor name="Perceive_atom_types">
+          <s:cdk>org.openscience.cdk.applications.taverna.atomtype.PerceiveAtomType</s:cdk>
+        </s:processor>
+        <s:processor name="Has_Next_Molecule_from_database">
+          <s:cdk>org.openscience.cdk.applications.taverna.database.pgchem.IterativeHasNextMoleculeFromDB</s:cdk>
+        </s:processor>
+        <s:processor name="Extract_the_database_ID_from_the_molcule">
+          <s:cdk>org.openscience.cdk.applications.taverna.tools.ExtractDatabaseIDFromMolecule</s:cdk>
+        </s:processor>
+        <s:processor name="Get_Molecule_from_database">
+          <s:cdk>org.openscience.cdk.applications.taverna.database.pgchem.IterativeGetMoleculeFromDB</s:cdk>
+        </s:processor>
+        <s:processor name="Hueckel_Aromaticity_Detector">
+          <s:cdk>org.openscience.cdk.applications.taverna.aromaticity.DetectHueckelAromaticity</s:cdk>
+        </s:processor>
+        <s:link source="DatabaseReaderID" sink="Get_Molecule_from_database:DatabaseConnectionID" />
+        <s:link source="DatabaseReaderID" sink="Has_Next_Molecule_from_database:DatabaseConnectionID" />
+        <s:link source="Extract_the_database_ID_from_the_molcule:databaseIDs" sink="Iterative_File_Writer:content" />
+        <s:link source="Get_Molecule_from_database:molecules" sink="Perceive_atom_types:inputStructures" />
+        <s:link source="Has_Next_Molecule_from_database:hasNext" sink="Fail_if_true:test" />
+        <s:link source="Hueckel_Aromaticity_Detector:aromaticStructures" sink="Extract_the_database_ID_from_the_molcule:inputStructures" />
+        <s:link source="Perceive_atom_types:allAtomTypesPerceived" sink="Hueckel_Aromaticity_Detector:inputStructures" />
+        <s:source name="DatabaseReaderID" />
+        <s:coordination name="Has_Next_Molecule_from_database_BLOCKON_Iterative_File_Writer">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>Iterative_File_Writer</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>Has_Next_Molecule_from_database</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:link source="Iterative_Molecule_from_database_reader:DatabaseConnectionID" sink="Nested_Workflow:DatabaseReaderID" />
+</s:scufl>
+

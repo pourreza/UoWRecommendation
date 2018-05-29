@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:87c56f6c-5d25-4d32-a24d-cc6e2582069a" author="Alan R Williams" title="List files by regex - single answer">The create_temporary_directory beanshell creates a temporary directory and outputs the path to that directory.
+
+The populate_directory beanshell creates several files within the temporary directory.
+
+Once the directory has been populated, it is examined by the List_files_by_regex service and the file path to the one file matching 'c.*' i.e. starting with 'c' is output.</s:workflowdescription>
+  <s:processor name="create_temporary_directory">
+    <s:beanshell>
+      <s:scriptvalue>File temp = File.createTempFile("taverna", ".dir");
+temp.delete();
+temp.mkdir();
+temp.deleteOnExit();
+directoryPath = temp.getCanonicalPath();</s:scriptvalue>
+      <s:beanshellinputlist />
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">directoryPath</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="populate_directory">
+    <s:beanshell>
+      <s:scriptvalue>createfile(directory, filename) {
+  File f = new File(directory, filename);
+  f.createNewFile();
+}
+
+createfile(directory, "alan.txt");
+createfile(directory, "stian.txt");
+createfile(directory, "jits.txt");
+createfile(directory, "sergejs.bin");
+createfile(directory, "carole.png");
+createfile(directory, "david.png");
+createfile(directory, "stuart.txt");
+createfile(directory, "ian.png");</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">directory</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist />
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="List_Files_By_Regex">
+    <s:defaults>
+      <s:default name="regex">c.*</s:default>
+    </s:defaults>
+    <s:local>net.sourceforge.taverna.scuflworkers.io.FileListByRegexTask</s:local>
+  </s:processor>
+  <s:link source="List_Files_By_Regex:filelist" sink="out" />
+  <s:link source="create_temporary_directory:directoryPath" sink="List_Files_By_Regex:directory" />
+  <s:link source="create_temporary_directory:directoryPath" sink="populate_directory:directory" />
+  <s:sink name="out" />
+  <s:coordination name="List_Files_By_Regex_BLOCKON_populate_directory">
+    <s:condition>
+      <s:state>Completed</s:state>
+      <s:target>populate_directory</s:target>
+    </s:condition>
+    <s:action>
+      <s:target>List_Files_By_Regex</s:target>
+      <s:statechange>
+        <s:from>Scheduled</s:from>
+        <s:to>Running</s:to>
+      </s:statechange>
+    </s:action>
+  </s:coordination>
+</s:scufl>
+

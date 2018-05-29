@@ -1,0 +1,969 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:RAF68CG7K10" author="Peter Li" title="Mapping microarray data onto metabolic pathways">This workflow maps microarray data onto metabolic pathway diagrams represented as SBML models drawn using Cell Designer. To run this workflow requires libsbml to be installed into taverna - see http://www.mcisb.org/software/taverna/libsbml/index.html</s:workflowdescription>
+  <s:processor name="FileLocation" boring="true">
+    <s:description>URL of the SBML file of the glycolysis pathway</s:description>
+    <s:stringconstant>http://dbkgroup.org/peter/mcisb_glycolysis3-edited.xml</s:stringconstant>
+  </s:processor>
+  <s:processor name="createDictionary">
+    <s:description>Creates a mapping of yeast gene names with affymetrix probe set identifiers</s:description>
+    <s:beanshell>
+      <s:scriptvalue>import java.util.ArrayList;
+
+ArrayList AffyIdGeneNameMap = new ArrayList();
+
+System.out.println("Size of AffyIds: " + AffyIds.size());
+System.out.println("Size of GeneNames: " + GeneNames.size());
+
+//if(!AffyIds.size() = GeneNames.size())
+//  System.out.println("Number of affyids does NOT equal number of gene names!");
+
+for(x =0; x &lt; AffyIds.size(); x ++)
+{
+  ArrayList map = new ArrayList();
+  String affyId = AffyIds.get(x);
+  if(affyId.equals(""))
+    continue;
+
+  String geneName = GeneNames.get(x);
+  map.add(affyId);
+  map.add(geneName);
+  AffyIdGeneNameMap.add(map);
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">AffyIds</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l('text/plain')">GeneNames</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l(l('text/plain'))">AffyIdGeneNameMap</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="swapAffyIds">
+    <s:beanshell>
+      <s:scriptvalue>import java.util.ArrayList;
+
+//Output
+ArrayList NewExpressionValues = new ArrayList();
+
+//Create hashmap for easier querying of affy Ids
+HashMap mappings = new HashMap();
+for(int i = 0; i &lt; affyIdGeneNameMap.size(); i ++)
+{
+  ArrayList map = affyIdGeneNameMap.get(i);
+  String affyId = map.get(0);
+  String genename = map.get(1);
+  mappings.put(affyId, genename);  
+}
+
+//System.out.println("Number of items in expressionValues list: " + expressionValues.size());
+
+//Exchange affyIds in expression values
+for(x = 0; x &lt; expressionValues.size(); x ++)
+{
+  ArrayList pair = expressionValues.get(x);
+  String affy = pair.get(0);
+  affy = affy.substring(12);
+  System.out.println("Affy Id: " + affy);
+  String value = pair.get(1);
+  System.out.println("Exp value: " + value);
+  String geneName = mappings.get(affy);
+  System.out.println("Gene name: " + geneName);
+
+  ArrayList newPair = new ArrayList();
+  newPair.add(geneName);
+  newPair.add(value);
+
+  NewExpressionValues.add(newPair);
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l(l('text/plain'))">affyIdGeneNameMap</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l(l('text/plain'))">expressionValues</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l(l('text/plain'))">NewExpressionValues</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="extractExpressData">
+    <s:beanshell>
+      <s:scriptvalue>import org.xml.sax.InputSource;
+
+import javax.xml.namespace.QName;
+import javax.xml.transform.sax.SAXSource;
+import javax.xml.xpath.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.util.Iterator;
+import java.util.List;
+
+import org.w3c.dom.*;
+import org.w3c.dom.NodeList;
+
+class XPathWorker implements XPathVariableResolver
+{
+  NodeList evaluateXPath(InputSource is)
+  {
+    XPathFactory factory = XPathFactory.newInstance();
+    XPath xPath = factory.newXPath();
+
+    String expression = "//*[@Name]";
+    NodeList nodes = (NodeList) xPath.evaluate(expression, is, XPathConstants.NODESET);
+    NodeList nodeList = (NodeList) nodes;
+    return nodeList;
+  }
+}
+
+
+ArrayList ExpressionValues = new ArrayList();
+ArrayList pair;
+
+try
+{
+
+  XPath xpath = XPathFactory.newInstance().newXPath();
+  InputSource s = new InputSource(new StringReader(maxdBrowseXMLOutput));
+ 
+  //Saxon specific
+  XPathWorker xpathWorker = new XPathWorker();
+  NodeList nodes = xpathWorker.evaluateXPath(s);
+  System.out.println("Expression values from MaxD:\n");
+  if (nodes != null) 
+  {
+    int count = 0;
+    for(int i = 0; i &lt; nodes.getLength(); i ++)
+    {
+      Node n = nodes.item(i);
+      String str = n.getTextContent().trim();
+
+       if(count == 0)
+       {
+         pair = new ArrayList();        
+       }
+
+       if(!str.equals("") &amp;&amp; !str.startsWith("Affy:YG_S98:F:") &amp;&amp; !str.startsWith("Affy:YG_S98:R:"))
+       {
+         System.out.println(str);
+         pair.add(str);
+         count ++;
+       }
+       
+       
+       if(count == 2)
+       {
+         ExpressionValues.add(pair);
+         count = 0;
+       }
+    }    
+    
+  }
+
+  System.out.println("Size of ExpressionValues list: " + ExpressionValues.size());
+  
+
+} catch (XPathExpressionException e)
+{
+  e.printStackTrace();
+} catch (FileNotFoundException e)
+{
+  e.printStackTrace();
+} catch (IOException e)
+{
+  e.printStackTrace();
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="'text/plain'">maxdBrowseXMLOutput</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l(l('text/plain'))">ExpressionValues</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="system">
+        <s:jarfile>libsbmlj.jar</s:jarfile>
+      </s:dependencies>
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="addColorToValues">
+    <s:beanshell>
+      <s:scriptvalue>//Output
+ArrayList ColorCodedExpressionValues = new ArrayList();
+
+for(int i = 0; i &lt; expressionValues.size(); i++)
+{
+  ArrayList pair = expressionValues.get(i);
+  String geneName = pair.get(0);
+  float value = Float.parseFloat(pair.get(1));
+  String colorValue = "";
+
+  System.out.println("Gene: " + geneName);
+
+  //Match color to expression value  
+  for(int v = 0; v &lt; colorcode.size(); v++)
+  {
+    ArrayList colors = colorcode.get(v);
+    Float f = new Float(colors.get(0));
+    float expValue = f.floatValue();
+    if(value &lt; expValue)
+    {
+      System.out.println("Gene expression value: " + value);
+      System.out.println("Colour value: " + expValue);
+      colorValue = colors.get(1);
+      break;
+    }
+    if(value &gt; expValue)
+      colorValue = "ff33ff00"; 
+
+  }  
+
+  //Add to new arraylist
+  ArrayList triple = new ArrayList();
+  triple.add(geneName);
+  triple.add(value);
+  triple.add(colorValue);
+  ColorCodedExpressionValues.add(triple);
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l(l('text/plain'))">colorcode</s:beanshellinput>
+        <s:beanshellinput s:syntactictype="l(l('text/plain'))">expressionValues</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l(l('text/plain'))">ColorCodedExpressionValues</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="merge">
+    <s:beanshell>
+      <s:scriptvalue>/**
+ * Concatenates the affy ids into one String
+ * delimited by commas
+ */
+
+StringBuffer final_sb = new StringBuffer();
+
+for(int i = 0; i &lt; ids.size(); i ++)
+{
+  String str = "Affy:YG_S98:" + (String)ids.get(i);
+  final_sb.append(str);
+  if(i &lt; ids.size())
+    final_sb.append(",");
+  else
+    continue;
+}
+
+//Output
+String mergedIds = final_sb.toString();</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">ids</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="'text/plain'">mergedIds</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="calcExpressionRange">
+    <s:beanshell>
+      <s:scriptvalue>//Output
+String range = "";
+
+float lowestValue = 500.00;
+float highestValue = 0.00;
+
+System.out.println("Calculating gene expression value range...");
+
+for(int i = 0; i &lt; expressionValues.size(); i++)
+{
+  ArrayList pair = expressionValues.get(i);
+  String value = pair.get(1);
+  //System.out.println("Value is: " + value);
+
+  float x = java.lang.Float.parseFloat(value);
+  if(x &lt; lowestValue)
+    lowestValue = x;
+
+  if(x &gt; highestValue)
+    highestValue = x;
+}
+
+System.out.println("Calculating colour intervals...");
+
+//Create list of color codes
+float intervals = highestValue / 6;
+ArrayList colorcode = new ArrayList();
+for(int i = 0 ; i &lt; 6; i++)
+{
+  float e = intervals * (i + 1);
+  String color = "";
+  if(i == 0)
+    color = "ff330000";
+  else if(i == 1)
+    color = "ff333300";
+  else if(i == 2)
+    color = "ff336600";
+  else if(i == 3)
+    color = "ff339900";
+  else if(i == 4)
+    color = "ff33CC00";
+  else if(i == 5)
+    color = "ff33FF00";
+
+  ArrayList colormap = new ArrayList();
+  colormap.add(e);
+  colormap.add(color);
+  colorcode.add(colormap);
+  
+}
+
+//Check
+//for(int m = 0; m &lt; colorcode.size(); m ++)
+//  System.out.println(colorcode.get(m));</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l(l('text/plain'))">expressionValues</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l(l('text/plain'))">colorcode</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="getSBMLFile">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:processor name="queryMaxd">
+    <s:description>Will take a list of Gene names, a list of Measurement names and a list of Column Types and produce a table. All values are coloured in relation to the a reference. In the list of Measurement names, the first Measurement listed is taken to be the reference. Formatted as text.</s:description>
+    <s:defaults>
+      <s:default name="ColumnTypes">*</s:default>
+      <s:default name="MeasurementNames">JC_S-0.07-1_Measurement</s:default>
+      <s:default name="listSplitter">,</s:default>
+      <s:default name="profileANDppass">BigEx:9dj2n5g7l</s:default>
+    </s:defaults>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://dbkgroup.org/software/maxd/maxdBrowse/sequences/GeneHunterXHTMLCoreOutput/wsdl.xml</s:wsdl>
+      <s:operation>query</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="extractGeneNames">
+    <s:description>A sub workflow that reads the gene names used by labelling enzymes in the SBML model</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:RAF68CG7K10" author="" title="Untitled workflow #7" />
+        <s:processor name="extractGeneNames">
+          <s:beanshell>
+            <s:scriptvalue>import org.sbml.libsbml.*;
+import org.xml.sax.InputSource;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.XPathExpressionException;
+import java.util.ArrayList;
+
+//System.loadLibrary("sbmlj");
+
+//Output
+ArrayList geneNames = new ArrayList();
+
+//For some reason, Taverna is converting NumOfSpecies into a String
+//Need to parse into an int 
+int speciesNumber = Integer.parseInt(NumOfSpecies);
+for(int i = 0; i &lt; speciesNumber; i ++)
+{
+  Species species = (Species) listOfSpecies.get(i);
+  //System.out.println(species.getName());
+
+  String annotation = species.getAnnotation();
+  annotation = annotation.replaceAll("celldesigner:", "");
+  //System.out.println(annotation);
+
+  try
+  {
+    XPath xpath = XPathFactory.newInstance().newXPath();
+    String expression = "//class";
+    InputSource s = new InputSource(new StringReader(annotation));
+    String speciesClass = xpath.evaluate(expression, s);
+    if (speciesClass.equals("PROTEIN"))
+      geneNames.add(species.getName());
+
+
+  } catch (XPathExpressionException e)
+  {
+    e.printStackTrace();
+  }
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">NumOfSpecies</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="'text/plain'">listOfSpecies</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="l('text/plain')">geneNames</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="getModel">
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBMLDocument" />
+            <method name="getModel" static="false" constructor="false" type="org.sbml.libsbml.Model" dimension="0" />
+            <description />
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="readSBMLFromString">
+          <s:description>Reads an SBML document from the given XML string.
+
+ The XML string must be complete and legal XML document.  Among other
+ things, it must start with an XML processing instruction.  For e.g.,:
+
+   &lt;?xml version='1.0' encoding='UTF-8'?&gt;
+
+ This method will log a fatal error if the XML string is not SBML.  See
+ the method documentation for readSBML(filename) for example error
+ checking code.</s:description>
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBMLReader" />
+            <method name="readSBMLFromString" static="false" constructor="false" type="org.sbml.libsbml.SBMLDocument" dimension="0" />
+            <description>Reads an SBML document from the given XML string.
+
+ The XML string must be complete and legal XML document.  Among other
+ things, it must start with an XML processing instruction.  For e.g.,:
+
+   &lt;?xml version='1.0' encoding='UTF-8'?&gt;
+
+ This method will log a fatal error if the XML string is not SBML.  See
+ the method documentation for readSBML(filename) for example error
+ checking code.</description>
+            <parameter name="xml" type="java.lang.String" dimension="0" />
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="getListOfSpecies">
+          <apiconsumer>
+            <class name="org.sbml.libsbml.Model" />
+            <method name="getListOfSpecies" static="false" constructor="false" type="org.sbml.libsbml.ListOf" dimension="0" />
+            <description />
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="createSbmlReader">
+          <s:description>Creates a new SBMLReader and returns it.
+
+ By default schema validation is off (XML_SCHEMA_VALIDATION_NONE) and
+ schemaFilenames are empty.</s:description>
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBMLReader" />
+            <method name="SBMLReader" static="false" constructor="true" type="org.sbml.libsbml.SBMLReader" dimension="0" />
+            <description>Creates a new SBMLReader and returns it.
+
+ By default schema validation is off (XML_SCHEMA_VALIDATION_NONE) and
+ schemaFilenames are empty.</description>
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="getNumSpecies">
+          <apiconsumer>
+            <class name="org.sbml.libsbml.Model" />
+            <method name="getNumSpecies" static="false" constructor="false" type="long" dimension="0" />
+            <description />
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:link source="createSbmlReader:object" sink="readSBMLFromString:object" />
+        <s:link source="getListOfSpecies:result" sink="extractGeneNames:listOfSpecies" />
+        <s:link source="getModel:result" sink="getListOfSpecies:object" />
+        <s:link source="getModel:result" sink="getNumSpecies:object" />
+        <s:link source="getNumSpecies:result" sink="extractGeneNames:NumOfSpecies" />
+        <s:link source="readSBMLFromString:result" sink="getModel:object" />
+        <s:link source="sbmlString" sink="readSBMLFromString:xml" />
+        <s:link source="extractGeneNames:geneNames" sink="geneNames" />
+        <s:source name="sbmlString" />
+        <s:sink name="geneNames" />
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="writeSBML">
+    <s:description>Creates a new SBML model containing new colours for how the enzymes should coloured according to gene expression level</s:description>
+    <s:workflow>
+      <s:scufl version="0.2" log="0">
+        <s:workflowdescription lsid="urn:lsid:www.mygrid.org.uk:operation:RAF68CG7K10" author="" title="icsb30_createpng" />
+        <s:processor name="writeAnnotation">
+          <s:beanshell>
+            <s:scriptvalue>import org.sbml.libsbml.*;
+
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.w3c.dom.*;
+
+import javax.xml.transform.*;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.dom.DOMSource;
+
+import com.sun.org.apache.xerces.internal.parsers.DOMParser;
+
+import java.io.OutputStreamWriter;
+
+
+//Output
+String NewSBMLFile = "";
+
+//System.loadLibrary("sbmlj");
+
+//Create hashmap mapping gene names to colour values
+HashMap geneColorMappings = new HashMap();
+for(int h = 0; h &lt; ExpressionValues.size(); h ++)
+{
+  ArrayList l = ExpressionValues.get(h);
+  String genename = l.get(0);
+  Float value = l.get(1);
+  String color = l.get(2);
+  geneColorMappings.put(genename, color);
+}
+
+//SBMLReader reader = new SBMLReader();
+//SBMLDocument document = reader.readSBMLFromString(SBMLFile);
+//odel model = document.getModel();
+//String annotation = model.getAnnotation();
+
+//Get rid of prefix celldesigner: in XML tags
+annotation = annotation.replaceAll("celldesigner:", "");
+
+
+try
+{
+  DOMParser parser = new DOMParser();
+  InputSource s = new InputSource(new StringReader(annotation));
+  parser.parse(s);
+  Document doc = parser.getDocument();
+  NodeList nodes1 = doc.getElementsByTagName("speciesAlias");
+  System.out.println("Number of speciesAlias nodes: " + nodes1.getLength());
+
+  for (int i = 0; i &lt; nodes1.getLength(); i++)
+  {
+    Element speciesAliasElem = (Element) nodes1.item(i);
+    //System.out.println(speciesAliasElem.getAttribute("id"));
+    String id = speciesAliasElem.getAttribute("id");
+    if (id.startsWith("sa"))
+      continue;
+
+    System.out.println("Id is: " + id);
+
+    NodeList nodes2 = speciesAliasElem.getElementsByTagName("usualView");
+    for (int v = 0; v &lt; nodes2.getLength(); v++)
+    {
+      Element usualViewElem = (Element) nodes2.item(v);
+      NodeList nodes3 = usualViewElem.getElementsByTagName("paint");
+      //System.out.println("Number of paint nodes: " + nodes3.getLength());
+
+      //If id is a gene name which is not measured in the experiment or not found by YeastAffymapper
+      //, colour it white!!!
+      if(!geneColorMappings.containsKey(id))
+      {
+         System.out.println("Gene name: " + id + " was not found in MaxD database or by YeastAffymapper");
+
+        for (int g = 0; g &lt; nodes3.getLength(); g++)
+        {
+          Element paintElem = (Element) nodes3.item(g);
+          paintElem.removeAttribute("color");
+          paintElem.setAttribute("color", "fff9f2f0");
+        }
+      }
+      else
+      {
+        for (int g = 0; g &lt; nodes3.getLength(); g++)
+        {
+          Element paintElem = (Element) nodes3.item(g);
+          paintElem.removeAttribute("color");
+          paintElem.setAttribute("color", geneColorMappings.get(speciesAliasElem.getAttribute("id")));
+        }
+      }
+    }
+  }
+
+  // Prepare the DOM document for writing - use a Transformer for output
+  StringWriter sw = new StringWriter();
+  TransformerFactory tFactory = TransformerFactory.newInstance();
+  Transformer transformer = tFactory.newTransformer();
+
+  DOMSource source = new DOMSource(doc);
+  StreamResult result = new StreamResult(sw);
+  transformer.transform(source, result);
+
+  StringBuffer output = new StringBuffer();
+
+  String stuff = sw.toString();
+  String[] lines = stuff.split("\n");
+
+  //Sort out first line
+  output.append("&lt;annotation&gt;\n");
+
+  for (int i = 2; i &lt; lines.length; i++) //Miss first line
+  {
+
+    String line = lines[i];
+
+    
+
+    if (line.trim().startsWith("&lt;html") || line.trim().startsWith("&lt;/html") || line.trim().startsWith("&lt;body") || line.trim().startsWith("&lt;/body") || line.trim().startsWith("&lt;/annotation"))
+    {
+      output.append("\n" + line);
+      continue;
+    }
+
+    if (line.trim().startsWith("&lt;") &amp;&amp; !line.trim().startsWith("&lt;/"))
+      line = line.replaceFirst("&lt;", "&lt;celldesigner:");
+
+
+    line = line.replaceAll("&lt;/", "&lt;/celldesigner:");
+
+    output.append("\n" + line);
+
+    //if(i &lt; 20)
+    // System.out.println("Line is: " + line);
+
+    
+  }
+
+  NewSBMLFile = output.toString();
+
+  //Need to add into SBML model
+/*
+  //model.unsetAnnotation();
+  //model.setAnnotation(output.toString());
+  //SBMLDocument document = new SBMLDocument(2);
+  //document.getNamespaces().add("celldesigner", "http://www.sbml.org/2001/ns/celldesigner");
+  //document.setModel(model);
+
+  //New!!!!!!!!!!!!!!!!!!
+  //SBMLWriter writer = new SBMLWriter();
+  String str =  writer.writeToString(document);
+  writer.delete();
+  writer = null; 
+
+  NewSBMLFile = str.replaceAll("\t", "    ");
+*/
+
+} 
+catch (SAXException e)
+{
+  e.printStackTrace();  
+} 
+catch (IOException e)
+{
+  e.printStackTrace();  
+}
+catch (TransformerException e)
+{
+  e.printStackTrace();
+}</s:scriptvalue>
+            <s:beanshellinputlist>
+              <s:beanshellinput s:syntactictype="'text/plain'">annotation</s:beanshellinput>
+              <s:beanshellinput s:syntactictype="l(l('text/plain'))">ExpressionValues</s:beanshellinput>
+            </s:beanshellinputlist>
+            <s:beanshelloutputlist>
+              <s:beanshelloutput s:syntactictype="'text/plain'">NewSBMLFile</s:beanshelloutput>
+            </s:beanshelloutputlist>
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </s:beanshell>
+        </s:processor>
+        <s:processor name="createSBMLReader">
+          <s:description>Creates a new SBMLReader and returns it.
+
+ By default schema validation is off (XML_SCHEMA_VALIDATION_NONE) and
+ schemaFilenames are empty.</s:description>
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBMLReader" />
+            <method name="SBMLReader" static="false" constructor="true" type="org.sbml.libsbml.SBMLReader" dimension="0" />
+            <description>Creates a new SBMLReader and returns it.
+
+ By default schema validation is off (XML_SCHEMA_VALIDATION_NONE) and
+ schemaFilenames are empty.</description>
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="readSBMLFromString">
+          <s:description>Reads an SBML document from the given XML string.
+
+ The XML string must be complete and legal XML document.  Among other
+ things, it must start with an XML processing instruction.  For e.g.,:
+
+   &lt;?xml version='1.0' encoding='UTF-8'?&gt;
+
+ This method will log a fatal error if the XML string is not SBML.  See
+ the method documentation for readSBML(filename) for example error
+ checking code.</s:description>
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBMLReader" />
+            <method name="readSBMLFromString" static="false" constructor="false" type="org.sbml.libsbml.SBMLDocument" dimension="0" />
+            <description>Reads an SBML document from the given XML string.
+
+ The XML string must be complete and legal XML document.  Among other
+ things, it must start with an XML processing instruction.  For e.g.,:
+
+   &lt;?xml version='1.0' encoding='UTF-8'?&gt;
+
+ This method will log a fatal error if the XML string is not SBML.  See
+ the method documentation for readSBML(filename) for example error
+ checking code.</description>
+            <parameter name="xml" type="java.lang.String" dimension="0" />
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="writeToString">
+          <s:description>Writes the given SBML document to an in-memory string and returns a
+ pointer to it.  The string is owned by the caller and should be freed
+ (with free()) when no longer needed.</s:description>
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBMLWriter" />
+            <method name="writeToString" static="false" constructor="false" type="java.lang.String" dimension="0" />
+            <description>Writes the given SBML document to an in-memory string and returns a
+ pointer to it.  The string is owned by the caller and should be freed
+ (with free()) when no longer needed.</description>
+            <parameter name="d" type="org.sbml.libsbml.SBMLDocument" dimension="0" />
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="createSBMLDocument">
+          <s:description>Creates a new SBMLDocument.  The SBML level defaults to 2 and version
+ defaults to 1.</s:description>
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBMLDocument" />
+            <method name="SBMLDocument" static="false" constructor="true" type="org.sbml.libsbml.SBMLDocument" dimension="0" />
+            <description>Creates a new SBMLDocument.  The SBML level defaults to 2 and version
+ defaults to 1.</description>
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="unsetAnnotation">
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBase" />
+            <method name="unsetAnnotation" static="false" constructor="false" type="void" dimension="0" />
+            <description />
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="getModel">
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBMLDocument" />
+            <method name="getModel" static="false" constructor="false" type="org.sbml.libsbml.Model" dimension="0" />
+            <description />
+            <s:dependencies s:classloader="workflow">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="getAnnotation">
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBase" />
+            <method name="getAnnotation" static="false" constructor="false" type="java.lang.String" dimension="0" />
+            <description />
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="getNamespaces">
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBase" />
+            <method name="getNamespaces" static="false" constructor="false" type="org.sbml.libsbml.XMLNamespaceList" dimension="0" />
+            <description />
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="setAnnotation">
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBase" />
+            <method name="setAnnotation" static="false" constructor="false" type="void" dimension="0" />
+            <description />
+            <parameter name="xml" type="java.lang.String" dimension="0" />
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="setModel">
+          <s:description>Sets the Model of this SBMLDocument to the given Model.
+ Any previously defined model is unset and freed.</s:description>
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBMLDocument" />
+            <method name="setModel" static="false" constructor="false" type="void" dimension="0" />
+            <description>Sets the Model of this SBMLDocument to the given Model.
+ Any previously defined model is unset and freed.</description>
+            <parameter name="m" type="org.sbml.libsbml.Model" dimension="0" />
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="add">
+          <s:description>Adds (prefix, URI) to this list of XML namespaces.
+
+ If prefix starts with 'xmlns:' (case-insensitive), it will be removed.</s:description>
+          <s:defaults>
+            <s:default name="prefix">celldesigner</s:default>
+            <s:default name="URI">http://www.sbml.org/2001/ns/celldesigner</s:default>
+          </s:defaults>
+          <apiconsumer>
+            <class name="org.sbml.libsbml.XMLNamespaceList" />
+            <method name="add" static="false" constructor="false" type="void" dimension="0" />
+            <description>Adds (prefix, URI) to this list of XML namespaces.
+
+ If prefix starts with 'xmlns:' (case-insensitive), it will be removed.</description>
+            <parameter name="prefix" type="java.lang.String" dimension="0" />
+            <parameter name="URI" type="java.lang.String" dimension="0" />
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:processor name="createSbmlWriter">
+          <s:description>Creates a new SBMLWriter.</s:description>
+          <apiconsumer>
+            <class name="org.sbml.libsbml.SBMLWriter" />
+            <method name="SBMLWriter" static="false" constructor="true" type="org.sbml.libsbml.SBMLWriter" dimension="0" />
+            <description>Creates a new SBMLWriter.</description>
+            <s:dependencies s:classloader="system">
+              <s:jarfile>libsbmlj.jar</s:jarfile>
+            </s:dependencies>
+          </apiconsumer>
+        </s:processor>
+        <s:link source="colouredExpressionValues" sink="writeAnnotation:ExpressionValues" />
+        <s:link source="createSBMLDocument:object" sink="getNamespaces:object" />
+        <s:link source="createSBMLDocument:object" sink="setModel:object" />
+        <s:link source="createSBMLDocument:object" sink="writeToString:d" />
+        <s:link source="createSBMLReader:object" sink="readSBMLFromString:object" />
+        <s:link source="createSbmlWriter:object" sink="writeToString:object" />
+        <s:link source="getAnnotation:result" sink="writeAnnotation:annotation" />
+        <s:link source="getModel:result" sink="getAnnotation:object" />
+        <s:link source="getModel:result" sink="setModel:m" />
+        <s:link source="getModel:result" sink="unsetAnnotation:object" />
+        <s:link source="getNamespaces:result" sink="add:object" />
+        <s:link source="readSBMLFromString:result" sink="getModel:object" />
+        <s:link source="sbmlString" sink="readSBMLFromString:xml" />
+        <s:link source="unsetAnnotation:object" sink="setAnnotation:object" />
+        <s:link source="writeAnnotation:NewSBMLFile" sink="setAnnotation:xml" />
+        <s:link source="writeToString:result" sink="newSBMLString" />
+        <s:source name="sbmlString" />
+        <s:source name="colouredExpressionValues" />
+        <s:sink name="newSBMLString" />
+        <s:coordination name="unsetAnnotation_BLOCKON_getAnnotation">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>getAnnotation</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>unsetAnnotation</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="setModel_BLOCKON_add">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>add</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>setModel</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="setModel_BLOCKON_setAnnotation">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>setAnnotation</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>setModel</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+        <s:coordination name="writeToString_BLOCKON_setModel">
+          <s:condition>
+            <s:state>Completed</s:state>
+            <s:target>setModel</s:target>
+          </s:condition>
+          <s:action>
+            <s:target>writeToString</s:target>
+            <s:statechange>
+              <s:from>Scheduled</s:from>
+              <s:to>Running</s:to>
+            </s:statechange>
+          </s:action>
+        </s:coordination>
+      </s:scufl>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="createImage">
+    <s:description>Renders an image of the new SBML model</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://dbk-ed.mib.man.ac.uk:8080/CellDesignerViz/services/CellDesignerViz?wsdl</s:wsdl>
+      <s:operation>createImage</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="getAffyIds">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://dbk-ed.mib.man.ac.uk:8080/YeastAffymapper/services/YeastAffymapper?wsdl</s:wsdl>
+      <s:operation>getAffyId</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="FileLocation:value" sink="getSBMLFile:url" />
+  <s:link source="addColorToValues:ColorCodedExpressionValues" sink="writeSBML:colouredExpressionValues" />
+  <s:link source="calcExpressionRange:colorcode" sink="addColorToValues:colorcode" />
+  <s:link source="createDictionary:AffyIdGeneNameMap" sink="swapAffyIds:affyIdGeneNameMap" />
+  <s:link source="createImage:createImageReturn" sink="image" />
+  <s:link source="extractExpressData:ExpressionValues" sink="swapAffyIds:expressionValues" />
+  <s:link source="extractGeneNames:geneNames" sink="createDictionary:GeneNames" />
+  <s:link source="extractGeneNames:geneNames" sink="getAffyIds:geneName" />
+  <s:link source="getAffyIds:getAffyIdReturn" sink="createDictionary:AffyIds" />
+  <s:link source="getAffyIds:getAffyIdReturn" sink="merge:ids" />
+  <s:link source="getSBMLFile:contents" sink="extractGeneNames:sbmlString" />
+  <s:link source="getSBMLFile:contents" sink="writeSBML:sbmlString" />
+  <s:link source="merge:mergedIds" sink="queryMaxd:GeneNames" />
+  <s:link source="queryMaxd:return" sink="extractExpressData:maxdBrowseXMLOutput" />
+  <s:link source="swapAffyIds:NewExpressionValues" sink="addColorToValues:expressionValues" />
+  <s:link source="swapAffyIds:NewExpressionValues" sink="calcExpressionRange:expressionValues" />
+  <s:link source="writeSBML:newSBMLString" sink="createImage:sbml" />
+  <s:link source="writeSBML:newSBMLString" sink="sbml" />
+  <s:sink name="sbml" />
+  <s:sink name="image">
+    <s:metadata>
+      <s:mimeTypes>
+        <s:mimeType>image/png</s:mimeType>
+      </s:mimeTypes>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

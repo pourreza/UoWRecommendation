@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:b0a9a56b-e529-41b2-86a9-ba348e5a0c6e" author="Andrew P Gibson, University of Amsterdam" title="Extract lists from an Excel Spreadsheet">This workflow takes an Excel spreadsheet exported as a tab delimited file.
+
+The workflow outputs three lists. A list of column names, a list of row names, and a two deep list of data points that can be indexed by [row][column].
+
+This workflow assumes that the first row and column contain row names and column names respectively, that cell A1 is blank or meaningless, and that all other rows are some sort of data.
+
+Example data:
+
+Blank	A	B	C	D
+p	1	2	3	4
+q	5	6	7	8
+r	9	10	11	12
+s	13	14	15	16</s:workflowdescription>
+  <s:processor name="SplitColumnNamesIntoList">
+    <s:description>Splits the header row of the Excel Sheet by tab</s:description>
+    <s:defaults>
+      <s:default name="regex">\t</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+    <s:mergemode input="string" mode="merge" />
+    <s:mergemode input="regex" mode="merge" />
+  </s:processor>
+  <s:processor name="SplitRows">
+    <s:description>Splits the Excel Spreadsheet by newlines, giving a list of strings, each string being a row</s:description>
+    <s:defaults>
+      <s:default name="regex">\n</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="MakeColumnNameList">
+    <s:description>For some reason, the previous processor returns a list of lists. This beanshell simply converts it back to a 1-deep list.</s:description>
+    <s:beanshell>
+      <s:scriptvalue>list = listoflists.get(0);
+list.remove(0);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l(l('text/plain'))">listoflists</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">list</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="SplitDataRows">
+    <s:description>Separates the header row from the rest of the rows for separate processing</s:description>
+    <s:beanshell>
+      <s:scriptvalue>//declare the output lists
+ArrayList datarows = new ArrayList();
+String headerrow = new String();
+
+//copy the header row to headerrow output
+headerrow = rows.get(0);
+
+//copy the datarows so we dont edit the main data in the workflow
+datarows = rows;
+//remove the header row from datarows output 
+datarows.remove(0);</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l('text/plain')">rows</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">datarows</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="'text/plain'">headerrow</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:processor name="SplitDataPoints">
+    <s:description>Splits each row from the excel spreadsheet by tab regex. Each iteration produces a list of the values from the cells of each row. Overall a list of lists is produced.</s:description>
+    <s:defaults>
+      <s:default name="regex">\t</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.SplitByRegex</s:local>
+  </s:processor>
+  <s:processor name="SplitRowNames">
+    <s:description>Filters out the first element of each row to build the list of row names and the 2-deel list of data points by row</s:description>
+    <s:beanshell>
+      <s:scriptvalue>//declare outputs
+ArrayList rownameslist = new ArrayList();
+
+// iterate over rows
+for(i = 0; i &lt; datarows.size(); i++) {
+// copy current row from list to temp list  
+	ArrayList templist = datarows.get(i);
+// add row name to rownameslist
+	rownameslist.add(templist.get(0));
+// remove row name from current list
+	templist.remove(0);
+// replace original row
+	datarows.set(i, templist);
+}</s:scriptvalue>
+      <s:beanshellinputlist>
+        <s:beanshellinput s:syntactictype="l(l('text/plain'))">datarows</s:beanshellinput>
+      </s:beanshellinputlist>
+      <s:beanshelloutputlist>
+        <s:beanshelloutput s:syntactictype="l(l('text/plain'))">datarows</s:beanshelloutput>
+        <s:beanshelloutput s:syntactictype="l('text/plain')">rownameslist</s:beanshelloutput>
+      </s:beanshelloutputlist>
+      <s:dependencies s:classloader="iteration" />
+    </s:beanshell>
+  </s:processor>
+  <s:link source="TabDelimitedExcelFile" sink="SplitRows:string" />
+  <s:link source="SplitColumnNamesIntoList:split" sink="MakeColumnNameList:listoflists" />
+  <s:link source="SplitDataPoints:split" sink="SplitRowNames:datarows" />
+  <s:link source="SplitDataRows:datarows" sink="SplitDataPoints:string" />
+  <s:link source="SplitDataRows:headerrow" sink="SplitColumnNamesIntoList:string" />
+  <s:link source="MakeColumnNameList:list" sink="ColumnNameList" />
+  <s:link source="SplitRowNames:datarows" sink="DataPoints" />
+  <s:link source="SplitRowNames:rownameslist" sink="RowNameList" />
+  <s:link source="SplitRows:split" sink="SplitDataRows:rows" />
+  <s:source name="TabDelimitedExcelFile" />
+  <s:sink name="ColumnNameList" />
+  <s:sink name="DataPoints" />
+  <s:sink name="RowNameList" />
+</s:scufl>
+

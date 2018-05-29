@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:9ffd1b18-abc9-4125-92ec-94b4f01e993e" author="Tom Oinn, Stian Soiland" title="Fetch today's xkcd comic">Use the local java plugins and some filtering operations to fetch the comic strip image from http://xkcd.com/
+
+Based on the FetchDailyDilbert workflow.</s:workflowdescription>
+  <s:processor name="comicURLRegex" boring="true">
+    <s:stringconstant>.*/comics/.*</s:stringconstant>
+  </s:processor>
+  <s:processor name="xkcdURL" boring="true">
+    <s:stringconstant>http://xkcd.com/</s:stringconstant>
+  </s:processor>
+  <s:processor name="getImageLinks">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.ExtractImageLinks</s:local>
+  </s:processor>
+  <s:processor name="getComicStrip">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebImageFetcher</s:local>
+  </s:processor>
+  <s:processor name="findComicURL">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.FilterStringList</s:local>
+  </s:processor>
+  <s:processor name="getPage">
+    <s:local>org.embl.ebi.escience.scuflworkers.java.WebPageFetcher</s:local>
+  </s:processor>
+  <s:link source="comicURLRegex:value" sink="findComicURL:regex" />
+  <s:link source="findComicURL:filteredlist" sink="getComicStrip:url" />
+  <s:link source="getComicStrip:image" sink="todaysXkcd" />
+  <s:link source="getImageLinks:imagelinks" sink="findComicURL:stringlist" />
+  <s:link source="getPage:contents" sink="getImageLinks:document" />
+  <s:link source="xkcdURL:value" sink="getComicStrip:base" />
+  <s:link source="xkcdURL:value" sink="getPage:url" />
+  <s:sink name="todaysXkcd" />
+</s:scufl>
+
