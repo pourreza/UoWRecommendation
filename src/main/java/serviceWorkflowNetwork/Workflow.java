@@ -1,10 +1,11 @@
 package serviceWorkflowNetwork;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Workflow {
+public class Workflow implements Serializable{
     private String url;
     private int index;
     private ArrayList<WorkflowVersion> versions;
@@ -17,7 +18,7 @@ public class Workflow {
         this.contributors = new HashSet<Person>();
         contributors.add(person);
     }
-    
+
     public void addVersion(WorkflowVersion version){
         versions.add(version);
     }

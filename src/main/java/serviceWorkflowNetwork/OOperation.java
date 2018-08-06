@@ -1,6 +1,8 @@
 package serviceWorkflowNetwork;
 
-public class OOperation {
+import java.io.Serializable;
+
+public class OOperation implements Serializable{
     private SService service;
     private String name;
     private String processorName;

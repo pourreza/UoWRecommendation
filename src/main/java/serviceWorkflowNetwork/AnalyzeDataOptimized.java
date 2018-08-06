@@ -1,5 +1,7 @@
 package serviceWorkflowNetwork;
 
+import Evaluation.EvaluateUoWRecommendation;
+import Evaluation.WorkflowWrapper;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
@@ -20,41 +22,64 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import static utilities.Printer.print;
 import static serviceWorkflowNetwork.ServiceType.*;
 
 public class AnalyzeDataOptimized {
 
-    public static Set<SService> services = new HashSet<SService>();
-    public static Set<OOperation> operations = new HashSet<OOperation>();
-    public static Set<WorkflowVersion> workflowVersions = new HashSet<WorkflowVersion>();
-    public static Set<Workflow> workflows = new HashSet<Workflow>();
-    public static Set<Person> people = new HashSet<Person>();
+    public Set<SService> services = new HashSet<SService>();
+    public Set<OOperation> operations = new HashSet<OOperation>();
+    public Set<WorkflowVersion> workflowVersions = new HashSet<WorkflowVersion>();
+    public Set<Workflow> workflows = new HashSet<Workflow>();
+    public Set<Person> people = new HashSet<Person>();
 
-    public static Set<SORelation> soRelations = new HashSet<SORelation>();
-    public static Set<OWRelation> owRelations = new HashSet<OWRelation>();
+    public Set<SORelation> soRelations = new HashSet<SORelation>();
+    public Set<OWRelation> owRelations = new HashSet<OWRelation>();
 
-    public static Graph<String, DefaultEdge>[] directedServiceServiceGraph = new Graph[12];
-    public static Graph<OOperation, DefaultEdge>[] directedOperationOperationGraph = new Graph[12];
+    public Graph<String, DefaultEdge>[] directedServiceServiceGraph = new Graph[12];
+    public Graph<OOperation, DefaultEdge>[] directedOperationOperationGraph = new Graph[12];
 
-    public static int notFoundUsers = 0;
-    public static int useless = 0;
+    public Set<SService>[] networkServices = new Set[12];
+    public Set<OOperation>[] networkOperations = new Set[12];
+    public Set<WorkflowVersion>[] networkWorkflowVersions = new Set[12];
+
+    public ArrayList<WorkflowWrapper> workflowWrappers;
+
+    public Graph<String, DefaultEdge> uowNetworkBeforeTime;
+
+    public int notFoundUsers = 0;
+    public int useless = 0;
+    boolean test1 = false;
+    boolean test2 = false;
+
+    public Map<WorkflowVersion, Graph<String, DefaultEdge>> workflowDirectedGraphs = new HashMap<WorkflowVersion, Graph<String, DefaultEdge>>();
 
     public static void main(String[] arg) throws ParserConfigurationException {
 
-        extractDataFromWorkflows();
+//        extractDataFromWorkflows();
 //        findServicesInBiocatalogue();
 //        Graph<Integer, DefaultWeightedEdge> workflowWorkflowGraph = createWorkflowWorkflowGraph();
 //        Graph<String, DefaultWeightedEdge> serviceServiceGraph = createServiceServiceGraph();
 //        Graph<String, DefaultEdge> workflowServiceGraph = createWorkflowServiceGraph();
     }
 
-    public static void extractDataFromWorkflows() throws ParserConfigurationException {
+    public void extractDataFromWorkflows() throws ParserConfigurationException {
+        services = new HashSet<SService>();
+        operations = new HashSet<OOperation>();
+        workflowVersions = new HashSet<WorkflowVersion>();
+        workflows = new HashSet<Workflow>();
+        people = new HashSet<Person>();
+
+        soRelations = new HashSet<SORelation>();
+        owRelations = new HashSet<OWRelation>();
+
+        directedServiceServiceGraph = new Graph[12];
+        directedOperationOperationGraph = new Graph[12];
+
+        uowNetworkBeforeTime = new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
+
         for(int i=0; i<12; i++){
             directedServiceServiceGraph[i] = new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
             directedOperationOperationGraph[i] = new DefaultDirectedGraph<OOperation, DefaultEdge>(DefaultEdge.class);
@@ -87,66 +112,66 @@ public class AnalyzeDataOptimized {
             int versionIndex = Integer.parseInt(worflowIndexAndVersion.substring(worflowIndexAndVersion.lastIndexOf("-") + 1));
 //            if (workflowIndexNextFile != (workflowIndex)) { // this means that this version is the last version of the current workflow
 
-                String workflowVersionURL = "http://www.myexperiment.org/workflows/" + workflowIndex + "/versions/" + versionIndex + ".html";
-                Date creationDate = findDate(workflowVersionURL, true);
-                Person person = findPerson(workflowVersionURL);
-                String description = findDescription(workflowVersionURL);
-                people.add(person);
-                Workflow workflow = new Workflow(workflowURL, workflowIndex, person);
-                WorkflowVersion workflowVersion = new WorkflowVersion(workflow, versionIndex, creationDate, workflowVersionURL, description);
-                Date updateDate = findDate(workflowVersionURL, false);
-                workflowVersion.setUpdateDate(updateDate);
-                workflowVersions.add(workflowVersion);
-                if(workflows.contains(workflow)){
-                    for(Workflow w: workflows){
-                        if(w.equals(workflow)){
-                            w.addVersion(workflowVersion);
-                            addContributors(w, workflowVersionURL);
-                        }
+            String workflowVersionURL = "http://www.myexperiment.org/workflows/" + workflowIndex + "/versions/" + versionIndex + ".html";
+            Date creationDate = findDate(workflowVersionURL, true);
+            Person person = findPerson(workflowVersionURL);
+            String description = findDescription(workflowVersionURL);
+            people.add(person);
+            Workflow workflow = new Workflow(workflowURL, workflowIndex, person);
+            WorkflowVersion workflowVersion = new WorkflowVersion(workflow, versionIndex, creationDate, workflowVersionURL, description);
+            Date updateDate = findDate(workflowVersionURL, false);
+            workflowVersion.setUpdateDate(updateDate);
+            workflowVersions.add(workflowVersion);
+            if(workflows.contains(workflow)){
+                for(Workflow w: workflows){
+                    if(w.equals(workflow)){
+                        w.addVersion(workflowVersion);
+//                            addContributors(w, workflowVersionURL);
                     }
-                }else {
-                    workflows.add(workflow);
-                    workflow.addVersion(workflowVersion);
-                    addContributors(workflow, workflowVersionURL);
                 }
+            }else {
+                workflows.add(workflow);
+                workflow.addVersion(workflowVersion);
+//                    addContributors(workflow, workflowVersionURL);
+            }
 
-                try {
-                    Document doc = dBuilder.parse(child);
-                    doc.getDocumentElement().normalize();
+            try {
+                Document doc = dBuilder.parse(child);
+                doc.getDocumentElement().normalize();
 
-                    boolean isXMl = false;
-                    NodeList processorNode;
+                boolean isXMl = false;
+                NodeList processorNode;
 
-                    DirectedGraph<String, DefaultEdge> directedProcessorGraph = new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
+                DirectedGraph<String, DefaultEdge> directedProcessorGraph = new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
 
-                    if (child.getName().contains(".xml")) {
-                        processorNode = (NodeList) xpath.compile("/scufl/processor").evaluate(doc, XPathConstants.NODESET);
-                        isXMl = true;
-                    } else {
-                        String xpathStr = "/workflow/dataflow/processors/processor/activities/activity";
-                        processorNode = (NodeList) xpath.compile(xpathStr).evaluate(doc, XPathConstants.NODESET);
-                    }
-                    workflowVersion.setNumberOfService(processorNode.getLength());
-                    workflowVersion.setNumberOfExternalServices(retrieveExternalServices(isXMl, processorNode, workflowVersion, directedProcessorGraph));
-
-                    //created directed graph - add edges to the graph
-                    NodeList links;
-                    if (child.getName().contains(".xml")) {
-                        links = (NodeList) xpath.compile("/scufl/link").evaluate(doc, XPathConstants.NODESET);
-                    } else {
-                        links = (NodeList) xpath.compile("/workflow/dataflow/datalinks/datalink").evaluate(doc, XPathConstants.NODESET);
-                    }
-                    workflowVersion.setDirectedProcessorGraph(directedProcessorGraph);
-                    createEdges(directedProcessorGraph, links, isXMl);
-                    createEdgesForDirectedGraphs(directedProcessorGraph, workflowVersion);
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (XPathExpressionException e) {
-                    e.printStackTrace();
-                } catch (SAXException e) {
-                    e.printStackTrace();
+                if (child.getName().contains(".xml")) {
+                    processorNode = (NodeList) xpath.compile("/scufl/processor").evaluate(doc, XPathConstants.NODESET);
+                    isXMl = true;
+                } else {
+                    String xpathStr = "/workflow/dataflow/processors/processor/activities/activity";
+                    processorNode = (NodeList) xpath.compile(xpathStr).evaluate(doc, XPathConstants.NODESET);
                 }
+                workflowVersion.setNumberOfService(processorNode.getLength());
+                workflowVersion.setNumberOfExternalServices(retrieveExternalServices(isXMl, processorNode, workflowVersion, directedProcessorGraph));
+
+                //created directed graph - add edges to the graph
+                NodeList links;
+                if (child.getName().contains(".xml")) {
+                    links = (NodeList) xpath.compile("/scufl/link").evaluate(doc, XPathConstants.NODESET);
+                } else {
+                    links = (NodeList) xpath.compile("/workflow/dataflow/datalinks/datalink").evaluate(doc, XPathConstants.NODESET);
+                }
+                workflowVersion.setDirectedProcessorGraph(directedProcessorGraph);
+                createEdges(directedProcessorGraph, links, isXMl);
+                createEdgesForDirectedGraphs(directedProcessorGraph, workflowVersion);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (XPathExpressionException e) {
+                e.printStackTrace();
+            } catch (SAXException e) {
+                e.printStackTrace();
+            }
 //            }
         }
 
@@ -255,7 +280,323 @@ public class AnalyzeDataOptimized {
         print("not Found Users: "+ notFoundUsers);
     }
 
-    private static String minMaxDate(Set<Workflow> workflows) {
+    public void extractDataFromWorkflows(ArrayList<WorkflowWrapper> workflowWrappers, boolean test2) throws ParserConfigurationException {
+        services = new HashSet<SService>();
+        operations = new HashSet<OOperation>();
+        workflowVersions = new HashSet<WorkflowVersion>();
+        workflows = new HashSet<Workflow>();
+        people = new HashSet<Person>();
+
+        soRelations = new HashSet<SORelation>();
+        owRelations = new HashSet<OWRelation>();
+
+        this.workflowWrappers = new ArrayList<WorkflowWrapper>(workflowWrappers);
+
+        directedServiceServiceGraph = new Graph[workflowWrappers.size()];
+        directedOperationOperationGraph = new Graph[workflowWrappers.size()];
+        networkServices = new Set[workflowWrappers.size()];
+        networkOperations = new Set[workflowWrappers.size()];
+        networkWorkflowVersions = new Set[workflowWrappers.size()];
+
+        ArrayList<WorkflowVersion> allSortedWorkflows = new ArrayList<WorkflowVersion>();
+        for(int i=0; i<workflowWrappers.size(); i++){
+            allSortedWorkflows.add(workflowWrappers.get(i).getWorkflow());
+        }
+
+        if(!test2) {
+            test1 = true;
+            this.test2 = false;
+        }
+        else {
+            this.test2 = true;
+            test1 = false;
+        }
+
+        uowNetworkBeforeTime = new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
+
+        for(int i=0; i<workflowWrappers.size(); i++){
+            directedServiceServiceGraph[i] = new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
+            networkServices[i] = new HashSet<SService>();
+            networkOperations[i] = new HashSet<OOperation>();
+            directedOperationOperationGraph[i] = new DefaultDirectedGraph<OOperation, DefaultEdge>(DefaultEdge.class);
+        }
+
+        File dir = new File("/Users/Maryam/MyExperimentDataset/");
+        File[] directoryListing = dir.listFiles();
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+        XPathFactory xPathfactory = XPathFactory.newInstance();
+        XPath xpath = xPathfactory.newXPath();
+
+        for (int directoryIndex = 0; directoryIndex < directoryListing.length; directoryIndex++) {
+            File child = directoryListing[directoryIndex];
+            print(child.getName());
+            if (child.getName().equals("214.xml")) {
+                print("hi");
+            }
+            String worflowIndexAndVersion = child.getName().substring(0, child.getName().indexOf("."));
+            String worflowIndexAndVersionNextFile = "";
+            if ((directoryIndex + 1) < directoryListing.length)
+                worflowIndexAndVersionNextFile = directoryListing[directoryIndex + 1].getName().substring(0, directoryListing[directoryIndex + 1].getName().indexOf("."));
+
+            int workflowIndex = Integer.parseInt(worflowIndexAndVersion.substring(0, worflowIndexAndVersion.lastIndexOf("-")));
+            int workflowIndexNextFile = 9999; // this number is used for the last file in the directory
+            if ((directoryIndex + 1) < directoryListing.length)
+                workflowIndexNextFile = Integer.parseInt(worflowIndexAndVersionNextFile.substring(0, worflowIndexAndVersionNextFile.lastIndexOf("-")));
+
+            String workflowURL = "http://www.myexperiment.org/workflows/" + workflowIndex + ".html";
+            int versionIndex = Integer.parseInt(worflowIndexAndVersion.substring(worflowIndexAndVersion.lastIndexOf("-") + 1));
+//            if (workflowIndexNextFile != (workflowIndex)) { // this means that this version is the last version of the current workflow
+
+            String workflowVersionURL = "http://www.myexperiment.org/workflows/" + workflowIndex + "/versions/" + versionIndex + ".html";
+            Date creationDate = findDate(workflowVersionURL, true);
+            Person person = findPerson(workflowVersionURL);
+            String description = findDescription(workflowVersionURL);
+            Workflow workflow = new Workflow(workflowURL, workflowIndex, person);
+            WorkflowVersion workflowVersion = new WorkflowVersion(workflow, versionIndex, creationDate, workflowVersionURL, description);
+            Date updateDate = findDate(workflowVersionURL, false);
+            workflowVersion.setUpdateDate(updateDate);
+            people.add(person);
+            workflowVersions.add(workflowVersion);
+            if(!allSortedWorkflows.contains(workflowVersion))// this means that this workflow does not have any services
+                continue;
+            addToNetwork(workflowVersion);
+            if(workflows.contains(workflow)){
+                for(Workflow w: workflows){
+                    if(w.equals(workflow)){
+                        w.addVersion(workflowVersion);
+//                            addContributors(w, workflowVersionURL);
+                    }
+                }
+            }else {
+                workflows.add(workflow);
+                workflow.addVersion(workflowVersion);
+//                    addContributors(workflow, workflowVersionURL);
+            }
+
+            try {
+                Document doc = dBuilder.parse(child);
+                doc.getDocumentElement().normalize();
+
+                boolean isXMl = false;
+                NodeList processorNode;
+
+                DirectedGraph<String, DefaultEdge> directedProcessorGraph = new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
+
+                if (child.getName().contains(".xml")) {
+                    processorNode = (NodeList) xpath.compile("/scufl/processor").evaluate(doc, XPathConstants.NODESET);
+                    isXMl = true;
+                } else {
+                    String xpathStr = "/workflow/dataflow/processors/processor/activities/activity";
+                    processorNode = (NodeList) xpath.compile(xpathStr).evaluate(doc, XPathConstants.NODESET);
+                }
+                workflowVersion.setNumberOfService(processorNode.getLength());
+                workflowVersion.setNumberOfExternalServices(retrieveExternalServices(isXMl, processorNode, workflowVersion, directedProcessorGraph));
+
+                //created directed graph - add edges to the graph
+                NodeList links;
+                if (child.getName().contains(".xml")) {
+                    links = (NodeList) xpath.compile("/scufl/link").evaluate(doc, XPathConstants.NODESET);
+                } else {
+                    links = (NodeList) xpath.compile("/workflow/dataflow/datalinks/datalink").evaluate(doc, XPathConstants.NODESET);
+                }
+                workflowVersion.setDirectedProcessorGraph(directedProcessorGraph);
+                createEdges(directedProcessorGraph, links, isXMl);
+                createEdgesForDirectedGraphs(directedProcessorGraph, workflowVersion);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (XPathExpressionException e) {
+                e.printStackTrace();
+            } catch (SAXException e) {
+                e.printStackTrace();
+            }
+//            }
+        }
+
+        ArrayList<WorkflowVersion> workflowVersionList = new ArrayList<WorkflowVersion>(workflowVersions);
+        print("number of workflows: " + workflows.size());
+        print("number of workflowVersions: " + workflowVersionList.size());
+        int countMore = 0;
+        int countOnes = 0;
+        int countTwos = 0;
+        int countThrees = 0;
+        int countFours = 0;
+        int countFives = 0;
+        int countTens = 0;
+        int countMoreThan10 = 0;
+        int countMoreThan100 = 0;
+        int countVersions = 0;
+        int countMore5 = 0;
+        for (int i = 0; i < workflowVersionList.size(); i++) {
+            WorkflowVersion workflowVersion = workflowVersionList.get(i);
+//            if(workflowVersion.getWorkflow().getVersions().size()==workflowVersion.getVersionIndex()) {
+            countVersions++;
+            if (workflowVersion.getNumExternalServices() >= 1) {
+                countMore++;
+            }
+            if (workflowVersion.getNumExternalServices() == 1)
+                countOnes++;
+            if (workflowVersion.getNumExternalServices() == 2)
+                countTwos++;
+            if (workflowVersion.getNumExternalServices() == 3)
+                countThrees++;
+            if (workflowVersion.getNumExternalServices() == 4)
+                countFours++;
+            if (workflowVersion.getNumExternalServices() == 5)
+                countFives++;
+
+            if (workflowVersion.getNumExternalServices() > 5 && workflowVersion.getNumExternalServices() < 10)
+                countMore5++;
+            if (workflowVersion.getNumExternalServices() == 10)
+                countTens++;
+            if (workflowVersion.getNumExternalServices() > 10) {
+                print("More than 10 : " + workflowVersion.getNumExternalServices() + " ");
+                countMoreThan10++;
+            }
+            if (workflowVersion.getNumExternalServices() > 100) {
+                print("More than 100 : " + workflowVersion.getNumExternalServices());//+ " " + workflowVersion.getWorkflowIndex() + " versionIndex: " + workflowVersion.getVersionIndex());
+                countMoreThan100++;
+            }
+//            }
+        }
+
+        print("All versions considered: " + countVersions);
+        print("numb external services more than one: " + countMore);
+
+        print("ones: " + countOnes);
+        print("Twos: " + countTwos);
+        print("Threes: " + countThrees);
+        print("Fours: " + countFours);
+        print("Fives: " + countFives);
+        print("Tens: " + countTens);
+        print("More than 5: " + countMore5);
+        print("More than 10: " + countMoreThan10);
+        print("More than 100: " + countMoreThan100);
+
+        print("Number of services: " + services.size());
+        print("Number of operations: " + operations.size());
+
+        double sumVersions = 0;
+        double sumServices = 0;
+        double sumOperations = 0;
+        double hasMoreOperations = 0;
+        for(Workflow workflow: workflows){
+            sumVersions+=workflow.getVersions().size();
+            if(workflow.getVersions().size()>1)
+                hasMoreOperations++;
+            //external operations for last version
+            ArrayList<OOperation> externalOperations = workflow.getVersions().get(workflow.getVersions().size() - 1).getExternalOperations();
+            sumOperations+=externalOperations.size();
+            Set<SService> serviceSet= new HashSet<SService>();
+            for(OOperation operation: externalOperations){
+                serviceSet.add(operation.getService());
+            }
+            sumServices+=serviceSet.size();
+        }
+
+        print(hasMoreOperations+"has more operations");
+
+        print(people.size()+" peopless ");
+        print(sumVersions/workflows.size()+" avg version per workflow ");
+        print(sumOperations/workflows.size()+" avg operation per workflow ");
+        print(sumServices/workflows.size()+" avg services per workflow ");
+
+        print(minMaxDate(workflows));
+        double sumWorkflows = 0;
+        for(Person person: people){
+            int workflowsForperson = 0;
+            for(Workflow workflow: workflows){
+                if(workflow.getContributors().contains(person)) {
+                    workflowsForperson++;
+                }
+            }
+            sumWorkflows+= workflowsForperson;
+        }
+        print(sumWorkflows/people.size()+" avg workflows per person ");
+
+        print("not useless: "+ useless);
+        print("not Found Users: "+ notFoundUsers);
+    }
+
+    private void addNetworkNodeForTestGraph(WorkflowVersion workflowVersion, OOperation operation, SService service) {
+        int index = 0;
+        for(int i=0; i<workflowWrappers.size(); i++){
+            if(test1) {
+                if(workflowWrappers.get(i).getWorkflow().equals(workflowVersion)){
+                    index = i;
+                    break;
+                }
+            }else{
+                if(!(workflowVersion.getWorkflow().getIndex().equals(workflowWrappers.get(i).getWorkflow().getWorkflow().getIndex()) && workflowVersion.getVersionIndex().compareTo(workflowWrappers.get(i).getWorkflow().getVersionIndex())>=0))
+                {
+                    directedServiceServiceGraph[i].addVertex(service.getURL());
+                    networkServices[i].add(service);
+                    networkOperations[i].add(operation);
+                }
+            }
+            index++;
+        }
+        if(test1){
+            for(int i=index+1; i<workflowWrappers.size(); i++){
+                directedServiceServiceGraph[i].addVertex(service.getURL());
+                networkServices[i].add(service);
+                networkOperations[i].add(operation);
+            }
+        }
+    }
+
+    private void addEdgetoNetworkForTest(WorkflowVersion workflowVersion, SService source, SService sink) {
+        int index = 0;
+        for(int i=0; i<workflowWrappers.size(); i++){
+            if(test1) {
+                if(workflowWrappers.get(i).getWorkflow().equals(workflowVersion)){
+                    index = i;
+                    break;
+                }
+            }else{
+                if(!(workflowVersion.getWorkflow().getIndex().equals(workflowWrappers.get(i).getWorkflow().getWorkflow().getIndex()) && workflowVersion.getVersionIndex().compareTo(workflowWrappers.get(i).getWorkflow().getVersionIndex())>=0))
+                {
+                    directedServiceServiceGraph[i].addEdge(source.getURL(), sink.getURL());
+                }
+            }
+            index++;
+        }
+        if(test1){
+            for(int i=index+1; i<workflowWrappers.size(); i++){
+                directedServiceServiceGraph[i].addEdge(source.getURL(), sink.getURL());
+            }
+        }
+    }
+
+    private void addToNetwork(WorkflowVersion workflowVersion) {
+        int index = 0;
+        for(int i=0; i<workflowWrappers.size(); i++){
+            if(test1) {
+                if(workflowWrappers.get(i).getWorkflow().equals(workflowVersion)){
+                    index = i;
+                    break;
+                }
+            }else{
+                if(!(workflowVersion.getWorkflow().getIndex().equals(workflowWrappers.get(i).getWorkflow().getWorkflow().getIndex()) && workflowVersion.getVersionIndex().compareTo(workflowWrappers.get(i).getWorkflow().getVersionIndex())>=0))
+                {
+                    if(networkWorkflowVersions[i]==null)
+                        networkWorkflowVersions[i] = new HashSet<WorkflowVersion>();
+                    networkWorkflowVersions[i].add(workflowVersion);
+                }
+            }
+            index++;
+        }
+        if(test1){
+            for(int i=index+1; i<workflowWrappers.size(); i++){
+                if(networkWorkflowVersions[i]==null)
+                    networkWorkflowVersions[i] = new HashSet<WorkflowVersion>();
+                networkWorkflowVersions[i].add(workflowVersion);
+            }
+        }
+    }
+
+    private String minMaxDate(Set<Workflow> workflows) {
         int minyear = 2018;
         int maxYear = 1800;
         for(WorkflowVersion workflow: workflowVersions){
@@ -267,7 +608,7 @@ public class AnalyzeDataOptimized {
         return "Min Year: "+ minyear + " Max Year: "+ maxYear;
     }
 
-    private static Graph<String, DefaultEdge> createWorkflowServiceGraph() {
+    private Graph<String, DefaultEdge> createWorkflowServiceGraph() {
         Graph<String, DefaultEdge> workflowServiceGraph = new SimpleGraph<String, DefaultEdge>(DefaultEdge.class);
         ArrayList<OWRelation> owRelationsList = new ArrayList<OWRelation>(owRelations);
         for (int i = 0; i < owRelationsList.size(); i++) {
@@ -280,7 +621,7 @@ public class AnalyzeDataOptimized {
         return workflowServiceGraph;
     }
 
-    private static Graph<String, DefaultWeightedEdge> createServiceServiceGraph() {
+    private Graph<String, DefaultWeightedEdge> createServiceServiceGraph() {
         Graph<String, DefaultWeightedEdge> serviceServiceGraph = new SimpleWeightedGraph<String, DefaultWeightedEdge>(DefaultWeightedEdge.class);
         ArrayList<SService> serviceList = new ArrayList<SService>(services);
         for (int i = 0; i < serviceList.size(); i++) {
@@ -311,7 +652,7 @@ public class AnalyzeDataOptimized {
         return serviceServiceGraph;
     }
 
-    private static Graph<Integer, DefaultWeightedEdge> createWorkflowWorkflowGraph() {
+    private Graph<Integer, DefaultWeightedEdge> createWorkflowWorkflowGraph() {
         Graph<Integer, DefaultWeightedEdge> workflowWorkflowGraph = new SimpleWeightedGraph<Integer, DefaultWeightedEdge>(DefaultWeightedEdge.class);
         ArrayList<WorkflowVersion> workflowVersionsList = new ArrayList<WorkflowVersion>(workflowVersions);
         for (int i = 0; i < workflowVersionsList.size(); i++) {
@@ -341,25 +682,25 @@ public class AnalyzeDataOptimized {
         return workflowWorkflowGraph;
     }
 
-    public static Graph<String,DefaultEdge>[] getDirectedServiceGraph() {
-        try {
-            extractDataFromWorkflows();
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        }
+    public Graph<String,DefaultEdge>[] getDirectedServiceGraph() {
+//        try {
+//            extractDataFromWorkflows();
+//        } catch (ParserConfigurationException e) {
+//            e.printStackTrace();
+//        }
         return directedServiceServiceGraph;
     }
 
-    public static Set<SService> getAllServices() {
-        try {
-            extractDataFromWorkflows();
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        }
+    public Set<SService> getAllServices() {
+//        try {
+//            extractDataFromWorkflows();
+//        } catch (ParserConfigurationException e) {
+//            e.printStackTrace();
+//        }
         return services;
     }
 
-    public static Set<WorkflowVersion> getAllWorkflowVersions() {
+    public Set<WorkflowVersion> getAllWorkflowVersions() {
         try {
             extractDataFromWorkflows();
         } catch (ParserConfigurationException e) {
@@ -368,16 +709,41 @@ public class AnalyzeDataOptimized {
         return workflowVersions;
     }
 
-    public static Set<OOperation> getAllOperations() {
+    public Set<OOperation> getAllOperations() {
+//        try {
+//            extractDataFromWorkflows();
+//        } catch (ParserConfigurationException e) {
+//            e.printStackTrace();
+//        }
+        return operations;
+    }
+    public Graph<String,DefaultEdge>[] getUoWnetwork(ArrayList<WorkflowWrapper> workflowWrappers, boolean test2) {
         try {
-            extractDataFromWorkflows();
+            extractDataFromWorkflows(workflowWrappers, test2);
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         }
-        return operations;
+        return directedServiceServiceGraph;
+    }
+
+    public Set<SService>[] getAllNetworkServices() {
+        return networkServices;
+    }
+
+    public Set<OOperation>[] getAllNetworkOperations() {
+        return networkOperations;
+    }
+
+    public Set<WorkflowVersion>[] getAllNetworkWorkflowVersions() {
+        return networkWorkflowVersions;
+    }
+
+    public Map<WorkflowVersion, Graph<String, DefaultEdge>> getWorkflowDirectedGraphs() {
+        return workflowDirectedGraphs;
     }
 
     class MyWeightedEdge extends DefaultWeightedEdge {
+
 
         @Override
         public String toString() {
@@ -385,7 +751,8 @@ public class AnalyzeDataOptimized {
         }
 
     }
-    private static int intersectionSize(ArrayList<OOperation> externalOperations, ArrayList<OOperation> externalOperations2) {
+
+    private int intersectionSize(ArrayList<OOperation> externalOperations, ArrayList<OOperation> externalOperations2) {
         int intersectionSize = 0;
         for (int i = 0; i < externalOperations.size(); i++) {
             for (int j = 0; j < externalOperations2.size(); j++) {
@@ -399,7 +766,7 @@ public class AnalyzeDataOptimized {
         return intersectionSize;
     }
 
-    private static void createEdgesForDirectedGraphs(Graph<String, DefaultEdge> directedProcessorGraph, WorkflowVersion workflowVersion) {
+    private void createEdgesForDirectedGraphs(Graph<String, DefaultEdge> directedProcessorGraph, WorkflowVersion workflowVersion) {
         for (int i = 0; i < workflowVersion.getExternalOperations().size(); i++) {
             OOperation source = workflowVersion.getExternalOperations().get(i);
             for (int j = 0; j < workflowVersion.getExternalOperations().size(); j++) {
@@ -407,15 +774,25 @@ public class AnalyzeDataOptimized {
                     OOperation sink = workflowVersion.getExternalOperations().get(j);
                     GraphPath<String, DefaultEdge> path = DijkstraShortestPath.findPathBetween(directedProcessorGraph, source.getProcessorName(), sink.getProcessorName());
                     if (path != null) {
-                        directedServiceServiceGraph[yearIndex(workflowVersion)].addEdge(source.getService().getURL(), sink.getService().getURL());
-                        directedOperationOperationGraph[yearIndex(workflowVersion)].addEdge(source, sink);
+                        if(!test1 && !test2) {
+                            directedServiceServiceGraph[yearIndex(workflowVersion)].addEdge(source.getService().getURL(), sink.getService().getURL());
+                            directedOperationOperationGraph[yearIndex(workflowVersion)].addEdge(source, sink);
+                        }else{
+                            addEdgetoNetworkForTest(workflowVersion, source.getService(), sink.getService());
+                            /****************
+                             * Added for flow recommendation
+                             */
+                            Graph<String, DefaultEdge> directedGraph = workflowDirectedGraphs.get(workflowVersion);
+                            directedGraph.addEdge(source.getService().getURL(), sink.getService().getURL());
+                            workflowDirectedGraphs.put(workflowVersion, directedGraph);
+                        }
                     }
                 }
             }
         }
     }
 
-    private static void createEdges(Graph<String, DefaultEdge> directedProcessorGraph, NodeList links, boolean isXML) {
+    private void createEdges(Graph<String, DefaultEdge> directedProcessorGraph, NodeList links, boolean isXML) {
         ///////for every link
         for (int i = 0; i < links.getLength(); i++) {
             String sink = null;
@@ -453,7 +830,7 @@ public class AnalyzeDataOptimized {
         }
     }
 
-    private static void findServicesInBiocatalogue() {
+    private void findServicesInBiocatalogue() {
         ArrayList<OOperation> operationList = new ArrayList<OOperation>(operations);
         int countFoundServices = 0;
         int operationNumber = 0;
@@ -472,7 +849,7 @@ public class AnalyzeDataOptimized {
         print("Found Operations in Biocatalogue: " + countFoundServices);
     }
 
-    private static boolean findServiceName(String serviceName) {
+    private boolean findServiceName(String serviceName) {
         String url = "https://www.biocatalogue.org/search?utf8=✓&q=" + serviceName;
         try {
             org.jsoup.nodes.Document document = Jsoup.connect(url).userAgent("Mozilla/5.0").timeout(10 * 1000000).get();
@@ -485,8 +862,8 @@ public class AnalyzeDataOptimized {
         return false;
     }
 
-    private static Person findPerson(String workflowURL) {
-        String csvFile = "feedmeWithVersions";
+    private Person findPerson(String workflowURL) {
+        String csvFile = "feedmeWithVersionsAll";
         BufferedReader br = null;
         String line = "";
         try {
@@ -496,9 +873,9 @@ public class AnalyzeDataOptimized {
             int lineNumber = 2;
             while ((line = br.readLine()) != null) {
                 String[] data2 = line.split("\"");
-                if (workflowURL.equals(data2[1])) {
-                    int id = Integer.parseInt(data2[11].substring(data2[11].lastIndexOf("/") + 1));
-                    String name = data2[13];
+                if (workflowURL.equals(data2[3])) {
+                    int id = Integer.parseInt(data2[33].substring(data2[33].lastIndexOf("/") + 1));
+                    String name = data2[39];
                     return new Person(name, id);
                 }
             }
@@ -512,8 +889,8 @@ public class AnalyzeDataOptimized {
         return null;
     }
 
-    private static String findDescription(String workflowURL) {
-        String csvFile = "feedmeWithVersions";
+    private String findDescription(String workflowURL) {
+        String csvFile = "feedmeWithVersionsAll";
         BufferedReader br = null;
         String line = "";
         try {
@@ -523,9 +900,9 @@ public class AnalyzeDataOptimized {
             int lineNumber = 2;
             while ((line = br.readLine()) != null) {
                 String[] data2 = line.split("\"");
-                if (workflowURL.equals(data2[1])) {
-                    if(data2.length>21) {
-                        String description = data2[21];
+                if (workflowURL.equals(data2[3])) {
+                    if(data2.length>9) {
+                        String description = data2[63];
                         return description;
                     }
                 }
@@ -539,8 +916,8 @@ public class AnalyzeDataOptimized {
         return null;
     }
 
-    private static void addContributors(Workflow workflow, String workflowVersionURL) {
-        String csvFile = "feedmeWithVersions";
+    private void addContributors(Workflow workflow, String workflowVersionURL) {
+        String csvFile = "feedmeWithVersionsAll";
         BufferedReader br = null;
         String line = "";
         try {
@@ -551,11 +928,11 @@ public class AnalyzeDataOptimized {
             while ((line = br.readLine()) != null) {
                 String[] data2 = line.split("\"");
                 //Creation date
-                if (workflowVersionURL.equals(data2[1])) {
+                if (workflowVersionURL.equals(data2[3])) {
                     //update date
                     if (!data2[17].equals("")) {
-                        String[] ids = data2[17].split(",");
-                        String[] names = data2[19].split(",");
+                        String[] ids = data2[57].split(",");
+                        String[] names = data2[51].split(",");
                         for(int i=0; i<ids.length; i++){
                             int userID = Integer.parseInt(ids[i].substring(ids[i].lastIndexOf("/") + 1));
                             String name = names[i];
@@ -577,8 +954,8 @@ public class AnalyzeDataOptimized {
         }
     }
 
-    private static Date findDate(String workflowURL, boolean isCreation) {
-        String csvFile = "feedmeWithVersions";
+    private Date findDate(String workflowURL, boolean isCreation) {
+        String csvFile = "feedmeWithVersionsAll";
         BufferedReader br = null;
         String line = "";
         try {
@@ -589,14 +966,17 @@ public class AnalyzeDataOptimized {
             while ((line = br.readLine()) != null) {
                 String[] data2 = line.split("\"");
                 //Creation date
-                if (workflowURL.equals(data2[1])) {
+                if(data2.length<60){
+                    print(line);
+                }
+                if (workflowURL.equals(data2[3])) {
                     //update date
-                    String date = data2[5];
+                    String date = data2[15];
 
                     if (!isCreation) {
-                        date = data2[7];
+                        date = data2[21];
                         if (date == null || date.trim().equals(""))
-                            date = data2[5].trim();
+                            date = data2[15].trim();
                     }
 
                     int year = Integer.parseInt(date.substring(0, 4));
@@ -615,7 +995,7 @@ public class AnalyzeDataOptimized {
         return null;
     }
 
-    private static int retrieveExternalServices(boolean isXMl, NodeList processorNode, WorkflowVersion workflowVersion, Graph<String, DefaultEdge> directedProcessorGraph) {
+    private int retrieveExternalServices(boolean isXMl, NodeList processorNode, WorkflowVersion workflowVersion, Graph<String, DefaultEdge> directedProcessorGraph) {
         int numExternalServices = 0;
         ///////for every processor
         for (int i = 0; i < processorNode.getLength(); i++) {
@@ -672,7 +1052,7 @@ public class AnalyzeDataOptimized {
         return null;
     }
 
-    private static int digForURL(WorkflowVersion workflowVersion, int numExternalServices, String serviceTypeStr, NodeList insideNodes, String processorName) {
+    private int digForURL(WorkflowVersion workflowVersion, int numExternalServices, String serviceTypeStr, NodeList insideNodes, String processorName) {
         for (int k = 0; k < insideNodes.getLength(); k++) {
             Node URLnode = insideNodes.item(k);
             if (URLnode.getTextContent().startsWith("http://") || URLnode.getTextContent().startsWith("https://")) {
@@ -688,7 +1068,7 @@ public class AnalyzeDataOptimized {
         return numExternalServices;
     }
 
-    private static ServiceType findServiceType(String serviceTypeStr) {
+    private ServiceType findServiceType(String serviceTypeStr) {
         serviceTypeStr = serviceTypeStr.toLowerCase().trim();
         if (serviceTypeStr.contains("soaplab"))
             return SOAPLAB;
@@ -705,7 +1085,7 @@ public class AnalyzeDataOptimized {
         return null;
     }
 
-    private static boolean createOperationService(ServiceType serviceType, String processorName, int k, Node URLnode, WorkflowVersion workflowVersion) {
+    private boolean createOperationService(ServiceType serviceType, String processorName, int k, Node URLnode, WorkflowVersion workflowVersion) {
         String serviceURL = URLnode.getTextContent();
         String operationName = null;
 
@@ -748,14 +1128,28 @@ public class AnalyzeDataOptimized {
         return false;
     }
 
-    private static boolean createNetworkNodesRelations(ServiceType serviceType, String processorName, WorkflowVersion workflowVersion, String serviceURL, String operationName) {
+    private boolean createNetworkNodesRelations(ServiceType serviceType, String processorName, WorkflowVersion workflowVersion, String serviceURL, String operationName) {
         if (operationName != null && !operationName.equals("") && serviceURL != null) {
             SService service = new SService(serviceURL, serviceType);
             services.add(service);
-            directedServiceServiceGraph[yearIndex(workflowVersion)].addVertex(serviceURL);
             OOperation operation = new OOperation(service, operationName, processorName);
             operations.add(operation);
-            directedOperationOperationGraph[yearIndex(workflowVersion)].addVertex(operation);
+            if(!test1 && !test2) {
+                directedServiceServiceGraph[yearIndex(workflowVersion)].addVertex(serviceURL);
+                directedOperationOperationGraph[yearIndex(workflowVersion)].addVertex(operation);
+
+            }else{
+                addNetworkNodeForTestGraph(workflowVersion, operation, service);
+                /*****************
+                 * Added for flow recommendation
+                 */
+                Graph<String, DefaultEdge> directedGraph = new SimpleDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
+                if(workflowDirectedGraphs.containsKey(workflowVersion)){
+                    directedGraph = workflowDirectedGraphs.get(workflowVersion);
+                }
+                directedGraph.addVertex(serviceURL);
+                workflowDirectedGraphs.put(workflowVersion, directedGraph);
+            }
 
             workflowVersion.addExternalOperation(operation);
 

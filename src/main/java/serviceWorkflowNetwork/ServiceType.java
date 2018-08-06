@@ -1,5 +1,7 @@
 package serviceWorkflowNetwork;
 
-public enum ServiceType {
+import java.io.Serializable;
+
+public enum ServiceType implements Serializable{
     WSDL, BIOMOBY, SOAPLAB, REST, SADI, ARBITRARYGT4;
 }

@@ -1,6 +1,8 @@
 package serviceWorkflowNetwork;
 
-public class SService {
+import java.io.Serializable;
+
+public class SService implements Serializable{
     private String url;
     private ServiceType type;
     private String intent;

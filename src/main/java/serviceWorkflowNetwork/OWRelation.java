@@ -1,8 +1,9 @@
 package serviceWorkflowNetwork;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class OWRelation {
+public class OWRelation implements Serializable{
     OOperation operation;
     WorkflowVersion workflowVersion;
     Date time;

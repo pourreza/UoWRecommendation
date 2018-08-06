@@ -3,10 +3,11 @@ package serviceWorkflowNetwork;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class WorkflowVersion {
+public class WorkflowVersion implements Serializable{
     private final int version;
     private final Workflow workflow;
     private final String description;
